@@ -4,7 +4,7 @@
 # Argparse
 import argparse
 # qidata
-import qidata.gui.annotator
+from qidata.gui.app import QiDataApp
 
 DESCRIPTION = "Annotate data-sets"
 
@@ -18,8 +18,8 @@ class AnnotateCommand:
 
 	@staticmethod
 	def run(args):
-		annotator = qidata.gui.annotator.Annotator()
+		qidata_app = QiDataApp(args.dataset)
 		try:
-			annotator.run()
+			qidata_app.run()
 		except KeyboardInterrupt:
 			pass
