@@ -19,7 +19,9 @@ setup(
     description='Dataset management CLI',
     long_description=open(os.path.join(CONTAINING_DIRECTORY,'README.md')).read(),
     install_requires=[
-        "argcomplete >= 1.1.0",
+        "PySide >= 1.2.2",
+        "python-xmp-toolkit >= 2.3.1"
+        "argcomplete >= 1.1.0"
     ]
 )
 
