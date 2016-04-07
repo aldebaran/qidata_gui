@@ -2,21 +2,24 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library
+import os.path
 import sys
 # Qt
 from PySide.QtCore import Signal, Slot
 from PySide.QtGui import QApplication
 # qidata
 import qidata
+from qidata import data
 from .window import QiDataMainWindow
 
 class QiDataApp(QApplication):
-	def __init__(self, root = None, selected = None):
+	def __init__(self, path = None, current_item = None):
 		super(QiDataApp, self).__init__([])
 		self.__setMetaInfo()
 
-		self.root     = root
-		self.selected = selected
+		self.fs_root         = path
+		self.current_dataset = None
+		self.current_item    = current_item
 
 		# ───
 		# GUI
@@ -31,21 +34,44 @@ class QiDataApp(QApplication):
 		# ──────────
 		# Initialize
 
-		if root:     self.setRoot(root)
-		if selected: self.setSelected(selected)
+		if fs_root:      self.setRoot(path)
+		if current_item: self.setSelected(current_item)
 
 	# ────────
 	# Main API
 
 	def setRoot(self, new_root):
-		self.root = new_root
+		self.fs_root = new_root
 		self.data_explorer.setRoot(new_root)
 
 	def setSelected(self, path):
+		# ───────────────────────────
+		# Find the containing dataset
+
+		containing_dataset = None
+
+		candidate_dataset = path
+		while not data.isDataset(candidate_dataset):
+			print candidate_dataset
+			if self.fs_root and os.path.samefile(candidate_dataset, self.fs_root):
+				break
+			candidate_dataset = os.path.dirname(candidate_dataset)
+
+		print candidate_dataset
+			# print os.path.dirname(path)
+			# if data.isDataset(path):
+			# 	pass
+
+		# ───────────
+		# ?
+
+		if data.isSupportedItem(path):
+			# Show the item in an annotation widget
+			pass
+
 		# Lookup the type of data
 		# Load the data in a model of it
 		# Instanciate an appropriate widget for it
-		print "Selected data:", path
 
 	# ──────────
 	# Properties

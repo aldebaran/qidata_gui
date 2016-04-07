@@ -19,6 +19,6 @@ VERSION = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "VERSIO
 # ––––––––––––––––––––
 # Hook for qiq plugins
 
-QIQ_PLUGIN_PACKAGES = ["qiq.data"]
+QIQ_PLUGIN_PACKAGES = ["qiq"]
 
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––#

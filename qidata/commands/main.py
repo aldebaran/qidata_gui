@@ -4,12 +4,13 @@
 # Argparse
 import argparse
 # qidata
-from . import status, annotate
+from . import annotate, status, xmp
 import qidata.version
 
 DESCRIPTION = "Manage data-sets"
 SUBCOMMANDS = [status.StatusCommand,
-               annotate.AnnotateCommand]
+               annotate.AnnotateCommand,
+               xmp.XMPCommand]
 
 def parser():
 	parser = argparse.ArgumentParser(description=DESCRIPTION)
