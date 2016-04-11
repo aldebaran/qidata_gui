@@ -9,7 +9,7 @@ try:
 except ImportError:
 	has_argcomplete = False
 # Qidata
-from qidata.xmp import XMP
+from qidata.xmp import XMPFile
 
 DESCRIPTION = "Manipulate XMP metadata"
 
@@ -39,12 +39,12 @@ class XMPCommand:
 	@staticmethod
 	def show(args):
 		input_file_path = args.file
-		with XMP(input_file_path) as metadata:
-			print metadata
+		with XMPFile(input_file_path) as xmp_file:
+			print xmp_file
 
 	@staticmethod
 	def xml(args):
 		import sys
 		input_file_path = args.file
-		with XMP(input_file_path) as metadata:
-			sys.stdout.write(metadata.xml())
+		with XMPFile(input_file_path) as xmp_file:
+			print xmp_file.metadata.xml()
