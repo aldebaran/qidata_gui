@@ -36,6 +36,27 @@ class XMPCommand:
 		if has_argcomplete: file_argument.completer = argcomplete.completers.FilesCompleter()
 		xml_parser.set_defaults(func=XMPCommand.xml)
 
+		# ───────────────
+		# set sub-command
+
+		set_parser = subparsers.add_parser("set", description="modify an XMP property")
+		file_argument      = set_parser.add_argument("file", help="file to modify")
+		namespace_argument = set_parser.add_argument("namespace", help="namespace to operate on")
+		property_argument  = set_parser.add_argument("property", help="XMP property to set")
+		value_argument     = set_parser.add_argument("value", help="XMP property to set")
+		if has_argcomplete: file_argument.completer = argcomplete.completers.FilesCompleter()
+		set_parser.set_defaults(func=XMPCommand.set)
+
+		# ──────────────────
+		# delete sub-command
+
+		delete_parser = subparsers.add_parser("delete", description="delete an XMP property")
+		file_argument      = delete_parser.add_argument("file", help="file to modify")
+		namespace_argument = delete_parser.add_argument("namespace", help="namespace to operate on")
+		property_argument  = delete_parser.add_argument("property", help="XMP property to set")
+		if has_argcomplete: file_argument.completer = argcomplete.completers.FilesCompleter()
+		delete_parser.set_defaults(func=XMPCommand.delete)
+
 	@staticmethod
 	def show(args):
 		input_file_path = args.file
@@ -44,7 +65,28 @@ class XMPCommand:
 
 	@staticmethod
 	def xml(args):
-		import sys
 		input_file_path = args.file
 		with XMPFile(input_file_path) as xmp_file:
 			print xmp_file.metadata.xml()
+
+	@staticmethod
+	def set(args):
+		print "Setting property {ns}:{p} of file {f} to {v}".format(ns=args.namespace,
+		                                                             p=args.property,
+		                                                             v=args.value,
+		                                                             f=args.file)
+		input_file_path = args.file
+		with XMPFile(input_file_path) as xmp_file:
+			pass
+			# TODO
+
+	@staticmethod
+	def delete(args):
+		print "Deleting property {ns}:{p} of file {f}".format(ns=args.namespace,
+		                                                       p=args.property,
+		                                                       v=args.value,
+		                                                       f=args.file)
+		input_file_path = args.file
+		with XMPFile(input_file_path) as xmp_file:
+			pass
+			# TODO

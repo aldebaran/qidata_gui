@@ -18,9 +18,10 @@ setup(
     license='LICENSE.txt',
     description='Dataset management CLI',
     long_description=open(os.path.join(CONTAINING_DIRECTORY,'README.md')).read(),
+    test_suite="tests",
     install_requires=[
         "PySide >= 1.2.2",
-        "python-xmp-toolkit >= 2.3.1"
+        "python-xmp-toolkit >= 2.0.1",
         "argcomplete >= 1.1.0"
     ]
 )

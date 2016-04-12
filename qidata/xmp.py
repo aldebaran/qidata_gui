@@ -14,6 +14,15 @@ XMP_NS_ALDEBARAN=u"http://aldebaran.com/xmp/0.1"
 SUGGESTED_ALDEBARAN_PREFIX=u"aldebaran"
 libxmp.exempi.register_namespace(XMP_NS_ALDEBARAN, SUGGESTED_ALDEBARAN_PREFIX)
 
+# ─────────────────────
+# Formatting parameters
+
+INDENT_SIZE = 5
+INDENT = ' ' * INDENT_SIZE
+TREE_INDENT = u'─'*(INDENT_SIZE-2) + " "
+TREE_MID_INDENT  = u"├" + TREE_INDENT
+TREE_LAST_INDENT = u"└" + TREE_INDENT
+
 class XMPFile(object):
 	def __init__(self, file_path, rw = False):
 		self.rw               = rw
@@ -67,32 +76,49 @@ class XMPFile(object):
 			message =  "Modified a read-only XMP file; won't be saved"
 			raise RuntimeWarning(message)
 
-class XMP(dict):
+class XMP(collections.Mapping):
 	"""
 	Pythonic wrapper around a libxmp XMPMetadata.
 	"""
 
-	def __init__(self, libxmp_metadata):
+	def __init__(self, libxmp_metadata = libxmp.XMPMeta()):
 		self.libxmp_metadata = libxmp_metadata
-		for namespace, elements in self.__dict().iteritems():
-			self[namespace] = XMPNamespace(self.libxmp_metadata,
-			                               namespace,
-			                               [LibXMPElement(e) for e in elements])
+		self._namespaces = {}
+		for ns_uid, elements in self.__dict().iteritems():
+			new_namespace = XMPNamespace(self.libxmp_metadata,
+			                             ns_uid,
+			                             [LibXMPElement(e) for e in elements])
+			self._namespaces[ns_uid] = new_namespace
 
 	# ──────────
 	# Properties
 
 	@property
 	def namespaces(self):
-	    return self.itervalues()
+		return [n for n in self._namespaces.itervalues()]
 
-	# ──────────
-	# Public API
+	# ───────────
+	# Mapping API
+
+	def __len__(self):
+		return len(self._namespaces)
+
+	def __iter__(self):
+		return iter(self._namespaces)
+
+	def __getitem__(self, key):
+		return self._namespaces[key]
+
+	# ──────────────
+	# Textualization
 
 	def __str__(self):
-		return self.textualize()
+		return unicode(self).encode("utf-8")
 
-	def prettyPrint(self):
+	def __unicode__(self):
+		return "\n".join([unicode(n) for n in self.namespaces])
+
+	def pretty_str(self):
 		return XMP.textualizeXMPDict(libxmp.utils.object_to_dict(self.libxmp_metadata)).encode("utf-8")
 
 	def xml(self):
@@ -104,9 +130,6 @@ class XMP(dict):
 
 	def __dict(self):
 		return libxmp.utils.object_to_dict(self.libxmp_metadata)
-
-	def textualize(self):
-		return "\n".join([str(n) for n in self.namespaces])
 
 	@staticmethod
 	def textualizeXMPDict(x, indent = ""):
@@ -123,31 +146,85 @@ class XMP(dict):
 			return str(x)
 		return rep
 
-class XMPNamespace(list):
+class XMPNamespace(collections.MutableMapping, collections.MutableSequence):
+	""" Convenience wrapper around libXMP to manipulate a namespace. """
+
 	def __init__(self, libxmp_metadata, namespace_uid, libxmp_elements):
 		self.libxmp_metadata = libxmp_metadata
 		self.uid = namespace_uid
+		self._elements = []
 		for e in libxmp_elements:
 			if not e.isTopLevel(): continue
-			self.append(XMPElement.fromLibXMPTuple(weakref.ref(self), e, libxmp_elements))
+			self._elements.append(XMPElement.fromLibXMPTuple(weakref.ref(self), e, libxmp_elements))
+
+	# ──────────
+	# Properties
 
 	@property
 	def prefix(self):
-	    return self.libxmp_metadata.get_prefix_for_namespace(self.uid)
+		return self.libxmp_metadata.get_prefix_for_namespace(self.uid)
+
+	# ─────────────
+	# Container API
+
+	def __len__(self):
+		return len(self._elements)
+
+	def __iter__(self):
+		return iter(self._elements)
+
+	# The following operators make XMPNamespace behave both as a Sequence and a Mapping.
+	#
+ 	# When given an XPath expression, behaves as a mapping of an XML tree.
+	# When given a slice or an index, behaves as a sequence of elements.
+
+	def __getitem__(self, key):
+		return self._elements[key]
+
+	def __setitem__(self, key, value):
+		success = False
+		# TODO Create a namespac if necessary
+		if success:
+			# super(XMP, self).__setitem__(key, value)
+			pass
+
+	def __delitem__(self, key):
+		success = False
+		# TODO Delete the underlying namespace
+		if success:
+			del self._elements[key]
+
+	def insert(self, key, value):
+		success = False
+		# TODO Delete the underlying namespace
+		if success:
+			del self._elements[key]
+
+	# ──────────────
+	# Textualization
 
 	def __str__(self):
-		return "{}\n{}".format(self.uid,
-		                       "\n".join([str(e) for e in self])).replace("\n","\n\t")
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u"{}\n{}".format(self.uid,
+		                        "\n".join([unicode(e) for e in self])).replace("\n","\n\t")
 
 class LibXMPElement:
-	INDEX_REGEX = re.compile(r".*\[\d+\]$")
+	""" Wrapper around a libXMP iterator element. """
+
+	ARRAY_ELEMENT_REGEX = re.compile(r".*\[\d+\]$")
+	INDEX_REGEX = re.compile(r"^\[\d+\]$")
 
 	def __init__(self, tuple):
-		self.address    = tuple[0]
-		self.value      = tuple[1]
+		self.address    = unicode(tuple[0])
+		self.value      = unicode(tuple[1])
 		self.descriptor = tuple[2]
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		rep = self.address
 		if self.value: rep += " = " + self.value
 		return rep
@@ -156,7 +233,7 @@ class LibXMPElement:
 	# Predicates
 
 	def isTopLevel(self):
-		return "/" not in self.address and not LibXMPElement.INDEX_REGEX.match(self.address)
+		return "/" not in self.address and not LibXMPElement.ARRAY_ELEMENT_REGEX.match(self.address)
 
 	def isDescendantOf(self, other_element):
 		return self.address != other_element.address \
@@ -169,11 +246,11 @@ class LibXMPElement:
 		if not self.address.startswith(other_element.address):
 			return False
 		address_delta = self.address[len(other_element.address):]
-		levels_down = address_delta.count("/")
-		is_array_element = LibXMPElement.INDEX_REGEX.match(address_delta) is not None
-		array_children = levels_down == 0 and is_array_element
-		struct_children = levels_down == 1 and not is_array_element
-		return array_children or struct_children
+		is_array_element = LibXMPElement.ARRAY_ELEMENT_REGEX.match(address_delta) is not None
+		if is_array_element:
+			return LibXMPElement.INDEX_REGEX.match(address_delta)
+		else:
+			return address_delta.count("/") == 1
 
 	def isParentOf(self, other_element):
 		return other_element.isChildrenOf(self)
@@ -194,6 +271,8 @@ class LibXMPElement:
 		return [e for e in elements if e.isParentOf(self)]
 
 class XMPElement:
+	""" Convenience wrapper around libXMP to manipulate a generic element. """
+
 	@staticmethod
 	def fromLibXMPTuple(namespace, libxmp_element, libxmp_elements):
 		descendents = libxmp_element.descendentsIn(libxmp_elements)
@@ -216,13 +295,15 @@ class XMPElement:
 
 	@property
 	def namespace(self):
-	    return self._namespace()
+		return self._namespace()
 
 	@property
 	def libxmp_metadata(self):
 		return self.namespace.libxmp_metadata
 
 class XMPStructure(XMPElement, list):
+	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
+
 	def __init__(self, namespace, libxmp_element, descendents = []):
 		XMPElement.__init__(self, namespace, libxmp_element)
 		for d in libxmp_element.childrenIn(descendents):
@@ -232,7 +313,17 @@ class XMPStructure(XMPElement, list):
 		children = "\n".join([str(c) for c in self])
 		return self.address + "\n\t" + children.replace("\n", "\n\t")
 
+	def __unicode__(self):
+		if self:
+			mid_children = [TREE_MID_INDENT+unicode(c) for c in self[:-1]]
+			last_child = TREE_LAST_INDENT+unicode(self[-1])
+			children = mid_children + [last_child]
+		else:
+			children = []
+		return self.address + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
+
 class XMPArray(XMPElement, list):
+	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
 	def __init__(self, namespace, libxmp_element, descendents = []):
 		XMPElement.__init__(self, namespace, libxmp_element)
 
@@ -249,20 +340,31 @@ class XMPArray(XMPElement, list):
 				self.append(XMPValue(self.namespace, "{}[{}]".format(self.address, i)))
 
 	def __str__(self):
-		children = "\n".join([str(c) for c in self])
-		return self.address + "\n\t" + children.replace("\n", "\n\t")
+		children = "\n".join(["- "+str(c).replace("\n", "\n  ") for c in self])
+		return self.address + " [\n\t" + children.replace("\n", "\n\t") + "\n]"
+
+	def __unicode__(self):
+		children = "\n".join([u"⁃ "+unicode(c).replace("\n", "\n  ") for c in self])
+		return self.address + " [\n\t" + children.replace("\n", "\n\t") + "\n]"
 
 class XMPSet(XMPElement, list):
-	def __init__(self, namespace, address, descendents = []):
-		XMPElement.__init__(self, namespace, address)
+	""" Convenience wrapper around libXMP to manipulate an XMP set (rdf:Bag). """
+
+	def __init__(self, namespace, libxmp_element, descendents = []):
+		XMPElement.__init__(self, namespace, libxmp_element)
 		for d in libxmp_element.childrenIn(descendents):
 			self.append(XMPElement.fromLibXMPTuple(namespace, d, descendents))
 
 	def __str__(self):
-		children = "\n".join([str(c) for c in self])
-		return self.address + "\n\t" + children.replace("\n", "\n\t")
+		children = "\n".join(["* "+str(c).replace("\n", "\n  ") for c in self])
+		return self.address + " {\n\t" + children.replace("\n", "\n\t") + "\n}"
+
+	def __unicode__(self):
+		children = "\n".join([u"• "+unicode(c).replace("\n", "\n  ") for c in self])
+		return self.address + " {\n\t" + children.replace("\n", "\n\t") + "\n}"
 
 class XMPValue(XMPElement):
+	""" Convenience wrapper around libXMP to manipulate an XMP value. """
 	def __init__(self, namespace, address):
 		XMPElement.__init__(self, namespace, address)
 
@@ -275,6 +377,8 @@ class XMPValue(XMPElement):
 	def name(self):
 		return self.address
 
-
 	def __str__(self):
 		return self.name + " = " + str(self.value)
+
+	def __unicode__(self):
+		return self.name + " = " + unicode(self.value)
