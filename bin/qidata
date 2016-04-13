@@ -45,6 +45,28 @@ if has_argcomplete:
 # Execute
 
 parsed_arguments = main_parser.parse_args(argv[1:])
-parsed_arguments.func(parsed_arguments)
+try:
+	parsed_arguments.func(parsed_arguments)
+except BaseException as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+
+    sys.stdout.write("Uncaught exception" + " " + type(e).__name__)
+    exception_message = str(e)
+    if exception_message:
+        print "\t" + exception_message
+    else:
+        print ""
+
+    import traceback
+    def rawEntry(e):
+        return "\n".join([l.lstrip() for l in e.rstrip().split("\n")])
+    print "Backtrace:"
+    backtrace_entries = [rawEntry(e) for e in traceback.format_tb(exc_traceback)]
+    for e in backtrace_entries[:-1]:
+        print "├─ " + e.replace("\n", "\n│  \t")
+    last_entry = backtrace_entries[-1]
+    print "╰╼ " + last_entry.replace("\n", "\n   \t")
+
+    print "Send this to the maintainer for help"
 
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––#

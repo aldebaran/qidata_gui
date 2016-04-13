@@ -62,15 +62,15 @@ class XMPFile(unittest.TestCase):
 	def test_modify_readonly(self):
 		with self.assertRaises(RuntimeWarning):
 			with xmp.XMPFile(self.jpg_photo_path) as f:
-				ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.XMP_NS_ALDEBARAN)
-				f.libxmp_metadata.set_property(schema_ns=xmp.XMP_NS_ALDEBARAN,
+				ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS_1)
+				f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS_1,
 				                               prop_name=ald_prefix+"Property",
 				                               prop_value="Value")
 	def test_modify_readwrite(self):
 		original_sha1 = sha1(self.jpg_photo_path)
 		with xmp.XMPFile(self.jpg_photo_path, rw=True) as f:
-			ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.XMP_NS_ALDEBARAN)
-			f.libxmp_metadata.set_property(schema_ns=xmp.XMP_NS_ALDEBARAN,
+			ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS_1)
+			f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS_1,
 			                               prop_name=ald_prefix+"Property",
 			                               prop_value="Value")
 		modified_sha1 = sha1(self.jpg_photo_path)
