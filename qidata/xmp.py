@@ -167,6 +167,10 @@ class XMPMetadata(collections.Mapping):
 		return rep
 
 class XMPTreeOperationMixin:
+	"""
+	Defines tree operations for any element that has a namespace and address.
+	"""
+
 	# ──────────
 	# Properties
 
@@ -197,13 +201,14 @@ class XMPTreeOperationMixin:
 			return False
 
 		address_delta = self.address[len(other.address):]
-		if not other.address:
+		is_array_element = LibXMPElement.ARRAY_ELEMENT_REGEX.match(address_delta) is not None
+		other_is_namespace = not other.address
+
+		if other_is_namespace and not is_array_element:
 			# If other is a namespace, its address is the empty string and
 			# children don't have a / in their address
 			return address_delta.count("/") == 0
-
-		is_array_element = LibXMPElement.ARRAY_ELEMENT_REGEX.match(address_delta) is not None
-		if is_array_element:
+		elif is_array_element:
 			return bool(LibXMPElement.INDEX_REGEX.match(address_delta))
 		else:
 			return address_delta.count("/") == 1
@@ -296,17 +301,17 @@ class XMPElement(object, XMPTreeOperationMixin):
 	# ────────────
 	# Constructors
 
-	def __init__(self, namespace, address, children = None):
+	def __init__(self, namespace, address):
+		assert(namespace is None or isinstance(namespace, weakref.ReferenceType))
 		self._namespace = namespace
-		self._address   = address
-		self.children   = children
+		self.address    = address
 
 	@staticmethod
 	def fromLibXMP(libxmp_element, potential_descendents, namespace):
 		if libxmp_element.is_value:
 			return XMPValue(namespace, libxmp_element.address)
 		else:
-			# Element is a container
+			# Container type elements
 			libxmp_descendents = libxmp_element.descendentsIn(potential_descendents)
 			libxmp_children    = libxmp_element.childrenIn(libxmp_descendents)
 
@@ -327,25 +332,159 @@ class XMPElement(object, XMPTreeOperationMixin):
 	# Properties
 
 	@property
+	def is_leaf(self):
+		try:
+			return not self.is_container
+		except NotImplemented:
+			return NotImplemented(str(self))
+
+	@property
+	def is_container(self):
+		return NotImplemented(str(self))
+
+	@property
 	def namespace(self):
 		return self._namespace()
 
 	@property
-	def address(self):
-		return self._address
+	def name(self):
+		return self.address.split("/")[-1]
 
 	@property
 	def libxmp_metadata(self):
 		return self.namespace.libxmp_metadata
 
-class XMPNamespace(XMPElement):
+class XMPStructure(XMPElement):
+	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
+
+	# ────────────
+	# Constructors
+
+	def __init__(self, namespace, address, children):
+		XMPElement.__init__(self, namespace, address)
+		self.children = children
+
+	# ────────────────────
+	# XMPElement overrides
+
+	@property
+	def children(self):
+		return [c for c in self._children.itervalues()]
+
+	@children.setter
+	def children(self, new_children):
+		if isinstance(new_children, collections.MutableMapping):
+			self._children = new_children
+		else:
+			self._children = dict((c.name, c) for c in new_children)
+
+	@property
+	def is_container(self):
+		return True
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		children = "\n".join([str(c) for c in self.children])
+		return self.name + "\n\t" + children.replace("\n", "\n\t")
+
+	def __unicode__(self):
+		if self.children:
+			mid_children = [TREE_MID_INDENT+unicode(c) for c in self.children[:-1]]
+			last_child = TREE_LAST_INDENT+unicode(self.children[-1])
+			children = mid_children + [last_child]
+		else:
+			children = []
+		return self.name + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
+
+class XMPArray(XMPElement):
+	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
+
+	# ────────────
+	# Constructors
+
+	def __init__(self, namespace, address, children):
+		XMPElement.__init__(self, namespace, address)
+		self.children = children
+
+	# ────────────────────
+	# XMPElement overrides
+
+	@property
+	def is_container(self):
+		return True
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		children_strings = "\n".join(["- "+str(c).replace("\n", "\n  ") for c in self.children])
+		return self.name + " [\n    " + children_strings.replace("\n", "\n    ") + "\n]"
+
+	def __unicode__(self):
+		children_strings = "\n".join([u"⁃ "+unicode(c).replace("\n", "\n  ") for c in self.children])
+		return self.name + " [\n    " + children_strings.replace("\n", "\n    ") + "\n]"
+
+class XMPSet(XMPElement):
+	""" Convenience wrapper around libXMP to manipulate an XMP set (rdf:Bag). """
+
+	# ────────────
+	# Constructors
+
+	def __init__(self, namespace, address, children):
+		XMPElement.__init__(self, namespace, address)
+		self.children = set(children)
+
+	# ────────────────────
+	# XMPElement overrides
+
+	@property
+	def is_container(self):
+		return True
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		children_strings = "\n".join(["* "+str(c).replace("\n", "\n  ") for c in self.children])
+		return self.name + " {\n    " + children_strings.replace("\n", "\n    ") + "\n}"
+
+	def __unicode__(self):
+		children_strings = "\n".join([u"• "+unicode(c).replace("\n", "\n  ") for c in self.children])
+		return self.name + " {\n    " + children_strings.replace("\n", "\n    ") + "\n}"
+
+class XMPValue(XMPElement):
+	""" Convenience wrapper around libXMP to manipulate an XMP value. """
+
+	@property
+	def value(self):
+		return self.libxmp_metadata.get_property(schema_ns=self.namespace.uid, prop_name=self.address)
+
+	# ────────────────────
+	# XMPElement overrides
+
+	@property
+	def is_container(self):
+		return False
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		return self.name + " = " + str(self.value)
+
+	def __unicode__(self):
+		return self.name + " = " + unicode(self.value)
+
+class XMPNamespace(XMPStructure):
 	""" Convenience wrapper around libXMP to manipulate a namespace. """
 
 	# ──────────
 	# Properties
 
 	def __init__(self, xmp, uid):
-		XMPElement.__init__(self, None, "", [])
+		XMPStructure.__init__(self, None, "", [])
 		self.xmp = xmp
 		self.uid = uid
 
@@ -393,67 +532,3 @@ class XMPNamespace(XMPElement):
 			                        "\n".join([unicode(e) for e in self.children])).replace("\n","\n\t")
 		else:
 			return self.uid
-
-class XMPStructure(XMPElement):
-	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
-
-	# ──────────────
-	# Textualization
-
-	def __str__(self):
-		children = "\n".join([str(c) for c in self.children])
-		return self.address + "\n\t" + children.replace("\n", "\n\t")
-
-	def __unicode__(self):
-		if self.children:
-			mid_children = [TREE_MID_INDENT+unicode(c) for c in self.children[:-1]]
-			last_child = TREE_LAST_INDENT+unicode(self.children[-1])
-			children = mid_children + [last_child]
-		else:
-			children = []
-		return self.address + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
-
-class XMPArray(XMPElement):
-	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
-
-	# ──────────────
-	# Textualization
-
-	def __str__(self):
-		children_strings = "\n".join(["- "+str(c).replace("\n", "\n  ") for c in self.children])
-		return self.address + " [\n\t" + children_strings.replace("\n", "\n\t") + "\n]"
-
-	def __unicode__(self):
-		children_strings = "\n".join([u"⁃ "+unicode(c).replace("\n", "\n  ") for c in self.children])
-		return self.address + " [\n\t" + children_strings.replace("\n", "\n\t") + "\n]"
-
-class XMPSet(XMPElement):
-	""" Convenience wrapper around libXMP to manipulate an XMP set (rdf:Bag). """
-
-	# ──────────────
-	# Textualization
-
-	def __str__(self):
-		children_strings = "\n".join(["* "+str(c).replace("\n", "\n  ") for c in self.children])
-		return self.address + " {\n\t" + children_strings.replace("\n", "\n\t") + "\n}"
-
-	def __unicode__(self):
-		children_strings = "\n".join([u"• "+unicode(c).replace("\n", "\n  ") for c in self.children])
-		return self.address + " {\n\t" + children_strings.replace("\n", "\n\t") + "\n}"
-
-class XMPValue(XMPElement):
-	""" Convenience wrapper around libXMP to manipulate an XMP value. """
-
-	@property
-	def value(self):
-		return self.libxmp_metadata.get_property(schema_ns=self.namespace.uid,
-		                                         prop_name=self.address)
-
-	# ──────────────
-	# Textualization
-
-	def __str__(self):
-		return self.address + " = " + str(self.value)
-
-	def __unicode__(self):
-		return self.address + " = " + unicode(self.value)

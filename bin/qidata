@@ -47,6 +47,8 @@ if has_argcomplete:
 parsed_arguments = main_parser.parse_args(argv[1:])
 try:
 	parsed_arguments.func(parsed_arguments)
+except SystemExit:
+    raise
 except BaseException as exception:
     exc_type, exc_value, exc_traceback = sys.exc_info()
 

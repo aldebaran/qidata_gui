@@ -84,7 +84,7 @@ class XMPTestCase(unittest.TestCase):
 
 class XMP(XMPTestCase):
 	def test_empty_init(self):
-		empty_xmp = xmp.XMP()
+		empty_xmp = xmp.XMPMetadata()
 		self.assertEqual(len(empty_xmp.namespaces), 0)
 
 	def test_len(self):
@@ -100,7 +100,7 @@ class XMP(XMPTestCase):
 			self.assertIsInstance(self.example_xmp[ns_uid], xmp.XMPNamespace)
 
 	def test_create_namespace(self):
-		empty_xmp = xmp.XMP()
+		empty_xmp = xmp.XMPMetadata()
 		self.assertEqual(len(empty_xmp.namespaces), 0)
 
 class XMPNamespace(XMPTestCase):
@@ -113,3 +113,7 @@ class XMPNamespace(XMPTestCase):
 		for ns_uid in self.EXPECTED_NS_UIDS:
 			ns = self.example_xmp[ns_uid]
 			self.assertEqual(len(ns), JPG_PHOTO_FILE_NS_LEN[ns_uid])
+
+class XMPElement(XMPTestCase):
+	def test_attribute_descriptor_get(self):
+		pass
