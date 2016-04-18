@@ -114,6 +114,9 @@ class XMPNamespace(XMPTestCase):
 			ns = self.example_xmp[ns_uid]
 			self.assertEqual(len(ns), JPG_PHOTO_FILE_NS_LEN[ns_uid])
 
-class XMPElement(XMPTestCase):
+class XMPStructure(XMPTestCase):
+	def test_has_field(self):
+		self.assertTrue(self.example_xmp[libxmp.consts.XMP_NS_EXIF].has("FNumber"))
+
 	def test_attribute_descriptor_get(self):
-		pass
+		self.example_xmp[libxmp.consts.XMP_NS_EXIF].FNumber

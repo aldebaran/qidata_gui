@@ -368,6 +368,13 @@ class XMPStructure(XMPElement):
 	# XMPElement overrides
 
 	@property
+	def is_container(self):
+		return True
+
+	# ──────────
+	# Properties
+
+	@property
 	def children(self):
 		return [c for c in self._children.itervalues()]
 
@@ -378,9 +385,15 @@ class XMPStructure(XMPElement):
 		else:
 			self._children = dict((c.name, c) for c in new_children)
 
-	@property
-	def is_container(self):
-		return True
+	# ─────────────
+	# Attribute API
+
+	def has(self, field_name):
+		return field_name in self._children
+
+	def __getattr__(self, name):
+		print name
+		# TODO
 
 	# ──────────────
 	# Textualization
