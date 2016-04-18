@@ -10,26 +10,7 @@ import shutil
 import libxmp.consts
 # Qidata
 from qidata import xmp
-
-DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/")
-TEMPORARY_FOLDER = "/tmp/qidata/"
-
-# ───────────
-# Groundtruth
-
-JPG_PHOTO_FILE = "SpringNebula.jpg"
-JPG_PHOTO_FILE_NS_UIDS = [
-	libxmp.consts.XMP_NS_EXIF,
-	libxmp.consts.XMP_NS_TIFF,
-	libxmp.consts.XMP_NS_XMP,
-	libxmp.consts.XMP_NS_Photoshop
-]
-JPG_PHOTO_FILE_NS_LEN = {
-	libxmp.consts.XMP_NS_EXIF      : 31,
-	libxmp.consts.XMP_NS_TIFF      : 7,
-	libxmp.consts.XMP_NS_XMP       : 3,
-	libxmp.consts.XMP_NS_Photoshop : 1,
-}
+from . import fixtures
 
 def sha1(file_path):
 	import hashlib
@@ -41,46 +22,37 @@ def sha1(file_path):
 
 class XMPFile(unittest.TestCase):
 	def setUp(self):
-		self.original_jpg_photo_path = os.path.join(DATA_FOLDER, JPG_PHOTO_FILE)
-		self.jpg_photo_path = os.path.join(TEMPORARY_FOLDER, JPG_PHOTO_FILE)
+		self.jpg_path = fixtures.sandboxed(fixtures.JPG_PHOTO)
 
-		# Make a copy of test files in /tmp
-		try:
-			os.mkdir(TEMPORARY_FOLDER)
-		except OSError as e:
-			if e.errno != errno.EEXIST:
-				raise
-		shutil.copyfile(self.original_jpg_photo_path, self.jpg_photo_path)
-
-	def test_noop(self):
-		original_sha1 = sha1(self.jpg_photo_path)
-		with xmp.XMPFile(self.jpg_photo_path):
+	def test_contextmanager_noop(self):
+		original_sha1 = sha1(self.jpg_path)
+		with xmp.XMPFile(self.jpg_path):
 			pass
-		noop_sha1 = sha1(self.jpg_photo_path)
+		noop_sha1 = sha1(self.jpg_path)
 		self.assertEqual(original_sha1, noop_sha1)
 
 	def test_modify_readonly(self):
 		with self.assertRaises(RuntimeWarning):
-			with xmp.XMPFile(self.jpg_photo_path) as f:
+			with xmp.XMPFile(self.jpg_path) as f:
 				ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS_1)
 				f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS_1,
 				                               prop_name=ald_prefix+"Property",
 				                               prop_value="Value")
 	def test_modify_readwrite(self):
-		original_sha1 = sha1(self.jpg_photo_path)
-		with xmp.XMPFile(self.jpg_photo_path, rw=True) as f:
+		original_sha1 = sha1(self.jpg_path)
+		with xmp.XMPFile(self.jpg_path, rw=True) as f:
 			ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS_1)
 			f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS_1,
 			                               prop_name=ald_prefix+"Property",
 			                               prop_value="Value")
-		modified_sha1 = sha1(self.jpg_photo_path)
+		modified_sha1 = sha1(self.jpg_path)
 		self.assertNotEqual(original_sha1, modified_sha1)
 
 class XMPTestCase(unittest.TestCase):
 	def setUp(self):
-		with xmp.XMPFile(os.path.join(DATA_FOLDER, JPG_PHOTO_FILE)) as xmp_file:
+		with xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO)) as xmp_file:
 			self.example_xmp = xmp_file.metadata
-			self.EXPECTED_NS_UIDS = JPG_PHOTO_FILE_NS_UIDS
+			self.EXPECTED_NS_UIDS = fixtures.JPG_PHOTO_NS_UIDS
 
 class XMP(XMPTestCase):
 	def test_empty_init(self):
@@ -112,11 +84,39 @@ class XMPNamespace(XMPTestCase):
 	def test_len(self):
 		for ns_uid in self.EXPECTED_NS_UIDS:
 			ns = self.example_xmp[ns_uid]
-			self.assertEqual(len(ns), JPG_PHOTO_FILE_NS_LEN[ns_uid])
+			self.assertEqual(len(ns), fixtures.JPG_PHOTO_NS_LEN[ns_uid])
 
 class XMPStructure(XMPTestCase):
-	def test_has_field(self):
-		self.assertTrue(self.example_xmp[libxmp.consts.XMP_NS_EXIF].has("FNumber"))
+	def test_contains(self):
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.assertTrue( "FNumber"  in exif_metadata)
+		self.assertFalse("FNumbers" in exif_metadata)
+
+		tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
+		self.assertTrue( "ResolutionUnit"  in tiff_metadata)
+		self.assertFalse("ResolutionUnits" in tiff_metadata)
+
+
+	def test_has(self):
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.assertTrue( exif_metadata.has("FNumber"))
+		self.assertFalse(exif_metadata.has("FNumbers"))
+
+		tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
+		self.assertTrue( tiff_metadata.has("ResolutionUnit"))
+		self.assertFalse(tiff_metadata.has("ResolutionUnits"))
+
+	def test_getitem(self):
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.assertEqual("32/10", exif_metadata["FNumber"].value)
+		with self.assertRaises(KeyError):
+			exif_metadata["FNumber2"]
+
+	def test_get(self):
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.assertEqual("32/10", exif_metadata.get("FNumber").value)
+		self.assertIsNone(exif_metadata.get("FNumber2"))
 
 	def test_attribute_descriptor_get(self):
-		self.example_xmp[libxmp.consts.XMP_NS_EXIF].FNumber
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.assertEqual("32/10", exif_metadata.FNumber)

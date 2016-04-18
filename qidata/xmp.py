@@ -22,11 +22,20 @@ TREE_INDENT = u'─'*(INDENT_SIZE-2) + " "
 TREE_MID_INDENT  = u"├" + TREE_INDENT
 TREE_LAST_INDENT = u"└" + TREE_INDENT
 
+# ───────────────
+# General XMP API
+
+def isQualified(name):
+	return name.find(':') != -1
+
+def qualify(name, prefix):
+	return "{prefix}:{name}".format(name=name, prefix=prefix)
+
 class XMPFile(object):
 	def __init__(self, file_path, rw = False):
 		self.rw               = rw
 		self.file_path        = os.path.abspath(file_path)
-		self.xmp_file         = None
+		self.libxmp_file      = None
 		self._libxmp_metadata = None
 		self.metadata         = None
 
@@ -60,10 +69,10 @@ class XMPFile(object):
 	def __enter__(self):
 		if libxmp.exempi.files_check_file_format(self.file_path) == libxmp.consts.XMP_FT_UNKNOWN:
 			raise RuntimeError("Unknown XMP file type")
-		self.xmp_file = libxmp.XMPFiles(file_path=self.file_path,
-		                                open_onlyxmp=True,
-		                                open_forupdate=self.rw)
-		self.libxmp_metadata = self.xmp_file.get_xmp()
+		self.libxmp_file = libxmp.XMPFiles(file_path=self.file_path,
+		                                   open_onlyxmp=True,
+		                                   open_forupdate=self.rw)
+		self.libxmp_metadata = self.libxmp_file.get_xmp()
 
 		return self
 
@@ -71,8 +80,8 @@ class XMPFile(object):
 		try:
 			if self.rw:
 				try:
-					if self.xmp_file.can_put_xmp(self.libxmp_metadata):
-						self.xmp_file.put_xmp(self.libxmp_metadata)
+					if self.libxmp_file.can_put_xmp(self.libxmp_metadata):
+						self.libxmp_file.put_xmp(self.libxmp_metadata)
 					else:
 						raise
 				except:
@@ -81,8 +90,7 @@ class XMPFile(object):
 				message =  "Modified a read-only XMP file; won't be saved"
 				raise RuntimeWarning(message)
 		finally:
-			self.xmp_file.close_file()
-
+			self.libxmp_file.close_file()
 
 class XMPMetadata(collections.Mapping):
 	"""
@@ -328,6 +336,19 @@ class XMPElement(object, XMPTreeOperationMixin):
 			elif libxmp_element.is_set:
 				return XMPSet(namespace, libxmp_element.address, children_elements)
 
+	# ───────────────────
+	# Descriptor protocol
+
+	def __get__(self, obj, type = None):
+		pass
+
+	def __set__(self, obj, value):
+		pass
+
+	def __delete__(self, obj):
+		self.libxmp_metadata.delete_property(schema_ns=self.namespace.uid,
+		                                     prop_name=self.address)
+
 	# ──────────
 	# Properties
 
@@ -354,7 +375,7 @@ class XMPElement(object, XMPTreeOperationMixin):
 	def libxmp_metadata(self):
 		return self.namespace.libxmp_metadata
 
-class XMPStructure(XMPElement):
+class XMPStructure(XMPElement, collections.Mapping):
 	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
 
 	# ────────────
@@ -389,11 +410,51 @@ class XMPStructure(XMPElement):
 	# Attribute API
 
 	def has(self, field_name):
-		return field_name in self._children
+		qualified_field_name = self.namespace.qualify(field_name)
+		return any(qualified_field_name == c.name for c in self.children)
 
-	def __getattr__(self, name):
-		print name
-		# TODO
+	def __getattr__(self, field_name):
+		# Lookup the field
+		field = self.get(field_name, default=None)
+
+		if field is not None:
+			if isinstance(field, XMPValue):
+				return field.value
+			else:
+				pass
+		else:
+			# If it doesn't exist, return a descriptor wrapping an XMPElement
+			pass
+
+	# ───────────
+	# Mapping API
+
+	def __getitem__(self, field_name):
+		if not isinstance(field_name, basestring):
+			raise TypeError("Wrong index type "+str(type(field_name)))
+
+		qualified_field_name = self.namespace.qualify(field_name)
+		try:
+			return self._children[qualified_field_name]
+		except KeyError:
+			raise KeyError(field_name)
+
+	def __iter__(self):
+		return iter(self._children)
+
+	def __len__(self):
+		return len(self._children)
+
+	# Note: the following methods are automatically implemented as mixin methods
+	#       using the previous 3 methods:
+	#       • __contains__
+	#       • keys
+	#       • items
+	#       • values
+	#       • get
+	#       • __eq__
+	#       • __ne__
+	# For more information: https://docs.python.org/2/library/collections.html
 
 	# ──────────────
 	# Textualization
@@ -514,7 +575,7 @@ class XMPNamespace(XMPStructure):
 
 	@property
 	def prefix(self):
-		return self.libxmp_metadata.get_prefix_for_namespace(self.uid)
+		return self.libxmp_metadata.get_prefix_for_namespace(self.uid)[:-1]
 
 	# ──────────────
 	# Comparison API
@@ -532,6 +593,13 @@ class XMPNamespace(XMPStructure):
 
 	def __iter__(self):
 		return iter(self.children)
+
+	# ───────────
+	# Utility API
+
+	def qualify(self, name):
+		if isQualified(name): return name
+		return qualify(name, self.prefix)
 
 	# ──────────────
 	# Textualization
