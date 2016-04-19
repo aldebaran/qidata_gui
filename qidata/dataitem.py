@@ -1,18 +1,6 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 from .xmp import XMPFile, XMPMetadata, ALDEBARAN_NS_1
-
-class Metadata(object):
-    def __init__(self, xmp_metadata):
-        self.xmp_metadata = xmp_metadata
-
-    @property
-    def aldebaran(self):
-        try:
-            return self.xmp_metadata[ALDEBARAN_NS_1]
-        except KeyError:
-            raise AttributeError("No Aldebaran-namespace metadata")
 
 class DataItem(object):
     def __init__(self, file_path, rw = False):
@@ -31,7 +19,11 @@ class DataItem(object):
 
     @property
     def metadata(self):
-        return Metadata(self.xmp_file.metadata)
+        return self.xmp_file.metadata[ALDEBARAN_NS_1]
+
+    @property
+    def xmp(self):
+        return self.xmp_file.metadata
 
     # ───────────────
     # Context Manager

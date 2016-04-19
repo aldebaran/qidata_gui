@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 # Standard Library
@@ -32,6 +31,15 @@ def qualify(name, prefix):
 	return "{prefix}:{name}".format(name=name, prefix=prefix)
 
 class XMPFile(object):
+	"""
+	Handle to a file path to manipulate as a container to an XMP packet.
+
+	Attributes:
+		rw: Whether the file is considered writable.
+		file_path: Path to the file to manipulate.
+		metadata: The metadata manipulator for the file.
+	"""
+
 	def __init__(self, file_path, rw = False):
 		self.rw               = rw
 		self.file_path        = os.path.abspath(file_path)
@@ -94,7 +102,10 @@ class XMPFile(object):
 
 class XMPMetadata(collections.Mapping):
 	"""
-	Pythonic wrapper around a libxmp XMPMetadata.
+	XMP metadata packet.
+
+	This may be a purely in-memory packet, or a packet read from a file by an
+	XMPFile object managing it and which may automatically write it when closed.
 	"""
 
 	def __init__(self, libxmp_metadata = libxmp.XMPMeta()):
@@ -114,9 +125,8 @@ class XMPMetadata(collections.Mapping):
 		# Construct namespaces; each one is the root object of an XMP object tree
 		for ns_uid, ns_libxmp_descendents in elements_by_namespace.iteritems():
 			namespace = XMPNamespace(self, ns_uid)
-			namespace_weakref = weakref.ref(namespace)
 			libxmp_members = namespace.childrenIn(ns_libxmp_descendents)
-			members = [XMPElement.fromLibXMP(m, ns_libxmp_descendents, namespace_weakref) for m in libxmp_members]
+			members = [XMPElement.fromLibXMP(m, ns_libxmp_descendents, namespace) for m in libxmp_members]
 			namespace.children = members
 			self._namespaces[ns_uid] = namespace
 
@@ -137,7 +147,10 @@ class XMPMetadata(collections.Mapping):
 		return iter(self._namespaces)
 
 	def __getitem__(self, key):
-		return self._namespaces[key]
+		try:
+			return self._namespaces[key]
+		except KeyError:
+			return XMPNamespace(self, key)
 
 	# ──────────────
 	# Textualization
@@ -188,6 +201,21 @@ class XMPTreeOperationMixin:
 			return self.namespace
 		elif isinstance(self, XMPElement):
 			return self.namespace.uid
+
+	def is_top_level(self):
+		return address_delta.count("/") == 0
+
+	def is_array_element(self):
+		return LibXMPElement.ARRAY_ELEMENT_REGEX.match(self.address) is not None
+
+	# ────────────────────
+	# Address manipulation
+
+	def absoluteAddress(self, relative_address):
+		if not self.address:
+			return relative_address
+		return "{base_address}/{relative_address}".format(base_address = self.address,
+		                                              relative_address = relative_address)
 
 	# ──────────
 	# Predicates
@@ -304,15 +332,36 @@ class LibXMPElement(object, XMPTreeOperationMixin):
 		return rep
 
 class XMPElement(object, XMPTreeOperationMixin):
-	""" Convenience wrapper around libXMP to manipulate a generic element. """
+	"""
+	Element in an XMP packet.
+
+	Abstracts a fully-qualified, absolute address in a namespace of an XMP metadata
+	packet. Elements can be virtual, meaning that they represent an address but the
+	actual corresponsing element may not exist, or non-virtual, in which case there
+	is a corresponding element in the XMP packet.
+	"""
 
 	# ────────────
 	# Constructors
 
-	def __init__(self, namespace, address):
-		assert(namespace is None or isinstance(namespace, weakref.ReferenceType))
-		self._namespace = namespace
-		self.address    = address
+	def __init__(self, namespace, address, virtual = False):
+		"""
+		Constructs a virtual or non-virtual XMP element.
+
+		Arguments:
+			namespace: The namespace to which the element belongs to, or None if the
+			           element is a namespace itself. No strong reference of it will be
+			           kept, only a weakref.
+			address: The fully-qualified, absolute address of the element in its namespace.
+			virtual: Whether the element is known to exist in the associated XMP metadata.
+		"""
+
+		if namespace is not None and not isinstance(namespace, weakref.ReferenceType):
+			self._namespace = weakref.ref(namespace)
+		else:
+			self._namespace = namespace
+		self.address = address
+		self.virtual = virtual
 
 	@staticmethod
 	def fromLibXMP(libxmp_element, potential_descendents, namespace):
@@ -340,9 +389,11 @@ class XMPElement(object, XMPTreeOperationMixin):
 	# Descriptor protocol
 
 	def __get__(self, obj, type = None):
+		# TODO
 		pass
 
 	def __set__(self, obj, value):
+		# TODO
 		pass
 
 	def __delete__(self, obj):
@@ -374,6 +425,20 @@ class XMPElement(object, XMPTreeOperationMixin):
 	@property
 	def libxmp_metadata(self):
 		return self.namespace.libxmp_metadata
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		s = "{namespace}:{address}".format(namespace = unicode(self.namespace),
+		                                     address = self.address)
+		if self.virtual:
+			return s + " [virtual]"
+		else:
+			return s
 
 class XMPStructure(XMPElement, collections.Mapping):
 	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
@@ -423,8 +488,10 @@ class XMPStructure(XMPElement, collections.Mapping):
 			else:
 				pass
 		else:
-			# If it doesn't exist, return a descriptor wrapping an XMPElement
-			pass
+			qualified_field_name = self.namespace.qualify(field_name)
+			return XMPElement(self.namespace,
+			                  self.absoluteAddress(qualified_field_name),
+			                  virtual=True)
 
 	# ───────────
 	# Mapping API
@@ -559,11 +626,18 @@ class XMPNamespace(XMPStructure):
 
 	def __init__(self, xmp, uid):
 		XMPStructure.__init__(self, None, "", [])
-		self.xmp = xmp
+		if not isinstance(xmp, weakref.ReferenceType):
+			self._xmp = weakref.ref(xmp)
+		else:
+			self._xmp = xmp
 		self.uid = uid
 
 	# ──────────
 	# Properties
+
+	@property
+	def xmp(self):
+		return self._xmp()
 
 	@property
 	def namespace(self):
