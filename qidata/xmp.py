@@ -386,12 +386,13 @@ class XMPElement(object, XMPTreeOperationMixin):
 	# Descriptor protocol
 
 	def __get__(self, owner_object, owner_object_type = None):
-		# TODO
-		pass
+		print "Get on virtual XMP element"
+		raise AttributeError("Inexistent element")
 
 	def __set__(self, owner_object, value):
-		# TODO
-		pass
+		print "Set on virtual XMP element"
+		# TODO Create the element and all missing parents, and assign the value
+		raise NotImplementedError("Virtual element assignment")
 
 	def __delete__(self, obj):
 		self.libxmp_metadata.delete_property(schema_ns=self.namespace.uid,
@@ -515,6 +516,11 @@ class XMPVirtualElement(object, XMPTreeOperationMixin):
 		# TODO Create the element and all missing parents, and assign the value
 		raise NotImplementedError("Virtual element assignment")
 
+	def __delete__(self):
+		print "Delete on virtual XMP element"
+		# TODO Create the element and all missing parents, and assign the value
+		raise NotImplementedError("Virtual element deletion")
+
 	# ──────────────
 	# Textualization
 
@@ -574,7 +580,7 @@ class XMPStructure(XMPElement, collections.Mapping):
 
 	def __setattr__(self, name, value):
 		try:
-			super(XMPElement, self).__setattr__(name, value)
+			super(XMPStructure, self).__setattr__(name, value)
 		except AttributeError as attribute_error:
 			child = self.__getattr__(name)
 			try:
@@ -585,7 +591,7 @@ class XMPStructure(XMPElement, collections.Mapping):
 
 	def __delattr__(self, name):
 		try:
-			super(XMPElement, self).__delattr__(name)
+			super(XMPStructure, self).__delattr__(name)
 		except AttributeError as attribute_error:
 			child = self.__getattr__(name)
 			try:
