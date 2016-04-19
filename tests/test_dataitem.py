@@ -31,8 +31,18 @@ class Metadata(unittest.TestCase):
 	def tearDown(self):
 		self.jpg_data_item.__exit__(None, None, None)
 
-	def test_virtual_attribute(self):
+	def test_virtual_element(self):
 		self.jpg_metadata.inexistent_attribute
 
-	def test_nested_virtual_attribute(self):
+	def test_nested_virtual_element(self):
 		self.jpg_metadata.inexistent_attribute.nested_inexistent_attribute
+
+	def test_virtual_element_descriptor_get(self):
+		self.jpg_metadata.inexistent_attribute
+
+	def test_virtual_element_descriptor_set(self):
+		self.jpg_metadata.inexistent_attribute = 12
+
+	def test_virtual_element_descriptor_delete(self):
+		with self.assertRaises(AttributeError):
+			del self.jpg_metadata.inexistent_attribute

@@ -118,4 +118,4 @@ class XMPStructure(XMPTestCase):
 
 	def test_attribute_descriptor_get(self):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
-		self.assertEqual("32/10", exif_metadata.FNumber)
+		self.assertEqual("32/10", exif_metadata.FNumber.value)

@@ -333,27 +333,25 @@ class LibXMPElement(object, XMPTreeOperationMixin):
 
 class XMPElement(object, XMPTreeOperationMixin):
 	"""
-	Element in an XMP packet.
+	Manipulator for an existing element in an XMP packet.
 
 	Abstracts a fully-qualified, absolute address in a namespace of an XMP metadata
-	packet. Elements can be virtual, meaning that they represent an address but the
-	actual corresponsing element may not exist, or non-virtual, in which case there
-	is a corresponding element in the XMP packet.
+	packet. Contrary to :class:`XMPVirtualElement`, the manipulated element already
+	exists in the XMP tree.
 	"""
 
 	# ────────────
 	# Constructors
 
-	def __init__(self, namespace, address, virtual = False):
+	def __init__(self, namespace, address):
 		"""
-		Constructs a virtual or non-virtual XMP element.
+		Constructs a manipulator for an existing XMP element in an XMP packet.
 
 		Arguments:
-			namespace: The namespace to which the element belongs to, or None if the
-			           element is a namespace itself. No strong reference of it will be
-			           kept, only a weakref.
-			address: The fully-qualified, absolute address of the element in its namespace.
-			virtual: Whether the element is known to exist in the associated XMP metadata.
+		    namespace: The namespace to which the element belongs to, or None if the
+		               element is a namespace itself. No "strong" reference of it will
+		               be kept, only a weakref.
+		    address: The fully-qualified, absolute address of the element in its namespace.
 		"""
 
 		if namespace is not None and not isinstance(namespace, weakref.ReferenceType):
@@ -361,7 +359,6 @@ class XMPElement(object, XMPTreeOperationMixin):
 		else:
 			self._namespace = namespace
 		self.address = address
-		self.virtual = virtual
 
 	@staticmethod
 	def fromLibXMP(libxmp_element, potential_descendents, namespace):
@@ -388,11 +385,11 @@ class XMPElement(object, XMPTreeOperationMixin):
 	# ───────────────────
 	# Descriptor protocol
 
-	def __get__(self, obj, type = None):
+	def __get__(self, owner_object, owner_object_type = None):
 		# TODO
 		pass
 
-	def __set__(self, obj, value):
+	def __set__(self, owner_object, value):
 		# TODO
 		pass
 
@@ -433,12 +430,100 @@ class XMPElement(object, XMPTreeOperationMixin):
 		return unicode(self).encode("utf-8")
 
 	def __unicode__(self):
-		s = "{namespace}:{address}".format(namespace = unicode(self.namespace),
-		                                     address = self.address)
-		if self.virtual:
-			return s + " [virtual]"
+		return "{namespace}|{address}".format(namespace = unicode(self.namespace.uid),
+		                                        address = self.address)
+
+class XMPVirtualElement(object, XMPTreeOperationMixin):
+	"""
+	Element in an XMP packet.
+
+	Abstracts a fully-qualified, absolute address in a namespace of an XMP metadata
+	packet. Elements can be virtual, meaning that they represent an address but the
+	actual corresponsing element may not exist.
+	"""
+
+	# ────────────
+	# Constructors
+
+	def __init__(self, namespace, address):
+		"""
+		Constructs a virtual or non-virtual XMP element.
+
+		Arguments:
+			namespace: The namespace to which the element belongs to, or None if the
+			           element is a namespace itself. No strong reference of it will be
+			           kept, only a weakref.
+			address: The fully-qualified, absolute address of the element in its namespace.
+			virtual: Whether the element is known to exist in the associated XMP metadata.
+		"""
+
+		if namespace is not None and not isinstance(namespace, weakref.ReferenceType):
+			self._namespace = weakref.ref(namespace)
 		else:
-			return s
+			self._namespace = namespace
+		self.address = address
+
+	# ──────────
+	# Properties
+
+	@property
+	def namespace(self):
+		return self._namespace()
+
+	# ─────────────
+	# Attribute API
+
+	def has(self, field_name):
+		qualified_field_name = self.namespace.qualify(field_name)
+		return any(qualified_field_name == c.name for c in self.children)
+
+	def __getattr__(self, name):
+		"""
+		Creates a child virtual element if normal attribute lookup fails.
+
+		Warning:
+		    This may cause confusion if the user wants to actually access a sub-field
+		    called namespace or address, which they legitimately may want.
+		    Notwithstanding the confusion, the user would have to use __getitem__ in
+		    this case.
+		"""
+		# A subfield of a virtual element is also virtual
+		qualified_field_name = self.namespace.qualify(name)
+		return XMPVirtualElement(self.namespace,
+		                         self.absoluteAddress(qualified_field_name))
+
+	# ───────────
+	# Mapping API
+
+	def __getitem__(self, field_name):
+		if not isinstance(field_name, basestring):
+			raise TypeError("Wrong index type "+str(type(field_name)))
+
+		qualified_field_name = self.namespace.qualify(field_name)
+		return XMPVirtualElement(self.namespace,
+			                     self.absoluteAddress(qualified_field_name))
+
+	# ───────────────────
+	# Descriptor protocol
+
+	def __get__(self, owner_object, owner_object_type = None):
+		print "Get on virtual XMP element"
+		raise AttributeError("Inexistent element")
+
+	def __set__(self, owner_object, value):
+		print "Set on virtual XMP element"
+		# TODO Create the element and all missing parents, and assign the value
+		raise NotImplementedError("Virtual element assignment")
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return "{namespace}|{address} [virtual]".format(namespace = self.namespace.uid,
+		                                                  address = self.address)
 
 class XMPStructure(XMPElement, collections.Mapping):
 	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
@@ -478,20 +563,35 @@ class XMPStructure(XMPElement, collections.Mapping):
 		qualified_field_name = self.namespace.qualify(field_name)
 		return any(qualified_field_name == c.name for c in self.children)
 
-	def __getattr__(self, field_name):
-		# Lookup the field
-		field = self.get(field_name, default=None)
-
+	def __getattr__(self, name):
+		field = self.get(name, default=None)
 		if field is not None:
-			if isinstance(field, XMPValue):
-				return field.value
-			else:
-				pass
+			return field
 		else:
-			qualified_field_name = self.namespace.qualify(field_name)
-			return XMPElement(self.namespace,
-			                  self.absoluteAddress(qualified_field_name),
-			                  virtual=True)
+			qualified_field_name = self.namespace.qualify(name)
+			return XMPVirtualElement(self.namespace,
+			                         self.absoluteAddress(qualified_field_name))
+
+	def __setattr__(self, name, value):
+		try:
+			super(XMPElement, self).__setattr__(name, value)
+		except AttributeError as attribute_error:
+			child = self.__getattr__(name)
+			try:
+				child.__dict__["__set__"](self, value)
+			except KeyError:
+				raise attribute_error
+
+
+	def __delattr__(self, name):
+		try:
+			super(XMPElement, self).__delattr__(name)
+		except AttributeError as attribute_error:
+			child = self.__getattr__(name)
+			try:
+				child.__dict__["__delete__"](self)
+			except KeyError:
+				raise attribute_error
 
 	# ───────────
 	# Mapping API
