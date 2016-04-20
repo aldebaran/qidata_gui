@@ -109,13 +109,31 @@ class XMPStructure(XMPTestCase):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		self.assertEqual("32/10", exif_metadata["FNumber"].value)
 		with self.assertRaises(KeyError):
-			exif_metadata["FNumber2"]
+			exif_metadata["inexistent_element"]
 
 	def test_get(self):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
-		self.assertEqual("32/10", exif_metadata.get("FNumber").value)
-		self.assertIsNone(exif_metadata.get("FNumber2"))
+		# Existing attribute
+		self.assertIsInstance(exif_metadata.get("FNumber"), xmp.XMPValue)
+		self.assertEqual(exif_metadata.get("FNumber").value, "32/10")
+		# Non-existing attribute
+		self.assertIsNone(exif_metadata.get("inexistent_element"))
 
 	def test_attribute_descriptor_get(self):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		self.assertEqual("32/10", exif_metadata.FNumber.value)
+
+	def test_getattr(self):
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		# Existing attribute
+		self.assertIsInstance(exif_metadata.FNumber, xmp.XMPValue)
+		self.assertEqual(exif_metadata.FNumber.value, "32/10")
+		# Non-existing attribute
+		self.assertIsInstance(exif_metadata.inexistent_element, xmp.XMPVirtualElement)
+
+	def test_setattr(self):
+		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		# Existing attribute
+		exif_metadata.FNumber = "314/141"
+		# Non-existing attribute
+		exif_metadata.inexistent_element = 12

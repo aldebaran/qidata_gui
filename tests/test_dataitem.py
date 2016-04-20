@@ -4,6 +4,7 @@
 import unittest
 # Qidata
 from qidata.dataitem import DataItem
+import qidata.xmp
 from . import fixtures
 
 class File(unittest.TestCase):
@@ -38,11 +39,12 @@ class Metadata(unittest.TestCase):
 		self.jpg_metadata.inexistent_attribute.nested_inexistent_attribute
 
 	def test_virtual_element_descriptor_get(self):
-		self.jpg_metadata.inexistent_attribute
+		self.assertIsInstance(self.jpg_metadata.inexistent_attribute, qidata.xmp.XMPVirtualElement)
+		self.assertIsInstance(self.jpg_metadata.__dict__, dict)
 
 	def test_virtual_element_descriptor_set(self):
 		self.jpg_metadata.inexistent_attribute = 12
 
 	def test_virtual_element_descriptor_delete(self):
-		with self.assertRaises(AttributeError):
+		with self.assertRaises(TypeError):
 			del self.jpg_metadata.inexistent_attribute

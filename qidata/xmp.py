@@ -2,6 +2,7 @@
 
 # Standard Library
 import collections
+from compiler.misc import mangle
 import os.path
 import re
 import weakref
@@ -331,7 +332,32 @@ class LibXMPElement(object, XMPTreeOperationMixin):
 		if self.value: rep += " = " + self.value
 		return rep
 
-class XMPElement(object, XMPTreeOperationMixin):
+class FreezeMixin:
+	@staticmethod
+	def marker(classname):
+		return "_{classname}___frozen".format(classname = classname)
+
+	@property
+	def frozen(self):
+		try:
+			# Don't use getattr, as the class probably overrides it and tests
+			# this function to check whether it should return something special,
+			# which would cause an infinite recursion.
+			return self.__dict__[FreezeMixin.marker(self.__class__.__name__)]
+		except KeyError:
+			return False
+
+	def freeze(self, class_or_classname, value = True):
+		if isinstance(class_or_classname, str):
+			classname = class_or_classname
+		elif isinstance(class_or_classname, type):
+			classname = class_or_classname.__name__
+		else:
+			raise ValueError("Freezing is done for a class or class-name")
+		# Bypass the objet's setattr, which may have additional semantics
+		object.__setattr__(self, FreezeMixin.marker(classname), value)
+
+class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 	"""
 	Manipulator for an existing element in an XMP packet.
 
@@ -386,12 +412,15 @@ class XMPElement(object, XMPTreeOperationMixin):
 	# Descriptor protocol
 
 	def __get__(self, owner_object, owner_object_type = None):
-		print "Get on virtual XMP element"
-		raise AttributeError("Inexistent element")
+		print "Get on XMP element"
+		return self
 
 	def __set__(self, owner_object, value):
-		print "Set on virtual XMP element"
-		# TODO Create the element and all missing parents, and assign the value
+		# TODO Create the element and all missing parents
+		# TODO Record all new elements as part of the tree (add children to parents)
+		# TODO Let subclasses set their own value
+
+		# TEMP
 		raise NotImplementedError("Virtual element assignment")
 
 	def __delete__(self, obj):
@@ -406,11 +435,11 @@ class XMPElement(object, XMPTreeOperationMixin):
 		try:
 			return not self.is_container
 		except NotImplemented:
-			return NotImplemented(str(self))
+			raise NotImplemented(str(self))
 
 	@property
 	def is_container(self):
-		return NotImplemented(str(self))
+		raise NotImplemented(str(self))
 
 	@property
 	def namespace(self):
@@ -431,7 +460,7 @@ class XMPElement(object, XMPTreeOperationMixin):
 		return unicode(self).encode("utf-8")
 
 	def __unicode__(self):
-		return "{namespace}|{address}".format(namespace = unicode(self.namespace.uid),
+		return "{namespace}@{address}".format(namespace = unicode(self.namespace.uid),
 		                                        address = self.address)
 
 class XMPVirtualElement(object, XMPTreeOperationMixin):
@@ -488,6 +517,7 @@ class XMPVirtualElement(object, XMPTreeOperationMixin):
 		    Notwithstanding the confusion, the user would have to use __getitem__ in
 		    this case.
 		"""
+
 		# A subfield of a virtual element is also virtual
 		qualified_field_name = self.namespace.qualify(name)
 		return XMPVirtualElement(self.namespace,
@@ -507,19 +537,9 @@ class XMPVirtualElement(object, XMPTreeOperationMixin):
 	# ───────────────────
 	# Descriptor protocol
 
-	def __get__(self, owner_object, owner_object_type = None):
-		print "Get on virtual XMP element"
-		raise AttributeError("Inexistent element")
-
 	def __set__(self, owner_object, value):
-		print "Set on virtual XMP element"
 		# TODO Create the element and all missing parents, and assign the value
 		raise NotImplementedError("Virtual element assignment")
-
-	def __delete__(self):
-		print "Delete on virtual XMP element"
-		# TODO Create the element and all missing parents, and assign the value
-		raise NotImplementedError("Virtual element deletion")
 
 	# ──────────────
 	# Textualization
@@ -528,7 +548,7 @@ class XMPVirtualElement(object, XMPTreeOperationMixin):
 		return unicode(self).encode("utf-8")
 
 	def __unicode__(self):
-		return "{namespace}|{address} [virtual]".format(namespace = self.namespace.uid,
+		return "{namespace}@{address} [virtual]".format(namespace = self.namespace.uid,
 		                                                  address = self.address)
 
 class XMPStructure(XMPElement, collections.Mapping):
@@ -540,6 +560,7 @@ class XMPStructure(XMPElement, collections.Mapping):
 	def __init__(self, namespace, address, children):
 		XMPElement.__init__(self, namespace, address)
 		self.children = children
+		self.freeze(XMPStructure)
 
 	# ────────────────────
 	# XMPElement overrides
@@ -569,7 +590,34 @@ class XMPStructure(XMPElement, collections.Mapping):
 		qualified_field_name = self.namespace.qualify(field_name)
 		return any(qualified_field_name == c.name for c in self.children)
 
+	def __raw_getattr__(self, name):
+		# Search in the object, then in all parent classes if not found
+		for o in [self] + self.__class__.mro():
+			try:
+				return o.__dict__[name]
+			except KeyError:
+				continue
+		raise AttributeError
+
+	def __raw_hasattr__(self, name):
+		try:
+			self.__raw_getattr__(name)
+			return True
+		except AttributeError:
+			return False
+
 	def __getattr__(self, name):
+		"""
+		Standard __getattr__ implementing custom field access when __getattribute__'s search fails.
+
+		See:
+		    https://docs.python.org/2/reference/datamodel.html#object.__getattr__
+		"""
+
+		# self.frozen is safe to call as it will tap into __getattribute__ first, which
+		# should find the attribute without coming back here in an infinite recursion
+		if not self.frozen:
+			raise
 		field = self.get(name, default=None)
 		if field is not None:
 			return field
@@ -579,25 +627,30 @@ class XMPStructure(XMPElement, collections.Mapping):
 			                         self.absoluteAddress(qualified_field_name))
 
 	def __setattr__(self, name, value):
-		try:
-			super(XMPStructure, self).__setattr__(name, value)
-		except AttributeError as attribute_error:
-			child = self.__getattr__(name)
-			try:
-				child.__dict__["__set__"](self, value)
-			except KeyError:
-				raise attribute_error
+		"""
+		Standard __setattr__ customized when the object is frozen and name wouldn't be find by the standard __getattr__.
 
+		See:
+		    https://docs.python.org/2/reference/datamodel.html#object.__setattr__
+		"""
+
+		if self.frozen and not self.__raw_hasattr__(name):
+			child = self.__getattr__(name)
+			assert(hasattr(child, "__set__") and callable(child.__set__))
+			child.__set__(self, value)
+		else:
+			object.__setattr__(self, name, value)
 
 	def __delattr__(self, name):
 		try:
-			super(XMPStructure, self).__delattr__(name)
+			object.__delattr__(self, name)
 		except AttributeError as attribute_error:
+			if attribute_error.args[0] != name:
+				raise
 			child = self.__getattr__(name)
-			try:
-				child.__dict__["__delete__"](self)
-			except KeyError:
-				raise attribute_error
+			assert(hasattr(child, "__set__") and callable(child.__set__))
+			child.__delete__(self)
+			raise
 
 	# ───────────
 	# Mapping API
@@ -613,10 +666,10 @@ class XMPStructure(XMPElement, collections.Mapping):
 			raise KeyError(field_name)
 
 	def __iter__(self):
-		return iter(self._children)
+		return iter(self.children)
 
 	def __len__(self):
-		return len(self._children)
+		return len(self.children)
 
 	# Note: the following methods are automatically implemented as mixin methods
 	#       using the previous 3 methods:
@@ -654,6 +707,7 @@ class XMPArray(XMPElement):
 	def __init__(self, namespace, address, children):
 		XMPElement.__init__(self, namespace, address)
 		self.children = children
+		self.freeze(XMPArray)
 
 	# ────────────────────
 	# XMPElement overrides
@@ -680,8 +734,9 @@ class XMPSet(XMPElement):
 	# Constructors
 
 	def __init__(self, namespace, address, children):
-		XMPElement.__init__(self, namespace, address)
+		super(XMPSet, self).__init__(namespace, address)
 		self.children = set(children)
+		self.freeze(XMPSet)
 
 	# ────────────────────
 	# XMPElement overrides
@@ -703,6 +758,10 @@ class XMPSet(XMPElement):
 
 class XMPValue(XMPElement):
 	""" Convenience wrapper around libXMP to manipulate an XMP value. """
+
+	def __init__(self, *args, **kwargs):
+		super(XMPValue, self).__init__(*args, **kwargs)
+		self.freeze(XMPValue)
 
 	@property
 	def value(self):
@@ -737,6 +796,7 @@ class XMPNamespace(XMPStructure):
 		else:
 			self._xmp = xmp
 		self.uid = uid
+		self.freeze(XMPNamespace)
 
 	# ──────────
 	# Properties
