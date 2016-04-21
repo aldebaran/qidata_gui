@@ -51,12 +51,10 @@ class QiDataApp(QApplication):
 
 		candidate_dataset = path
 		while not data.isDataset(candidate_dataset):
-			print candidate_dataset
 			if self.fs_root and os.path.samefile(candidate_dataset, self.fs_root):
 				break
 			candidate_dataset = os.path.dirname(candidate_dataset)
 
-		print candidate_dataset
 			# print os.path.dirname(path)
 			# if data.isDataset(path):
 			# 	pass
