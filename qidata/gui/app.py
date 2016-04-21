@@ -33,7 +33,7 @@ class QiDataApp(QApplication):
 		# ──────────
 		# Initialize
 
-		if fs_root:      self.setRoot(path)
+		if path:      self.setRoot(path)
 		if current_item: self.setSelected(current_item)
 
 	# ────────
