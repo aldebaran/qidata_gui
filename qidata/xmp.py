@@ -42,7 +42,7 @@ class XMPFile(object):
 	"""
 
 	def __init__(self, file_path, rw = False):
-		self.rw               = rw
+		self.__rw             = rw
 		self.file_path        = os.path.abspath(file_path)
 		self.libxmp_file      = None
 		self._libxmp_metadata = None
@@ -66,11 +66,10 @@ class XMPFile(object):
 		# Record to warn the user when they modify their metadata in read-only mode
 		self.__original_repr = repr(self._libxmp_metadata)
 
-	# ──────────
-	# Public API
+	@property
+	def rw(self):
+	    return self.__rw
 
-	def __str__(self):
-		return "XMP file {}:\n{}".format(self.file_path, str(self.metadata))
 
 	# ───────────────
 	# Context Manager
@@ -100,6 +99,12 @@ class XMPFile(object):
 				raise RuntimeWarning(message)
 		finally:
 			self.libxmp_file.close_file()
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		return "XMP file {}:\n{}".format(self.file_path, str(self.metadata))
 
 class XMPMetadata(collections.Mapping):
 	"""
@@ -359,7 +364,7 @@ class FreezeMixin:
 
 class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 	"""
-	Manipulator for an existing element in an XMP packet.
+	Manipulator for an element in an XMP packet.
 
 	Abstracts a fully-qualified, absolute address in a namespace of an XMP metadata
 	packet. Contrary to :class:`XMPVirtualElement`, the manipulated element already
@@ -371,7 +376,7 @@ class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 
 	def __init__(self, namespace, address):
 		"""
-		Constructs a manipulator for an existing XMP element in an XMP packet.
+		Constructs a manipulator for an XMP element in an XMP packet.
 
 		Arguments:
 		    namespace: The namespace to which the element belongs to, or None if the
@@ -385,6 +390,7 @@ class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 		else:
 			self._namespace = namespace
 		self.address = address
+		self.freeze(XMPElement)
 
 	@staticmethod
 	def fromLibXMP(libxmp_element, potential_descendents, namespace):
@@ -434,12 +440,12 @@ class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 	def is_leaf(self):
 		try:
 			return not self.is_container
-		except NotImplemented:
-			raise NotImplemented(str(self))
+		except NotImplementedError:
+			raise NotImplementedError(str(self))
 
 	@property
 	def is_container(self):
-		raise NotImplemented(str(self))
+		raise NotImplementedError(str(self))
 
 	@property
 	def namespace(self):
@@ -773,6 +779,17 @@ class XMPValue(XMPElement):
 	@property
 	def is_container(self):
 		return False
+
+	# Descriptor protocol
+
+	def __set__(self, owner_object, value):
+		if isinstance(value, basestring):
+			self.libxmp_metadata.set_property(schema_ns=self.namespace_uid,
+			                                  prop_name=self.address,
+			                                 prop_value=value)
+		else:
+			# TODO
+			raise NotImplementedError("Value assignment (generic)")
 
 	# ──────────────
 	# Textualization

@@ -49,9 +49,14 @@ class XMPFile(unittest.TestCase):
 
 class XMPTestCase(unittest.TestCase):
 	def setUp(self):
-		with xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO)) as xmp_file:
-			self.example_xmp = xmp_file.metadata
-			self.EXPECTED_NS_UIDS = fixtures.JPG_PHOTO_NS_UIDS
+		self.EXPECTED_NS_UIDS = fixtures.JPG_PHOTO_NS_UIDS
+
+		self.xmp_file = xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO))
+		self.xmp_file.__enter__()
+		self.example_xmp = self.xmp_file.metadata
+
+	def tearDown(self):
+		self.xmp_file.__exit__(None, None, None)
 
 class XMP(XMPTestCase):
 	def test_empty_init(self):
@@ -131,9 +136,20 @@ class XMPStructure(XMPTestCase):
 		# Non-existing attribute
 		self.assertIsInstance(exif_metadata.inexistent_element, xmp.XMPVirtualElement)
 
-	def test_setattr(self):
+	def test_setattr_existing(self):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		# Existing attribute
-		exif_metadata.FNumber = "314/141"
-		# Non-existing attribute
-		exif_metadata.inexistent_element = 12
+		jpg_filepath = fixtures.sandboxed(fixtures.JPG_PHOTO)
+		# original_sha1 = sha1(jpg_filepath)
+		with xmp.XMPFile(jpg_filepath, rw=True) as xmp_file:
+			xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber = "314/141"
+		# import shutil
+		# shutil.copyfile(jpg_filepath, jpg_filepath+".bck")
+		# modified_sha1 = sha1(jpg_filepath)
+		# print original_sha1, modified_sha1
+		with xmp.XMPFile(jpg_filepath) as xmp_file:
+			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "314/141")
+
+	def test_setattr_inexistent(self):
+		with xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO), rw=True) as xmp_file:
+			xmp_file.metadata[xmp.ALDEBARAN_NS_1].inexistent_element = 12
