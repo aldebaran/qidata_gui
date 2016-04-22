@@ -1,3 +1,4 @@
+from .editable_tree import EditableTree
 
 from PySide.QtGui import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QComboBox
 
@@ -7,6 +8,7 @@ class AnnotationMaker(QWidget):
 
     def __init__(self):
         super(AnnotationMaker, self).__init__()
+
         ## VIEW DEFINITION
 
         # Top layer widget: annotation definition
@@ -20,6 +22,7 @@ class AnnotationMaker(QWidget):
         self.definition_widget.setLayout(self.topic_vlayout)
 
         # Middle widget: annotation composition
+        self.editable_tree = EditableTree(self)
 
         # Bottom layer widget: Import data from another frame and save the current annotation
         self.utils_widget = QWidget(self)
@@ -36,6 +39,7 @@ class AnnotationMaker(QWidget):
         # Integrate all the widgets and the top layer widget into the main layout
         self.main_vlayout = QVBoxLayout(self)
         self.main_vlayout.addWidget(self.definition_widget)
+        self.main_vlayout.addWidget(self.editable_tree)
         self.main_vlayout.addWidget(self.utils_widget)
         self.setLayout(self.main_vlayout)
 
