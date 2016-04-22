@@ -9,6 +9,7 @@ from PySide.QtGui import QApplication
 # qidata
 import qidata
 from qidata import data
+from .widget import makeWidget
 from .window import QiDataMainWindow
 
 class QiDataApp(QApplication):
@@ -63,8 +64,13 @@ class QiDataApp(QApplication):
 		# ?
 
 		if data.isSupportedItem(path):
-			# Show the item in an annotation widget
-			pass
+			# Show the item in an visualization widget
+			try:
+				dataItem = data.makeDataItem(path)
+				self.main_window.visualization_widget = makeWidget(dataItem)
+				self.main_window.visualization_widget.showMaximized()
+			except TypeError, e:
+				print e
 
 		# Lookup the type of data
 		# Load the data in a model of it

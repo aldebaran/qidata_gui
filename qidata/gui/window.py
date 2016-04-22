@@ -6,7 +6,7 @@ import sys
 from PySide import QtGui, QtCore
 # qidata
 from .data_explorer import DataExplorer
-from .image_widget import ImageWidget
+from PySide.QtGui import QWidget
 
 class QiDataMainWindow(QtGui.QMainWindow):
 	def __init__(self, desktop_geometry = None):
@@ -24,7 +24,7 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self.explorer_dock.setObjectName(self.explorer_dock.windowTitle())
 		self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.explorer_dock)
 
-		self.annotation_widget = ImageWidget()
+		self.visualization_widget = QWidget()
 
 		# ───────
 		# Actions
@@ -56,13 +56,13 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	# Properties
 
 	@property
-	def annotation_widget(self):
-		return self._annotation_widget
+	def visualization_widget(self):
+		return self._visualization_widget
 
-	@annotation_widget.setter
-	def annotation_widget(self, new_annotation_widget):
-		self._annotation_widget = new_annotation_widget
-		self.setCentralWidget(self._annotation_widget)
+	@visualization_widget.setter
+	def visualization_widget(self, new_visualization_widget):
+		self._visualization_widget = new_visualization_widget
+		self.setCentralWidget(self._visualization_widget)
 
 	# ─────────────────────
 	# QMainWindow overrides
