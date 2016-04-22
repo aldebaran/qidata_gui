@@ -6,6 +6,7 @@ import sys
 from PySide import QtGui, QtCore
 # qidata
 from .data_explorer import DataExplorer
+from .annotation_maker import AnnotationMaker
 from PySide.QtGui import QWidget
 
 class QiDataMainWindow(QtGui.QMainWindow):
@@ -25,6 +26,13 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.explorer_dock)
 
 		self.visualization_widget = QWidget()
+
+		self.message_creation = AnnotationMaker()
+		self.annotation_dock = QtGui.QDockWidget("Annotation window", parent=self)
+		self.annotation_dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+		self.annotation_dock.setWidget(self.message_creation)
+		self.annotation_dock.setObjectName(self.annotation_dock.windowTitle())
+		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.annotation_dock)
 
 		# ───────
 		# Actions
