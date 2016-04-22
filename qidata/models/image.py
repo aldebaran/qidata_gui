@@ -7,7 +7,8 @@ from qidata.dataitem import DataItem
 
 class Image(DataItem):
     def __init__(self, source_path):
-        self.pixmap = QPixmap.load(source_path)
+        self.pixmap = QPixmap()
+        self.pixmap.load(source_path)
         self.loadXMP(source_path)
 
     @staticmethod
