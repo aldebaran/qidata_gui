@@ -1,6 +1,8 @@
 
 from PySide.QtGui import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QComboBox
 
+from qidata import annotationitems
+
 class AnnotationMaker(QWidget):
 
     def __init__(self):
@@ -44,5 +46,8 @@ class AnnotationMaker(QWidget):
 
         # Import button
         self.import_button.setEnabled(True)
+
+        # Topic selection
+        self.annotation_type_selection_widget.addItems(annotationitems.__all__) # we add some message type
 
         self.show()
