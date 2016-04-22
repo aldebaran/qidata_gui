@@ -2,6 +2,7 @@
 
 # Standard Library
 import os.path
+import re
 # qidata
 from qidata.models import *
 
@@ -21,10 +22,18 @@ def isMetadataFile(path):
 # Data Items
 
 LOOKUP_ITEM_MODEL = {
-    "png": image.Image,
-    "jpg": image.Image
+    re.compile(".*\.png"): image.Image,
+    re.compile(".*\.jpg"): image.Image
 }
 
 def isSupportedItem(path):
-    return True
-    # TODO
+    for pattern in LOOKUP_ITEM_MODEL:
+        if pattern.match(path):
+            return True
+    return False
+
+def makeDataItem(path):
+    for pattern in LOOKUP_ITEM_MODEL:
+        if pattern.match(path):
+            return LOOKUP_ITEM_MODEL[pattern](path)
+    raise TypeError("Item not supported")
