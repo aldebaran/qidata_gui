@@ -70,22 +70,40 @@ class XMPFile(object):
 	def rw(self):
 	    return self.__rw
 
+	@property
+	def is_open(self):
+	    return self.libxmp_file      is not None \
+	       and self._libxmp_metadata is not None \
+	       and self.metadata         is not None
 
-	# ───────────────
-	# Context Manager
+	@property
+	def has_changed(self):
+	    return repr(self._libxmp_metadata) != self.__original_repr
 
-	def __enter__(self):
+	@property
+	def read_only(self):
+	    return not self.rw
+
+	# ──────────
+	# Public API
+
+	def open(self):
+		if self.is_open:
+			raise RuntimeError("File {} is already open".format(self.file_path))
 		if libxmp.exempi.files_check_file_format(self.file_path) == libxmp.consts.XMP_FT_UNKNOWN:
 			raise RuntimeError("Unknown XMP file type")
+
 		self.libxmp_file = libxmp.XMPFiles(file_path=self.file_path,
 		                                   open_onlyxmp=True,
 		                                   open_forupdate=self.rw)
 		self.libxmp_metadata = self.libxmp_file.get_xmp()
 
-		return self
-
-	def __exit__(self, type, value, traceback):
+	def close(self):
 		try:
+			if self.read_only and self.has_changed:
+				message =  "Modified a read-only XMP file; won't be saved"
+				raise RuntimeWarning(message)
+
 			if self.rw:
 				try:
 					if self.libxmp_file.can_put_xmp(self.libxmp_metadata):
@@ -94,11 +112,29 @@ class XMPFile(object):
 						raise
 				except:
 					raise RuntimeError("Can't serialize XMP to file " + self.file_path)
-			elif repr(self._libxmp_metadata) != self.__original_repr:
-				message =  "Modified a read-only XMP file; won't be saved"
-				raise RuntimeWarning(message)
+
 		finally:
 			self.libxmp_file.close_file()
+			self._reset()
+
+	# ───────────────
+	# Context Manager
+
+	def __enter__(self):
+		self.open()
+		return self
+
+	def __exit__(self, type, value, traceback):
+		self.close()
+
+	# ───────
+	# Helpers
+
+	def _reset(self):
+		self.libxmp_file      = None
+		self._libxmp_metadata = None
+		self.metadata         = None
+		self.__original_repr  = None
 
 	# ──────────────
 	# Textualization
@@ -414,20 +450,15 @@ class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 			elif libxmp_element.is_set:
 				return XMPSet(namespace, libxmp_element.address, children_elements)
 
+	@staticmethod
+	def fromValue(namespace, address, value):
+		raise NotImplementedError
+
 	# ───────────────────
 	# Descriptor protocol
 
-	def __get__(self, owner_object, owner_object_type = None):
-		print "Get on XMP element"
-		return self
-
 	def __set__(self, owner_object, value):
-		# TODO Create the element and all missing parents
-		# TODO Record all new elements as part of the tree (add children to parents)
-		# TODO Let subclasses set their own value
-
-		# TEMP
-		raise NotImplementedError("Virtual element assignment")
+		raise NotImplementedError("Element assignment")
 
 	def __delete__(self, obj):
 		self.libxmp_metadata.delete_property(schema_ns=self.namespace.uid,
@@ -544,6 +575,11 @@ class XMPVirtualElement(object, XMPTreeOperationMixin):
 	# Descriptor protocol
 
 	def __set__(self, owner_object, value):
+		new_element = XMPElement.fromValue(self.namespace, self.address, value)
+		# TODO Create the element and all missing parents
+		# TODO Record all new elements as part of the tree (add children to parents)
+		# TODO Let subclasses set their own value
+		raise NotImplementedError("Virtual element assignment [Not implemented YET]")
 		# TODO Create the element and all missing parents, and assign the value
 		raise NotImplementedError("Virtual element assignment")
 
