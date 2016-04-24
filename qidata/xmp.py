@@ -229,10 +229,13 @@ class XMPMetadata(collections.Mapping):
 			return str(x)
 		return rep
 
-class XMPTreeOperationMixin:
+class TreePredicatesMixin:
 	"""
 	Defines tree operations for any element that has a namespace and address.
 	"""
+
+	ARRAY_ELEMENT_REGEX = re.compile(r"(.*)\[(\d+)\]$")
+	INDEX_REGEX = re.compile(r"^\[\d+\]$")
 
 	# ──────────
 	# Properties
@@ -245,10 +248,20 @@ class XMPTreeOperationMixin:
 			return self.namespace.uid
 
 	def is_top_level(self):
-		return address_delta.count("/") == 0
+		return "/" not in self.address and not TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address)
 
 	def is_array_element(self):
-		return LibXMPElement.ARRAY_ELEMENT_REGEX.match(self.address) is not None
+		return TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address) is not None
+
+	@property
+	def parent_address(self):
+		if self.is_top_level:
+			return None
+
+		if self.is_array_element:
+			return TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address).group(1)
+		else:
+			return self.address.split("/")[:-1]
 
 	# ────────────────────
 	# Address manipulation
@@ -258,6 +271,7 @@ class XMPTreeOperationMixin:
 			return relative_address
 		return "{base_address}/{relative_address}".format(base_address = self.address,
 		                                              relative_address = relative_address)
+
 
 	# ──────────
 	# Predicates
@@ -279,7 +293,7 @@ class XMPTreeOperationMixin:
 			return False
 
 		address_delta = self.address[len(other.address):]
-		is_array_element = LibXMPElement.ARRAY_ELEMENT_REGEX.match(address_delta) is not None
+		is_array_element = TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(address_delta) is not None
 		other_is_namespace = not other.address
 
 		if other_is_namespace and not is_array_element:
@@ -287,7 +301,7 @@ class XMPTreeOperationMixin:
 			# children don't have a / in their address
 			return address_delta.count("/") == 0
 		elif is_array_element:
-			return bool(LibXMPElement.INDEX_REGEX.match(address_delta))
+			return bool(TreePredicatesMixin.INDEX_REGEX.match(address_delta))
 		else:
 			return address_delta.count("/") == 1
 
@@ -309,11 +323,16 @@ class XMPTreeOperationMixin:
 	def parentsIn(self, elements):
 		return [e for e in elements if e.isParentOf(self)]
 
-class LibXMPElement(object, XMPTreeOperationMixin):
-	""" Wrapper around a libXMP iterator element. """
+class TreeManipulationMixin(TreePredicatesMixin):
+	@property
+	def parent(self):
+		if self.is_top_level:
+			return None
 
-	ARRAY_ELEMENT_REGEX = re.compile(r".*\[\d+\]$")
-	INDEX_REGEX = re.compile(r"^\[\d+\]$")
+		pass
+
+class LibXMPElement(object, TreePredicatesMixin):
+	""" Wrapper around a libXMP iterator element. """
 
 	# ───────────
 	# Constructor
@@ -355,10 +374,6 @@ class LibXMPElement(object, XMPTreeOperationMixin):
 	def is_set(self):
 	    return self.descriptor["VALUE_IS_ARRAY"] and not self.descriptor["ARRAY_IS_ORDERED"]
 
-	@property
-	def is_top_level(self):
-		return "/" not in self.address and not LibXMPElement.ARRAY_ELEMENT_REGEX.match(self.address)
-
 	# ──────────────
 	# Textualization
 
@@ -398,7 +413,7 @@ class FreezeMixin:
 		# Bypass the objet's setattr, which may have additional semantics
 		object.__setattr__(self, FreezeMixin.marker(classname), value)
 
-class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
+class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 	"""
 	Manipulator for an element in an XMP packet.
 
@@ -500,7 +515,7 @@ class XMPElement(object, XMPTreeOperationMixin, FreezeMixin):
 		return "{namespace}@{address}".format(namespace = unicode(self.namespace.uid),
 		                                        address = self.address)
 
-class XMPVirtualElement(object, XMPTreeOperationMixin):
+class XMPVirtualElement(object, TreeManipulationMixin):
 	"""
 	Element in an XMP packet.
 
@@ -575,13 +590,30 @@ class XMPVirtualElement(object, XMPTreeOperationMixin):
 	# Descriptor protocol
 
 	def __set__(self, owner_object, value):
-		new_element = XMPElement.fromValue(self.namespace, self.address, value)
-		# TODO Create the element and all missing parents
-		# TODO Record all new elements as part of the tree (add children to parents)
+		# Create the element object
+		if isinstance(value, XMPElement):
+			new_element = value
+			print "Setting %s to %s as %s" % (self.name, value, "XMPElement")
+		elif isinstance(value, collections.Mapping):
+			new_element = XMPStructure(self.namespace, self.address, [])
+			print "Setting %s to %s as %s" % (self.name, value, "XMPStructure")
+		elif isinstance(value, collections.Sequence):
+			new_element = XMPArray(self.namespace, self.address, [])
+			print "Setting %s to %s as %s" % (self.name, value, "XMPArray")
+		elif isinstance(value, collections.Set):
+			new_element = XMPSet(self.namespace, self.address, [])
+			print "Setting %s to %s as %s" % (self.name, value, "XMPSet")
+		else:
+			new_element = XMPValue(self.namespace, self.address)
+			print "Setting %s to %s as %s" % (self.name, value, "XMPValue")
+
+		# Insert in the tree and actually write to the XMPMetadata, creating all missing
+		# parents on the way
+		parent = self.parent
+		# TODO
+
 		# TODO Let subclasses set their own value
 		raise NotImplementedError("Virtual element assignment [Not implemented YET]")
-		# TODO Create the element and all missing parents, and assign the value
-		raise NotImplementedError("Virtual element assignment")
 
 	# ──────────────
 	# Textualization

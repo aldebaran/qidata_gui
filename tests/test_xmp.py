@@ -90,6 +90,10 @@ class XMPNamespace(XMPTestCase):
 			ns = self.example_xmp[ns_uid]
 			self.assertEqual(len(ns), fixtures.JPG_PHOTO_NS_LEN[ns_uid])
 
+class XMPTree(XMPTestCase):
+	def test_parent(self):
+		self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+
 class XMPStructure(XMPTestCase):
 	def test_contains(self):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
@@ -99,7 +103,6 @@ class XMPStructure(XMPTestCase):
 		tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
 		self.assertTrue( "ResolutionUnit"  in tiff_metadata)
 		self.assertFalse("ResolutionUnits" in tiff_metadata)
-
 
 	def test_has(self):
 		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
