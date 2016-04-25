@@ -3,6 +3,7 @@
 # Standard Library
 import collections
 from compiler.misc import mangle
+from itertools import islice
 import os.path
 import re
 import weakref
@@ -93,9 +94,9 @@ class XMPFile(object):
 		if libxmp.exempi.files_check_file_format(self.file_path) == libxmp.consts.XMP_FT_UNKNOWN:
 			raise RuntimeError("Unknown XMP file type")
 
-		self.libxmp_file = libxmp.XMPFiles(file_path=self.file_path,
-		                                   open_onlyxmp=True,
-		                                   open_forupdate=self.rw)
+		self.libxmp_file = libxmp.XMPFiles(file_path = self.file_path,
+		                                open_onlyxmp = True,
+		                              open_forupdate = self.rw)
 		self.libxmp_metadata = self.libxmp_file.get_xmp()
 
 	def close(self):
@@ -247,9 +248,11 @@ class TreePredicatesMixin:
 		elif isinstance(self, XMPElement):
 			return self.namespace.uid
 
+	@property
 	def is_top_level(self):
 		return "/" not in self.address and not TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address)
 
+	@property
 	def is_array_element(self):
 		return TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address) is not None
 
@@ -261,7 +264,7 @@ class TreePredicatesMixin:
 		if self.is_array_element:
 			return TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address).group(1)
 		else:
-			return self.address.split("/")[:-1]
+			return "/".join(self.address.split("/")[:-1])
 
 	# ────────────────────
 	# Address manipulation
@@ -476,8 +479,7 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 		raise NotImplementedError("Element assignment")
 
 	def __delete__(self, obj):
-		self.libxmp_metadata.delete_property(schema_ns=self.namespace.uid,
-		                                     prop_name=self.address)
+		self.libxmp_metadata.delete_property(schema_ns=self.namespace.uid, prop_name=self.address)
 
 	# ──────────
 	# Properties
@@ -772,7 +774,7 @@ class XMPStructure(XMPElement, collections.Mapping):
 			children = []
 		return self.name + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
 
-class XMPArray(XMPElement):
+class XMPArray(XMPElement, collections.Sequence):
 	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
 
 	# ────────────
@@ -789,6 +791,15 @@ class XMPArray(XMPElement):
 	@property
 	def is_container(self):
 		return True
+
+	# ────────────
+	# Sequence API
+
+	def __getitem__(self, index):
+		return self.children[index]
+
+	def __len__(self):
+		return len(self.children)
 
 	# ──────────────
 	# Textualization
@@ -852,9 +863,9 @@ class XMPValue(XMPElement):
 
 	def __set__(self, owner_object, value):
 		if isinstance(value, basestring):
-			self.libxmp_metadata.set_property(schema_ns=self.namespace_uid,
-			                                  prop_name=self.address,
-			                                 prop_value=value)
+			self.libxmp_metadata.set_property(schema_ns = self.namespace.uid,
+			                                  prop_name = self.address,
+			                                 prop_value = value)
 		else:
 			# TODO
 			raise NotImplementedError("Value assignment (generic)")

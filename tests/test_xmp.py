@@ -90,57 +90,110 @@ class XMPNamespace(XMPTestCase):
 			ns = self.example_xmp[ns_uid]
 			self.assertEqual(len(ns), fixtures.JPG_PHOTO_NS_LEN[ns_uid])
 
-class XMPTree(XMPTestCase):
+class TreePredicates(XMPTestCase):
+	def setUp(self):
+		super(TreePredicates, self).setUp()
+		self.root_structure = self.example_xmp[libxmp.consts.XMP_NS_EXIF].Flash
+		self.root_array = self.example_xmp[libxmp.consts.XMP_NS_EXIF].ISOSpeedRatings
+		self.nested_structure = self.example_xmp[libxmp.consts.XMP_NS_EXIF].Flash.Function
+
+	def test_namespace_uid(self):
+		self.assertEqual(self.root_structure.namespace_uid, libxmp.consts.XMP_NS_EXIF)
+
+	def test_is_top_level(self):
+		self.assertTrue(self.root_structure.is_top_level)
+		self.assertTrue(self.root_array.is_top_level)
+		self.assertFalse(self.nested_structure.is_top_level)
+		# TODO Array nested in array
+		# TODO Struct nested in array
+
+	def test_is_array_element(self):
+		self.assertFalse(self.root_array.is_array_element)
+		self.assertTrue(self.root_array[0].is_array_element)
+		self.assertFalse(self.root_structure.is_array_element)
+		self.assertFalse(self.nested_structure.is_array_element)
+
+	def test_parent_address(self):
+		self.assertIsNone(self.root_array.parent_address)
+		self.assertIsNone(self.root_structure.parent_address)
+		self.assertIsNotNone(self.nested_structure.parent_address)
+		self.assertEqual(self.nested_structure.parent_address, "exif:Flash")
+		self.assertEqual(self.root_array[0].parent_address, "exif:ISOSpeedRatings")
+
+class TreeManipulation(XMPTestCase):
 	def test_parent(self):
-		self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		nested_structure = self.example_xmp[libxmp.consts.XMP_NS_EXIF].Flash.Function
+		self.assertFalse(nested_structure.is_top_level)
 
-class XMPStructure(XMPTestCase):
-	def test_contains(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
-		self.assertTrue( "FNumber"  in exif_metadata)
-		self.assertFalse("FNumbers" in exif_metadata)
+class XMPArray(XMPTestCase):
+	def setUp(self):
+		super(XMPArray, self).setUp()
+		self.exif = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.iso_array = self.exif.ISOSpeedRatings
+		self.components_array = self.exif.ComponentsConfiguration
 
-		tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
-		self.assertTrue( "ResolutionUnit"  in tiff_metadata)
-		self.assertFalse("ResolutionUnits" in tiff_metadata)
-
-	def test_has(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
-		self.assertTrue( exif_metadata.has("FNumber"))
-		self.assertFalse(exif_metadata.has("FNumbers"))
-
-		tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
-		self.assertTrue( tiff_metadata.has("ResolutionUnit"))
-		self.assertFalse(tiff_metadata.has("ResolutionUnits"))
+	def test_len(self):
+		self.assertEqual(len(self.iso_array), 1)
+		self.assertEqual(len(self.components_array), 4)
 
 	def test_getitem(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
-		self.assertEqual("32/10", exif_metadata["FNumber"].value)
+		self.assertEqual(self.iso_array[0].value, "400")
+
+	def test_getitem_slices(self):
+		self.assertEqual(self.iso_array[-1].value, "400")
+		self.assertEqual(self.components_array[-1].value, "0")
+		self.assertEqual([e.value for e in self.iso_array[:]], ["400"])
+		self.assertEqual([e.value for e in self.components_array[:]], ["1", "2", "3", "0"])
+		self.assertEqual([e.value for e in self.components_array[:-1]], ["1", "2", "3"])
+		self.assertEqual([e.value for e in self.components_array[::2]], ["1", "3"])
+		self.assertEqual([e.value for e in self.components_array[-3:-1]], ["2","3"])
+
+class XMPStructure(XMPTestCase):
+	def setUp(self):
+		super(XMPStructure, self).setUp()
+		self.exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
+
+	def test_contains(self):
+		self.assertTrue( "FNumber"  in self.exif_metadata)
+		self.assertFalse("FNumbers" in self.exif_metadata)
+		self.assertTrue( "ResolutionUnit"  in self.tiff_metadata)
+		self.assertFalse("ResolutionUnits" in self.tiff_metadata)
+
+	def test_has(self):
+		self.assertTrue( self.exif_metadata.has("FNumber"))
+		self.assertFalse(self.exif_metadata.has("FNumbers"))
+
+		self.assertTrue( self.tiff_metadata.has("ResolutionUnit"))
+		self.assertFalse(self.tiff_metadata.has("ResolutionUnits"))
+
+	def test_getitem(self):
+		self.assertEqual("32/10", self.exif_metadata["FNumber"].value)
 		with self.assertRaises(KeyError):
-			exif_metadata["inexistent_element"]
+			self.exif_metadata["inexistent_element"]
 
 	def test_get(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		# Existing attribute
-		self.assertIsInstance(exif_metadata.get("FNumber"), xmp.XMPValue)
-		self.assertEqual(exif_metadata.get("FNumber").value, "32/10")
+		self.assertIsInstance(self.exif_metadata.get("FNumber"), xmp.XMPValue)
+		self.assertEqual(self.exif_metadata.get("FNumber").value, "32/10")
 		# Non-existing attribute
-		self.assertIsNone(exif_metadata.get("inexistent_element"))
+		self.assertIsNone(self.exif_metadata.get("inexistent_element"))
 
 	def test_attribute_descriptor_get(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
-		self.assertEqual("32/10", exif_metadata.FNumber.value)
+		self.assertEqual("32/10", self.exif_metadata.FNumber.value)
 
 	def test_getattr(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		# Existing attribute
-		self.assertIsInstance(exif_metadata.FNumber, xmp.XMPValue)
-		self.assertEqual(exif_metadata.FNumber.value, "32/10")
+		self.assertIsInstance(self.exif_metadata.FNumber, xmp.XMPValue)
+		self.assertEqual(self.exif_metadata.FNumber.value, "32/10")
 		# Non-existing attribute
-		self.assertIsInstance(exif_metadata.inexistent_element, xmp.XMPVirtualElement)
+		self.assertIsInstance(self.exif_metadata.inexistent_element, xmp.XMPVirtualElement)
+		# Nested attribute
+		self.assertIsInstance(self.exif_metadata.Flash, xmp.XMPStructure)
+		self.assertIsInstance(self.exif_metadata.Flash.RedEyeMode, xmp.XMPValue)
+		self.assertEqual(self.exif_metadata.Flash.RedEyeMode.value, "False")
 
 	def test_setattr_existing(self):
-		exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		# Existing attribute
 		jpg_filepath = fixtures.sandboxed(fixtures.JPG_PHOTO)
 		# original_sha1 = sha1(jpg_filepath)
