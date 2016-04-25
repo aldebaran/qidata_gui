@@ -416,6 +416,22 @@ class FreezeMixin:
 		# Bypass the objet's setattr, which may have additional semantics
 		object.__setattr__(self, FreezeMixin.marker(classname), value)
 
+class ContainerMixin:
+	# ──────────
+	# Properties
+
+	@property
+	def children(self):
+		""" Iterator over children; must be overriden by child classes. """
+		raise NotImplementedError
+
+	# ────────────────────
+	# XMPElement overrides
+
+	@property
+	def is_container(self):
+		return True
+
 class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 	"""
 	Manipulator for an element in an XMP packet.
@@ -627,7 +643,7 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		return "{namespace}@{address} [virtual]".format(namespace = self.namespace.uid,
 		                                                  address = self.address)
 
-class XMPStructure(XMPElement, collections.Mapping):
+class XMPStructure(XMPElement, ContainerMixin, collections.Mapping):
 	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
 
 	# ────────────
@@ -637,13 +653,6 @@ class XMPStructure(XMPElement, collections.Mapping):
 		XMPElement.__init__(self, namespace, address)
 		self.children = children
 		self.freeze(XMPStructure)
-
-	# ────────────────────
-	# XMPElement overrides
-
-	@property
-	def is_container(self):
-		return True
 
 	# ──────────
 	# Properties
@@ -731,15 +740,22 @@ class XMPStructure(XMPElement, collections.Mapping):
 	# ───────────
 	# Mapping API
 
-	def __getitem__(self, field_name):
-		if not isinstance(field_name, basestring):
-			raise TypeError("Wrong index type "+str(type(field_name)))
+	def __getitem__(self, key):
+		if not isinstance(key, basestring):
+			raise TypeError("Wrong index type "+str(type(key)))
 
-		qualified_field_name = self.namespace.qualify(field_name)
+		key_components = key.split("/")
+		qualified_field_name = self.namespace.qualify(key_components[0])
+		nested_components = key_components[1:]
 		try:
-			return self._children[qualified_field_name]
+			child = self._children[qualified_field_name]
 		except KeyError:
-			raise KeyError(field_name)
+			raise KeyError(qualified_field_name)
+
+		if nested_components:
+			return child["/".join(nested_components)]
+		else:
+			return child
 
 	def __iter__(self):
 		return iter(self.children)
@@ -774,7 +790,7 @@ class XMPStructure(XMPElement, collections.Mapping):
 			children = []
 		return self.name + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
 
-class XMPArray(XMPElement, collections.Sequence):
+class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
 	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
 
 	# ────────────
@@ -782,15 +798,15 @@ class XMPArray(XMPElement, collections.Sequence):
 
 	def __init__(self, namespace, address, children):
 		XMPElement.__init__(self, namespace, address)
-		self.children = children
+		self._children = children
 		self.freeze(XMPArray)
 
-	# ────────────────────
-	# XMPElement overrides
+	# ────────────────────────
+	# ContainerMixin overrides
 
 	@property
-	def is_container(self):
-		return True
+	def children(self):
+		return self._children
 
 	# ────────────
 	# Sequence API
@@ -812,7 +828,7 @@ class XMPArray(XMPElement, collections.Sequence):
 		children_strings = "\n".join([u"⁃ "+unicode(c).replace("\n", "\n  ") for c in self.children])
 		return self.name + " [\n    " + children_strings.replace("\n", "\n    ") + "\n]"
 
-class XMPSet(XMPElement):
+class XMPSet(XMPElement, ContainerMixin):
 	""" Convenience wrapper around libXMP to manipulate an XMP set (rdf:Bag). """
 
 	# ────────────
@@ -820,15 +836,15 @@ class XMPSet(XMPElement):
 
 	def __init__(self, namespace, address, children):
 		super(XMPSet, self).__init__(namespace, address)
-		self.children = set(children)
+		self._children = set(children)
 		self.freeze(XMPSet)
 
-	# ────────────────────
-	# XMPElement overrides
+	# ────────────────────────
+	# ContainerMixin overrides
 
 	@property
-	def is_container(self):
-		return True
+	def children(self):
+		return self._children
 
 	# ──────────────
 	# Textualization
