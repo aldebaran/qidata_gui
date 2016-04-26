@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-class Face:
+class Face(object):
     """Contains annotation details for a face"""
     def __init__(self, arg):
         self.name = ""
