@@ -19,7 +19,13 @@ class ImageWidget(QGraphicsView):
 	# QWidget overrides
 
 	def wheelEvent(self, event):
-		print "WheelEvent", event
+		focusedItem = self.scene().focusItem().rect()
+		step = event.delta() / 120
+		focusedItem.setTop(focusedItem.top()-5*step)
+		focusedItem.setBottom(focusedItem.bottom()+5*step)
+		focusedItem.setLeft(focusedItem.left()-5*step)
+		focusedItem.setRight(focusedItem.right()+5*step)
+		self.scene().focusItem().setRect(focusedItem)
 
 	def mousePressEvent(self, event):
 		focusedItem = self.scene().focusItem()
