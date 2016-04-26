@@ -273,10 +273,13 @@ class TreePredicatesMixin:
 
 	def absoluteAddress(self, relative_address):
 		if not self.address:
+			# Relative to a namespace: absolute is relative
 			return relative_address
-		return "{base_address}/{relative_address}".format(base_address = self.address,
-		                                              relative_address = relative_address)
-
+		elif TreePredicatesMixin.INDEX_REGEX.match(relative_address):
+			return self.address + relative_address
+		else:
+			return "{base_address}/{relative_address}".format(base_address = self.address,
+			                                              relative_address = relative_address)
 
 	# ──────────
 	# Predicates
@@ -606,16 +609,19 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		return XMPVirtualElement(self.namespace,
 		                         self.absoluteAddress(qualified_field_name))
 
-	# ───────────
-	# Mapping API
+	# ─────────────────────────
+	# Mapping and Sequence APIs
 
-	def __getitem__(self, field_name):
-		if not isinstance(field_name, basestring):
-			raise TypeError("Wrong index type "+str(type(field_name)))
-
-		qualified_field_name = self.namespace.qualify(field_name)
-		return XMPVirtualElement(self.namespace,
-			                     self.absoluteAddress(qualified_field_name))
+	def __getitem__(self, key):
+		if isinstance(key, (int, long)):
+			return XMPVirtualElement(self.namespace,
+			                         self.absoluteAddress("[%s]"%key))
+		elif isinstance(key, basestring):
+			qualified_field_name = self.namespace.qualify(key)
+			return XMPVirtualElement(self.namespace,
+				                     self.absoluteAddress(qualified_field_name))
+		else:
+			raise TypeError("Wrong index type "+str(type(key)))
 
 	# ───────────────────
 	# Descriptor protocol

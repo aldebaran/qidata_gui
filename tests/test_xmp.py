@@ -229,7 +229,9 @@ class XMPVirtualElement(XMPTestCase):
 
 	def test_getattr(self):
 		self.assertIsInstance(self.exif_ns.inexistent_element.nested_inexistent_element, xmp.XMPVirtualElement)
-		self.assertIsInstance(self.exif_ns.inexistent_element.parent, xmp.XMPNamespace)
+		self.assertIsInstance(self.exif_ns.inexistent_element[2], xmp.XMPVirtualElement)
+		self.assertEqual(self.exif_ns.inexistent_element[2].address,
+		                 "%s[2]" % self.exif_ns.inexistent_element.address)
 
 	def test_parent(self):
 		self.assertIsInstance(self.exif_ns.virtual_element.parent, xmp.XMPNamespace)
