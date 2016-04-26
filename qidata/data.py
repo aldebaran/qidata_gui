@@ -10,7 +10,7 @@ from qidata.models import *
 # ────────
 # Datasets
 
-METADATA_FILENAME = "dataset.yaml"
+METADATA_FILENAME = "metadata.yaml" # Place-holder
 
 def isDataset(path):
     return os.path.isdir(path) and os.path.isfile(os.path.join(path, METADATA_FILENAME))
