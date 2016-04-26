@@ -3,7 +3,7 @@
 from person import Person
 from face import Face
 
-__all__ = ["Person", "Face"]
+__all__ = ["Face", "Person"]
 
 def makeAnnotationItems(itemName):
     if itemName == "Person":

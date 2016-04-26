@@ -52,6 +52,13 @@ class AnnotationMaker(QWidget):
         self.import_button.setEnabled(True)
 
         # Topic selection
+        self.annotation_type_selection_widget.currentIndexChanged['QString'].connect(self._handle_message_selected)
         self.annotation_type_selection_widget.addItems(annotationitems.__all__) # we add some message type
 
-        self.show()
+    @property
+    def msg(self):
+        return self.editable_tree.msg
+
+    def _handle_message_selected(self, message_name):
+        if message_name != '':
+            self.editable_tree.message = annotationitems.makeAnnotationItems(message_name)
