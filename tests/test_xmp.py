@@ -33,15 +33,15 @@ class XMPFile(unittest.TestCase):
 	def test_modify_readonly(self):
 		with self.assertRaises(RuntimeWarning):
 			with xmp.XMPFile(self.jpg_path) as f:
-				ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS_1)
-				f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS_1,
+				ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS)
+				f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS,
 				                               prop_name=ald_prefix+"Property",
 				                               prop_value="Value")
 	def test_modify_readwrite(self):
 		original_sha1 = sha1(self.jpg_path)
 		with xmp.XMPFile(self.jpg_path, rw=True) as f:
-			ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS_1)
-			f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS_1,
+			ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS)
+			f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS,
 			                               prop_name=ald_prefix+"Property",
 			                               prop_value="Value")
 		modified_sha1 = sha1(self.jpg_path)
@@ -228,4 +228,4 @@ class XMPStructure(XMPTestCase):
 
 	def test_setattr_inexistent(self):
 		with xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO), rw=True) as xmp_file:
-			xmp_file.metadata[xmp.ALDEBARAN_NS_1].inexistent_element = 12
+			xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12

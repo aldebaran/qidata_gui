@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .xmp import XMPFile, XMPMetadata, ALDEBARAN_NS_1
+from .xmp import XMPFile, XMPMetadata, ALDEBARAN_NS
 
 class DataItem(object):
     def __init__(self, file_path, rw = False):
@@ -19,7 +19,7 @@ class DataItem(object):
 
     @property
     def metadata(self):
-        return self.xmp_file.metadata[ALDEBARAN_NS_1]
+        return self.xmp_file.metadata[ALDEBARAN_NS]
 
     @property
     def xmp(self):

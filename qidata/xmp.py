@@ -10,9 +10,10 @@ import weakref
 # XMP
 import libxmp
 
-ALDEBARAN_NS_1=u"http://aldebaran.com/xmp/1"
+ALDEBARAN_NS_V1=u"http://aldebaran.com/xmp/1"
+ALDEBARAN_NS = ALDEBARAN_NS_V1
 SUGGESTED_ALDEBARAN_NS_PREFIX=u"aldebaran"
-libxmp.exempi.register_namespace(ALDEBARAN_NS_1, SUGGESTED_ALDEBARAN_NS_PREFIX)
+libxmp.exempi.register_namespace(ALDEBARAN_NS, SUGGESTED_ALDEBARAN_NS_PREFIX)
 
 # ─────────────────────
 # Formatting parameters
@@ -237,6 +238,7 @@ class TreePredicatesMixin:
 
 	ARRAY_ELEMENT_REGEX = re.compile(r"(.*)\[(\d+)\]$")
 	INDEX_REGEX = re.compile(r"^\[\d+\]$")
+	STRUCT_CHILD_REGEX = re.compile(r"^/[^/]+$")
 
 	# ──────────
 	# Properties
@@ -291,22 +293,24 @@ class TreePredicatesMixin:
 		return other.isDescendantOf(self)
 
 	def isChildrenOf(self, other):
+
 		if not self.inSameNamespace(other) \
 		or not self.address.startswith(other.address):
 			return False
 
 		address_delta = self.address[len(other.address):]
+		struct_depth_delta = address_delta.count("/")
 		is_array_element = TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(address_delta) is not None
 		other_is_namespace = not other.address
 
 		if other_is_namespace and not is_array_element:
 			# If other is a namespace, its address is the empty string and
 			# children don't have a / in their address
-			return address_delta.count("/") == 0
+			return struct_depth_delta == 0
 		elif is_array_element:
 			return bool(TreePredicatesMixin.INDEX_REGEX.match(address_delta))
 		else:
-			return address_delta.count("/") == 1
+			return bool(TreePredicatesMixin.STRUCT_CHILD_REGEX.match(address_delta))
 
 	def isParentOf(self, other):
 		return other.isChildrenOf(self)
@@ -640,7 +644,11 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		# Insert in the tree and actually write to the XMPMetadata, creating all missing
 		# parents on the way
 		parent = self.parent
-		# TODO
+
+		if parent is None:
+			pass
+		else:
+			pass
 
 		# TODO Let subclasses set their own value
 		raise NotImplementedError("Virtual element assignment [Not implemented YET]")
