@@ -334,10 +334,12 @@ class TreeManipulationMixin(TreePredicatesMixin):
 	@property
 	def parent(self):
 		parent_address = self.parent_address
-		if parent_address is None:
+		if parent_address is not None:
+			return self.namespace[parent_address]
+		elif isinstance(self, XMPNamespace):
 			return None
 		else:
-			return self.namespace[parent_address]
+			return self.namespace
 
 class LibXMPElement(object, TreePredicatesMixin):
 	""" Wrapper around a libXMP iterator element. """
@@ -543,8 +545,8 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 	Element in an XMP packet.
 
 	Abstracts a fully-qualified, absolute address in a namespace of an XMP metadata
-	packet. Elements can be virtual, meaning that they represent an address but the
-	actual corresponsing element may not exist.
+	packet. Virtual elements represent an address the corresponding element of which
+	may not exist.
 	"""
 
 	# ────────────
@@ -552,14 +554,13 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 
 	def __init__(self, namespace, address):
 		"""
-		Constructs a virtual or non-virtual XMP element.
+		Constructs a virtual XMP element.
 
 		Arguments:
 			namespace: The namespace to which the element belongs to, or None if the
 			           element is a namespace itself. No strong reference of it will be
 			           kept, only a weakref.
 			address: The fully-qualified, absolute address of the element in its namespace.
-			virtual: Whether the element is known to exist in the associated XMP metadata.
 		"""
 
 		if namespace is not None and not isinstance(namespace, weakref.ReferenceType):
@@ -577,14 +578,10 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 
 	@property
 	def parent(self):
-		parent_address = self.parent_address
-		if parent_address is None:
-			return None
-		else:
-			try:
-				return super(XMPVirtualElement, self).parent
-			except KeyError:
-				return XMPVirtualElement(self.namespace, parent_address)
+		try:
+			return super(XMPVirtualElement, self).parent
+		except KeyError:
+			return XMPVirtualElement(self.namespace, self.parent_address)
 
 	# ─────────────
 	# Attribute API
@@ -646,8 +643,13 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		parent = self.parent
 
 		if parent is None:
+			# The parent is the namespace
+			pass
+		elif type(XMPVirtualElement):
+			# The parent is also a virtual element and needs to be created
 			pass
 		else:
+			# The parent exists
 			pass
 
 		# TODO Let subclasses set their own value

@@ -135,15 +135,12 @@ class TreeMixins(XMPTestCase):
 		self.assertEqual(self.root_array[0].parent_address, "exif:ISOSpeedRatings")
 
 	def test_element_parent(self):
-		self.assertIsNone(self.root_structure.parent)
-		self.assertIsNone(self.root_array.parent)
+		self.assertIsNone(self.exif_ns.parent)
+		self.assertIsInstance(self.root_structure.parent, xmp.XMPNamespace)
+		self.assertIsInstance(self.root_array.parent, xmp.XMPNamespace)
 		self.assertIsInstance(self.nested_structure.parent, xmp.XMPStructure)
 		self.assertEqual(self.nested_structure.parent.name, "exif:Flash")
-		self.assertIsNone(self.nested_structure.parent.parent)
-
-	def test_virtual_element_parent(self):
-		self.assertIsNone(self.exif_ns.virtual_element.parent)
-		self.assertIsInstance(self.exif_ns.virtual_element.nested_virtual_element.parent, xmp.XMPVirtualElement)
+		self.assertIsInstance(self.nested_structure.parent.parent, xmp.XMPNamespace)
 
 class XMPArray(XMPTestCase):
 	def setUp(self):
@@ -171,61 +168,69 @@ class XMPArray(XMPTestCase):
 class XMPStructure(XMPTestCase):
 	def setUp(self):
 		super(XMPStructure, self).setUp()
-		self.exif_metadata = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.exif_ns = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 		self.tiff_metadata = self.example_xmp[libxmp.consts.XMP_NS_TIFF]
 
 	def test_contains(self):
-		self.assertTrue( "FNumber"  in self.exif_metadata)
-		self.assertFalse("FNumbers" in self.exif_metadata)
+		self.assertTrue( "FNumber"  in self.exif_ns)
+		self.assertFalse("FNumbers" in self.exif_ns)
 		self.assertTrue( "ResolutionUnit"  in self.tiff_metadata)
 		self.assertFalse("ResolutionUnits" in self.tiff_metadata)
 
 	def test_has(self):
-		self.assertTrue( self.exif_metadata.has("FNumber"))
-		self.assertFalse(self.exif_metadata.has("FNumbers"))
+		self.assertTrue( self.exif_ns.has("FNumber"))
+		self.assertFalse(self.exif_ns.has("FNumbers"))
 
 		self.assertTrue( self.tiff_metadata.has("ResolutionUnit"))
 		self.assertFalse(self.tiff_metadata.has("ResolutionUnits"))
 
 	def test_getitem(self):
-		self.assertEqual("32/10", self.exif_metadata["FNumber"].value)
+		self.assertEqual("32/10", self.exif_ns["FNumber"].value)
 		with self.assertRaises(KeyError):
-			self.exif_metadata["inexistent_element"]
+			self.exif_ns["inexistent_element"]
 
 	def test_get(self):
 		# Existing attribute
-		self.assertIsInstance(self.exif_metadata.get("FNumber"), xmp.XMPValue)
-		self.assertEqual(self.exif_metadata.get("FNumber").value, "32/10")
+		self.assertIsInstance(self.exif_ns.get("FNumber"), xmp.XMPValue)
+		self.assertEqual(self.exif_ns.get("FNumber").value, "32/10")
 		# Non-existing attribute
-		self.assertIsNone(self.exif_metadata.get("inexistent_element"))
+		self.assertIsNone(self.exif_ns.get("inexistent_element"))
 
 	def test_attribute_descriptor_get(self):
-		self.assertEqual("32/10", self.exif_metadata.FNumber.value)
+		self.assertEqual("32/10", self.exif_ns.FNumber.value)
 
 	def test_getattr(self):
 		# Existing attribute
-		self.assertIsInstance(self.exif_metadata.FNumber, xmp.XMPValue)
-		self.assertEqual(self.exif_metadata.FNumber.value, "32/10")
+		self.assertIsInstance(self.exif_ns.FNumber, xmp.XMPValue)
+		self.assertEqual(self.exif_ns.FNumber.value, "32/10")
 		# Non-existing attribute
-		self.assertIsInstance(self.exif_metadata.inexistent_element, xmp.XMPVirtualElement)
+		self.assertIsInstance(self.exif_ns.inexistent_element, xmp.XMPVirtualElement)
 		# Nested attribute
-		self.assertIsInstance(self.exif_metadata.Flash, xmp.XMPStructure)
-		self.assertIsInstance(self.exif_metadata.Flash.RedEyeMode, xmp.XMPValue)
-		self.assertEqual(self.exif_metadata.Flash.RedEyeMode.value, "False")
+		self.assertIsInstance(self.exif_ns.Flash, xmp.XMPStructure)
+		self.assertIsInstance(self.exif_ns.Flash.RedEyeMode, xmp.XMPValue)
+		self.assertEqual(self.exif_ns.Flash.RedEyeMode.value, "False")
 
 	def test_setattr_existing(self):
 		# Existing attribute
 		jpg_filepath = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		# original_sha1 = sha1(jpg_filepath)
 		with xmp.XMPFile(jpg_filepath, rw=True) as xmp_file:
 			xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber = "314/141"
-		# import shutil
-		# shutil.copyfile(jpg_filepath, jpg_filepath+".bck")
-		# modified_sha1 = sha1(jpg_filepath)
-		# print original_sha1, modified_sha1
 		with xmp.XMPFile(jpg_filepath) as xmp_file:
 			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "314/141")
 
 	def test_setattr_inexistent(self):
 		with xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO), rw=True) as xmp_file:
 			xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12
+
+class XMPVirtualElement(XMPTestCase):
+	def setUp(self):
+		super(XMPVirtualElement, self).setUp()
+		self.exif_ns = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+
+	def test_getattr(self):
+		self.assertIsInstance(self.exif_ns.inexistent_element.nested_inexistent_element, xmp.XMPVirtualElement)
+		self.assertIsInstance(self.exif_ns.inexistent_element.parent, xmp.XMPNamespace)
+
+	def test_parent(self):
+		self.assertIsInstance(self.exif_ns.virtual_element.parent, xmp.XMPNamespace)
+		self.assertIsInstance(self.exif_ns.virtual_element.nested_virtual_element.parent, xmp.XMPVirtualElement)
