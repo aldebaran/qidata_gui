@@ -8,9 +8,8 @@ from PySide.QtCore import Signal, Slot
 from PySide.QtGui import QApplication
 # qidata
 import qidata
-from qidata import data
-from .widget import makeWidget
-from .window import QiDataMainWindow
+from .models import data
+from .view import makeWidget, QiDataMainWindow
 
 class QiDataApp(QApplication):
 	def __init__(self, path = None, current_item = None):

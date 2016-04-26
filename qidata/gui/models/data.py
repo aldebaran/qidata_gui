@@ -4,7 +4,7 @@
 import os.path
 import re
 # qidata
-from qidata.models import *
+from .dataitems import *
 
 
 # ────────

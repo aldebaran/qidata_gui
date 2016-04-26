@@ -3,7 +3,7 @@
 # Qt
 from PySide.QtGui import QPixmap
 # qidata
-from qidata.dataitem import DataItem
+from ..dataitem import DataItem
 
 class Image(DataItem):
     def __init__(self, source_path):

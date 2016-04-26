@@ -4,8 +4,8 @@
 import os.path
 import re
 # qidata
-from qidata.gui.models import *
-from qidata.models import *
+from .widgets import *
+from ..models.dataitems import *
 
 
 # ────────────

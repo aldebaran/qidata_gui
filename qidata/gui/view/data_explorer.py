@@ -7,7 +7,7 @@ from PySide.QtCore import QDir
 from PySide.QtCore import Signal, Slot
 from PySide.QtGui import QWidget, QFileSystemModel, QTreeView, QSortFilterProxyModel
 # qidata
-from qidata import data
+from ..models import data
 
 class DataFSModel(QSortFilterProxyModel):
 	def __init__(self):
