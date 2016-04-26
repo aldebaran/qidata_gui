@@ -98,13 +98,18 @@ class XMPNamespace(XMPTestCase):
 		self.assertIsInstance(self.exif_ns["LightSource"], xmp.XMPElement)
 		self.assertIsInstance(self.exif_ns["Flash/Function"], xmp.XMPElement)
 		self.assertIsInstance(self.exif_ns["exif:Flash/exif:Function"], xmp.XMPElement)
+		with self.assertRaises(KeyError):
+			self.exif_ns["Flashing"]
+		with self.assertRaises(KeyError):
+			self.exif_ns["Flash/Functioning"]
 
 class TreeMixins(XMPTestCase):
 	def setUp(self):
 		super(TreeMixins, self).setUp()
-		self.root_structure = self.example_xmp[libxmp.consts.XMP_NS_EXIF].Flash
-		self.root_array = self.example_xmp[libxmp.consts.XMP_NS_EXIF].ISOSpeedRatings
-		self.nested_structure = self.example_xmp[libxmp.consts.XMP_NS_EXIF].Flash.Function
+		self.exif_ns = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
+		self.root_structure = self.exif_ns.Flash
+		self.root_array = self.exif_ns.ISOSpeedRatings
+		self.nested_structure = self.exif_ns.Flash.Function
 
 	def test_namespace_uid(self):
 		self.assertEqual(self.root_structure.namespace_uid, libxmp.consts.XMP_NS_EXIF)
@@ -129,8 +134,16 @@ class TreeMixins(XMPTestCase):
 		self.assertEqual(self.nested_structure.parent_address, "exif:Flash")
 		self.assertEqual(self.root_array[0].parent_address, "exif:ISOSpeedRatings")
 
-	def test_parent(self):
-		self.fail(self.nested_structure.parent)
+	def test_element_parent(self):
+		self.assertIsNone(self.root_structure.parent)
+		self.assertIsNone(self.root_array.parent)
+		self.assertIsInstance(self.nested_structure.parent, xmp.XMPStructure)
+		self.assertEqual(self.nested_structure.parent.name, "exif:Flash")
+		self.assertIsNone(self.nested_structure.parent.parent)
+
+	def test_virtual_element_parent(self):
+		self.assertIsNone(self.exif_ns.virtual_element.parent)
+		self.assertIsInstance(self.exif_ns.virtual_element.nested_virtual_element.parent, xmp.XMPVirtualElement)
 
 class XMPArray(XMPTestCase):
 	def setUp(self):

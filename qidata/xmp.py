@@ -329,10 +329,11 @@ class TreePredicatesMixin:
 class TreeManipulationMixin(TreePredicatesMixin):
 	@property
 	def parent(self):
-		if self.is_top_level:
+		parent_address = self.parent_address
+		if parent_address is None:
 			return None
-
-		pass
+		else:
+			return self.namespace[parent_address]
 
 class LibXMPElement(object, TreePredicatesMixin):
 	""" Wrapper around a libXMP iterator element. """
@@ -569,6 +570,17 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 	@property
 	def namespace(self):
 		return self._namespace()
+
+	@property
+	def parent(self):
+		parent_address = self.parent_address
+		if parent_address is None:
+			return None
+		else:
+			try:
+				return super(XMPVirtualElement, self).parent
+			except KeyError:
+				return XMPVirtualElement(self.namespace, parent_address)
 
 	# ─────────────
 	# Attribute API
