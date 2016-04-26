@@ -627,22 +627,37 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 	# Descriptor protocol
 
 	def __set__(self, owner_object, value):
-		# Create the element object
+		"""
+		Sets the property in the associated libxmp metadata and adds an XMP element to
+		the object tree rooted in the virtual element's namespace.
+		"""
+
+		# ─────────────────────────────
+		# Create the new element object
+
 		if isinstance(value, XMPElement):
 			new_element = value
-			print "Setting %s to %s as %s" % (self.name, value, "XMPElement")
+			# TODO Ensure the address is correct
+			# print "Setting %s to %s as %s" % (self.name, value, "XMPElement")
 		elif isinstance(value, collections.Mapping):
 			new_element = XMPStructure(self.namespace, self.address, [])
-			print "Setting %s to %s as %s" % (self.name, value, "XMPStructure")
+			# TODO Add mapping elements to new_element
+			# print "Setting %s to %s as %s" % (self.name, value, "XMPStructure")
 		elif isinstance(value, collections.Sequence):
 			new_element = XMPArray(self.namespace, self.address, [])
-			print "Setting %s to %s as %s" % (self.name, value, "XMPArray")
+			# TODO Add sequence elements to new_element
+			# print "Setting %s to %s as %s" % (self.name, value, "XMPArray")
 		elif isinstance(value, collections.Set):
 			new_element = XMPSet(self.namespace, self.address, [])
-			print "Setting %s to %s as %s" % (self.name, value, "XMPSet")
+			# TODO Add set elements to new_element
+			# print "Setting %s to %s as %s" % (self.name, value, "XMPSet")
 		else:
 			new_element = XMPValue(self.namespace, self.address)
-			print "Setting %s to %s as %s" % (self.name, value, "XMPValue")
+			# TODO Add value to new XMPValue
+			# print "Setting %s to %s as %s" % (self.name, value, "XMPValue")
+
+		# ───────────────────────────────────────
+		# Make all parents also create themselves
 
 		# Insert in the tree and actually write to the XMPMetadata, creating all missing
 		# parents on the way
