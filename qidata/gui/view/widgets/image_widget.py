@@ -7,6 +7,14 @@ class ImageWidget(QGraphicsView):
 	def __init__(self, imageItem):
 		super(ImageWidget, self).__init__()
 
+		# ─────────────
+		# MODEL STORAGE
+
+		self._model = imageItem
+		# Here later we will load all rectangles stored in the model
+
+		# ─────────────
+		# VIEW CREATION
 
 		# Create scene
 		scene = QGraphicsScene()
@@ -15,8 +23,8 @@ class ImageWidget(QGraphicsView):
 		# Add scene to widget
 		self.setScene(scene)
 
-	# ─────────────────
-	# QWidget overrides
+	# ──────
+	# EVENTS
 
 	def wheelEvent(self, event):
 		focusedItem = self.scene().focusItem().rect()
@@ -28,33 +36,23 @@ class ImageWidget(QGraphicsView):
 		self.scene().focusItem().setRect(focusedItem)
 
 	def mousePressEvent(self, event):
-		focusedItem = self.scene().focusItem()
 		position_scene = self.mapToScene(event.x(),event.y())
 		position_widget = QPoint(event.x(), event.y())
-		x=position_scene.x()
-		y=position_scene.y()
 
 		if not self.pixmapItem.contains(position_scene):
 			# Click out of the zone
 			# Maybe defocus ?
 			return
 
-		if focusedItem is not None:
-			# If an item is focused, show it in black (prepare focus lost)
-			focusedItem.setPen(QPen(QColor(0,0,0)))
-
 		if len(self.items(position_widget)) == 1:
 			# If no item is already there, create a new rectangle
-			rect = self.scene().addRect(position_scene.x()-30, position_scene.y()-30, 60,60)
-			rect.setFlags(QGraphicsItem.ItemIsFocusable)
-			rect.setPen(QPen(QColor(255,255,255)))
-			# And give him focus
-			rect.setFocus()
+			self.__addFocusedRect(position_scene.x()-30, position_scene.y()-30, position_scene.x()+30, position_scene.y()+30)
 
 		else:
 			# A rectangle exists, retrieve it
 			selectedItem = self.items(position_widget)[0]
 
+			focusedItem = self.scene().focusItem()
 			if focusedItem is not None  and selectedItem == focusedItem:
 				# If the selected rectangle is the focused one, just replace it
 				rect = focusedItem.rect()
@@ -62,19 +60,26 @@ class ImageWidget(QGraphicsView):
 				focusedItem.setRect(rect)
 			else:
 				# If it is a different one, give him focus
-				selectedItem.setFocus()
+				self.__setFocus(selectedItem)
 
-			# Show that this rectangle is the focused one.
-			selectedItem.setPen(QPen(QColor(255,255,255)))
+	# ───────────────
+	# PRIVATE METHODS
 
+	def __addFocusedRect(self, x_min, y_min, x_max, y_max):
+		r = self.__addRect(x_min, y_min, x_max, y_max)
+		self.__setFocus(r)
+		return r
 
-	# ──────────
-	# Properties
+	def __addRect(self, x_min, y_min, x_max, y_max):
+		r = self.scene().addRect(x_min, y_min, x_max-x_min, y_max-y_min)
+		r.setFlags(QGraphicsItem.ItemIsFocusable)
+		r.setPen(QPen(QColor(0,0,0)))
+		return r
 
-	@property
-	def image(self):
-		return self._image
+	def __setFocus(self, r):
+		r.setPen(QPen(QColor(255,255,255)))
+		focusedItem = self.scene().focusItem()
+		if focusedItem and focusedItem != r:
+			focusedItem.setPen(QPen(QColor(0,0,0)))
+		r.setFocus()
 
-	@image.setter
-	def image(self, new_image):
-		self._image = new_image
