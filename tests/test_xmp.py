@@ -219,8 +219,12 @@ class XMPStructure(XMPTestCase):
 			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "314/141")
 
 	def test_setattr_inexistent(self):
-		with xmp.XMPFile(fixtures.sandboxed(fixtures.JPG_PHOTO), rw=True) as xmp_file:
-			xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12
+		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
+		with xmp.XMPFile(sandboxed_photo, rw=True) as xmp_file:
+			metadata = xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12
+			self.assertIsInstance(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element,
+			                      xmp.XMPValue)
+			self.assertEqual(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element.value, "12")
 
 class XMPVirtualElement(XMPTestCase):
 	def setUp(self):
@@ -228,11 +232,13 @@ class XMPVirtualElement(XMPTestCase):
 		self.exif_ns = self.example_xmp[libxmp.consts.XMP_NS_EXIF]
 
 	def test_getattr(self):
-		self.assertIsInstance(self.exif_ns.inexistent_element.nested_inexistent_element, xmp.XMPVirtualElement)
+		self.assertIsInstance(self.exif_ns.inexistent_element.nested_inexistent_element,
+		                      xmp.XMPVirtualElement)
 		self.assertIsInstance(self.exif_ns.inexistent_element[2], xmp.XMPVirtualElement)
 		self.assertEqual(self.exif_ns.inexistent_element[2].address,
 		                 "%s[2]" % self.exif_ns.inexistent_element.address)
 
 	def test_parent(self):
 		self.assertIsInstance(self.exif_ns.virtual_element.parent, xmp.XMPNamespace)
-		self.assertIsInstance(self.exif_ns.virtual_element.nested_virtual_element.parent, xmp.XMPVirtualElement)
+		self.assertIsInstance(self.exif_ns.virtual_element.nested_virtual_element.parent,
+		                      xmp.XMPVirtualElement)
