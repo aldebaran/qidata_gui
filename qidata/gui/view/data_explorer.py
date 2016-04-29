@@ -19,7 +19,7 @@ class DataFSModel(QSortFilterProxyModel):
 	def filterAcceptsRow(self, source_row, source_parent):
 		index = self.sourceModel().index(source_row, 0, source_parent)
 		path = self.sourceModel().filePath(index)
-		return  os.path.isdir(path) or data.isMetadataFile(path) or data.isSupportedItem(path)
+		return  os.path.isdir(path) or data.isMetadataFile(path) or data.isSupported(path)
 
 class DataExplorer(QTreeView):
 	# ───────

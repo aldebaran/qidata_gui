@@ -9,7 +9,8 @@ from PySide.QtGui import QApplication
 # qidata
 import qidata
 from .models import data
-from .view import makeWidget, QiDataMainWindow
+from .view import QiDataMainWindow
+from .controller import controllerfactory
 
 class QiDataApp(QApplication):
 	def __init__(self, path = None, current_item = None):
@@ -62,18 +63,14 @@ class QiDataApp(QApplication):
 		# ───────────
 		# ?
 
-		if data.isSupportedItem(path):
+		if data.isSupported(path):
 			# Show the item in an visualization widget
 			try:
-				dataItem = data.makeDataItem(path)
-				self.main_window.visualization_widget = makeWidget(dataItem)
+				self.data_controller = controllerfactory.makeDataController(path)
+				self.main_window.visualization_widget = self.data_controller.widget
 				self.main_window.visualization_widget.showMaximized()
 			except TypeError, e:
 				print e
-
-		# Lookup the type of data
-		# Load the data in a model of it
-		# Instanciate an appropriate widget for it
 
 	# ──────────
 	# Properties

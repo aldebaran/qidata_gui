@@ -26,11 +26,12 @@ LOOKUP_ITEM_MODEL = {
     re.compile(".*\.jpg"): image.Image
 }
 
-def isSupportedItem(path):
+def isSupported(dataPath):
     for pattern in LOOKUP_ITEM_MODEL:
-        if pattern.match(path):
+        if pattern.match(dataPath):
             return True
     return False
+
 
 def makeDataItem(path):
     for pattern in LOOKUP_ITEM_MODEL:
