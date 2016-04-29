@@ -447,11 +447,7 @@ class FreezeMixin:
 		object.__setattr__(self, FreezeMixin.marker(classname), value)
 
 class ContainerMixin:
-	# ──────────
-	# Properties
-
-	@property
-	def children(self):
+	def iterchildren(self):
 		""" Iterator over children with mutable semantics; must be overriden. """
 		raise NotImplementedError("Must be overriden")
 
@@ -722,20 +718,8 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 	# Properties
 
 	@property
-	def attributes(self):
-		return self._children.iterkeys()
-
-	@property
-	def fields(self):
-		return self.attributes
-
-	@property
-	def keys(self):
-		return self.attributes
-
-	@property
 	def children(self):
-		return self._children.itervalues()
+	    return self._children
 
 	@children.setter
 	def children(self, new_children):
@@ -746,7 +730,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 
 	@property
 	def value(self):
-		return collections.OrderedDict((c.name, c.value) for c in children)
+		return collections.OrderedDict((c.name, c.value) for c in self)
 
 	@property
 	def desynchronized(self):
@@ -755,17 +739,32 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 			return True
 
 		# Check that all children exist in the xmp packet
-		return any(children.desynchronized for c in self.children)
+		return any(c.desynchronized for c in self)
 
 		# TODO Check that no element in the xmp packet exist that do not exist among children
 		#      (false-negatives)
+
+	# ──────
+	# Public
+
+	def attributes(self):
+		""" Returns the list of children elements. """
+		return list(self._children.iterkeys())
+
+	def fields(self):
+		""" Returns the list of children elements; synonymous with attributes(). """
+		return self.attributes
+
+	def iterchildren(self):
+		""" Returns an iterator over children. """
+		return self._children.itervalues()
 
 	# ─────────────
 	# Attribute API
 
 	def has(self, field_name):
 		qualified_field_name = self.namespace.qualify(field_name)
-		return any(qualified_field_name == c.name for c in self.children)
+		return any(qualified_field_name == c.name for c in self)
 
 	def __raw_getattr__(self, name):
 		# Search in the object, then in all parent classes if not found
@@ -834,7 +833,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 
 	def __getitem__(self, key_or_index):
 		if isinstance(key_or_index, (int,long)):
-			return self.children[key_or_index]
+			return self._children[self.__indexToKey(key_or_index)]
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
 
@@ -860,9 +859,11 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 
 	def __delitem__(self, key_or_index):
 		if isinstance(key_or_index, (int,long)):
-			pass
+			key = self.__indexToKey(key_or_index)
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
+
+		# TODO
 		raise NotImplementedError # TODO
 
 	def __len__(self):
@@ -884,7 +885,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 				return False
 
 	def __iter__(self):
-		return self.children
+		return self.iterchildren()
 
 	def pop(self, key_or_index, mapping_default):
 		if isinstance(key_or_index, (int,long)):
@@ -938,6 +939,12 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 		else:
 			children = []
 		return self.name + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
+
+	# ───────
+	# Helpers
+
+	def __indexToKey(index):
+		return self._children.keys()[index]
 
 class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
 	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
