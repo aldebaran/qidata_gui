@@ -291,6 +291,13 @@ class TreePredicatesMixin:
 		else:
 			return "/".join(self.address.split("/")[:-1])
 
+	@property
+	def index(self):
+		array_pattern_match = TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address)
+		if not array_pattern_match:
+			raise ValueError("Not an array element; please check this is an array element before getting its index")
+		return array_pattern_match.group(2)
+
 	# ────────────────────
 	# Address manipulation
 
@@ -368,6 +375,9 @@ class TreePredicatesMixin:
 		return not self.__eq__(other)
 
 class TreeManipulationMixin(TreePredicatesMixin):
+	# ──────────
+	# Properties
+
 	@property
 	def parent(self):
 		parent_address = self.parent_address
@@ -377,6 +387,18 @@ class TreeManipulationMixin(TreePredicatesMixin):
 			return None
 		else:
 			return self.namespace
+
+	# ────────────
+	# Creation API
+
+	def create(self, value = None):
+		"""
+		Creates an element given that its parent already has been created.
+
+		Arguments
+			value: the value to initialize the element with (by default None)
+		"""
+		raise NotImplementedError("Must be overriden")
 
 class LibXMPElement(object, TreePredicatesMixin):
 	""" Wrapper around a libXMP iterator element. """
@@ -525,6 +547,17 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 			elif libxmp_element.is_set:
 				return XMPSet(namespace, libxmp_element.address, children_elements)
 
+	@staticmethod
+	def fromValue(namespace, address, value):
+		if isinstance(value, collections.Mapping):
+			return XMPStructure(namespace, address, [])
+		elif isinstance(value, collections.Sequence):
+			return XMPArray(namespace, address, [])
+		elif isinstance(value, collections.Set):
+			return XMPSet(namespace, address, [])
+		else:
+			return XMPValue(namespace, address)
+
 	# ───────────────────
 	# Descriptor protocol
 
@@ -637,8 +670,8 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		return XMPVirtualElement(self.namespace,
 		                         self.absoluteAddress(qualified_field_name))
 
-	# ──────────────────
-	# ???
+	# ───────────
+	# [] operator
 
 	def __getitem__(self, key):
 		if isinstance(key, (int, long)):
@@ -676,36 +709,21 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 			# - with the [] integer-indexing operator, in which case the parent (virtual)
 			#   element is an array.
 
-			# TODO
-
-			if parent.is_array_element:
-				parent.__set__(owner_object, {self.name : value})
+			if self.is_array_element:
+				parent_value = [None] * self.index + [value]
 			else:
-				# Parent is a struct of which this virtual element is a named child
-				parent.__set__(owner_object, {self.name : value})
+				parent_value = {self.name : value}
 
-			raise NotImplementedError("Virtual element assignment [Not implemented YET]")
+			parent.__set__(owner_object, parent_value)
 		else:
 			# The parent already exists ; we'll do out part by creating the element, and
 			# recursing downwards to let children create themselves if needed.
 
-			if isinstance(value, collections.Mapping):
-				# We're going to create a new XMPStructure ex-nihilo
-				new_element = XMPStructure(self.namespace, self.address, [])
-			elif isinstance(value, collections.Sequence):
-				# We're going to create a new XMPArray ex-nihilo
-				new_element = XMPArray(self.namespace, self.address, [])
-			elif isinstance(value, collections.Set):
-				# we're going to create a new XMPSet ex-nihilo
-				new_element = XMPSet(self.namespace, self.address, [])
+			new_element = XMPElement.fromValue(self.namespace, self.address, value)
+			if self.is_array_element:
+				parent.set(self.index, value)
 			else:
-				# We're going to create a new XMPValue ex-nihilo
-				new_element = XMPValue(self.namespace, self.address)
-				new_element.__set__(owner_object, value)
-
-			# Record the new element in its parent's children list
-
-			parent.append(new_element)
+				parent[self.name] = value
 
 	# ──────────────
 	# Textualization
@@ -717,7 +735,7 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		return "{namespace}@{address} [virtual]".format(namespace = self.namespace.uid,
 		                                                  address = self.address)
 
-class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, collections.Mapping):
+class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections.Mapping):
 	""" Convenience wrapper around libXMP to manipulate an XMP struct. """
 
 	# ────────────
@@ -727,6 +745,12 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 		XMPElement.__init__(self, namespace, address)
 		self.children = children
 		self.freeze(XMPStructure)
+
+	# ───────────────────────────────
+	# TreeManipulationMixin overrides
+
+	def create(self, value = None):
+		raise NotImplementedError # TODO
 
 	# ──────────
 	# Properties
@@ -758,8 +782,8 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 		# TODO Check that no element in the xmp packet exist that do not exist among children
 		#      (false-negatives)
 
-	# ──────
-	# Public
+	# ──────────
+	# Public API
 
 	def attributes(self):
 		""" Returns the list of children elements. """
@@ -772,6 +796,9 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 	def iterchildren(self):
 		""" Returns an iterator over children. """
 		return self._children.itervalues()
+
+	def set(self, key, value):
+		raise NotImplementedError # TODO
 
 	# ─────────────
 	# Attribute API
@@ -866,10 +893,12 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 
 	def __setitem__(self, key_or_index, value):
 		if isinstance(key_or_index, (int,long)):
-			pass
+			key = self.__indexToKey(key_or_index)
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
-		self.__getitem__(key).__set__(self, value)
+		else:
+			key = key_or_index
+		self.set(key, value)
 
 	def __delitem__(self, key_or_index):
 		if isinstance(key_or_index, (int,long)):
@@ -877,7 +906,9 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
 
-		self.__getitem__(key).__delete__()
+		element_to_delete = self.__getitem__(key)
+		element_to_delete.__delete__()
+		return self._children.pop(key)
 
 	def __len__(self):
 		return len(self._children)
@@ -900,30 +931,22 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 	def __iter__(self):
 		return self.iterchildren()
 
-	def pop(self, key_or_index, mapping_default):
-		if isinstance(key_or_index, (int,long)):
-			pass
-		elif not isinstance(key_or_index, basestring):
+	def pop(self, key = None, **kwargs):
+		has_default = "mapping_default" in kwargs
+		if key is None and not has_default:
+			if len(self) < 1:
+				raise IndexError("pop from empty element")
+			key = self.keys()[-1]
+		elif not isinstance(key, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
-		raise NotImplementedError # TODO
 
-	# ───────────────────
-	# MutableSequence API
-
-	def insert(self, i, element):
-		raise NotImplementedError # TODO
-
-	# Note: the following methods are automatically implemented as mixin methods
-	#       using the Sequence ABC:
-	#       • __reversed__
-	#       • index
-	#       • count
-	#       • append
-	#       • reverse
-	#       • extend
-	#       • remove
-	#       • __iadd__
-	# For more information: https://docs.python.org/2/library/collections.html
+		try:
+			return self.__delitem__(key)
+		except IndexError:
+			if has_default:
+				return kwargs["mapping_default"]
+			else:
+				raise KeyError(key)
 
 	# Note: the following methods are automatically implemented as mixin methods
 	#       using the Mapping ABC:
@@ -936,6 +959,16 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 	#       • update
 	#       • setdefault
 	# For more information: https://docs.python.org/2/library/collections.html
+
+	# ───────────────────
+	# MutableSequence API
+
+	def insert(self, i, value):
+		raise NotImplementedError
+		# TODO There's seemingly no way to change the order of attributes without
+		#      removing and adding them all in the desired order; this could be a lot of
+		#      work. If done, this class could be a MutableSequence instead of just a
+		#      Sequence.
 
 	# ──────────────
 	# Textualization
@@ -956,10 +989,10 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 	# ───────
 	# Helpers
 
-	def __indexToKey(index):
+	def __indexToKey(self, index):
 		return self._children.keys()[index]
 
-class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
+class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
 
 	# ────────────
@@ -990,6 +1023,12 @@ class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
 
 		return any_child_desynchronized or missing_elements
 
+	# ───────────────────────────────
+	# TreeManipulationMixin overrides
+
+	def create(self, value = None):
+		raise NotImplementedError # TODO
+
 	# ────────────────────────
 	# ContainerMixin overrides
 
@@ -997,18 +1036,66 @@ class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
 	def children(self):
 		return self._children
 
-	# ────────────
-	# Sequence API
+	# ──────────
+	# Public API
 
-	def __getitem__(self, index):
-		return self.children[index]
+	def set(self, i, value):
+		"""
+		Sets the i-th element to value.
 
-	def __setitem__(self, key, value):
-		# TODO Implement sequence set
-		raise NotImplementedError # TODO
+		Contrary to array_element[i] (__getitem__), this will work for indices outside
+		of the current array, in which case elements with indices in[len(self)+1, i-1]
+		are set to None.
+		"""
+
+		if 0 <= i < len(self):
+			return self.children[i].__set__(self, value)
+		else:
+			# Pad with None elements if any needed
+			for x in range(len(self), i-1):
+				self.append(None)
+			# Set the extra element
+			self.append(value)
+
+	# ───────────────────
+	# MutableSequence API
+
+	def __getitem__(self, i):
+		return self.children[i]
+
+	def __setitem__(self, i, value):
+		self.set(i, value)
+
+	def __delitem__(self, i):
+		element_to_delete = self.children[i]
+		element_to_delete.__delete__()
+		del self.children
+		return element_to_delete
 
 	def __len__(self):
 		return len(self.children)
+
+	def insert(self, i, value):
+		self.libxmp_metadata.set_array_item(schema_ns  = self.namespace.uid,
+		                                    array_name = self.address,
+		                                    item_index = i,
+		                                    item_value = None,
+		                                    prop_array_insert_before= True)
+		# XMPValue(self.namespace, self.absoluteAddress("[%s]"%x))
+
+		raise NotImplementedError# TODO
+
+	# Note: the following methods are automatically implemented as mixin methods
+	#       using the Sequence ABC:
+	#       • __reversed__
+	#       • index
+	#       • count
+	#       • append
+	#       • reverse
+	#       • extend
+	#       • remove
+	#       • __iadd__
+	# For more information: https://docs.python.org/2/library/collections.html
 
 	# ──────────────
 	# Textualization
@@ -1023,7 +1110,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
 		                              for c in self.children])
 		return self.name + " [\n    " + children_strings.replace("\n", "\n    ") + "\n]"
 
-class XMPSet(XMPElement, ContainerMixin):
+class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 	""" Convenience wrapper around libXMP to manipulate an XMP set (rdf:Bag). """
 
 	# ────────────
@@ -1054,6 +1141,12 @@ class XMPSet(XMPElement, ContainerMixin):
 
 		return any_child_desynchronized or missing_elements
 
+	# ───────────────────────────────
+	# TreeManipulationMixin overrides
+
+	def create(self, value = None):
+		raise NotImplementedError # TODO
+
 	# ────────────────────────
 	# ContainerMixin overrides
 
@@ -1061,18 +1154,25 @@ class XMPSet(XMPElement, ContainerMixin):
 	def children(self):
 		return self._children
 
-	# ────────────
-	# Sequence API
+	# ───────
+	# MutableSet API
 
-	def __getitem__(self, index):
-		return self.children[index]
+	def __contains__(self, key):
+		return namespace.qualify(key) in [c.name for c in self.children]
 
-	def __setitem__(self, key, value):
-		# TODO Implement set-element set
-		raise NotImplementedError # TODO
+	def __iter__(self):
+		return iter(self.children)
 
 	def __len__(self):
 		return len(self.children)
+
+	def add(self, value):
+		raise NotImplementedError # TODO
+
+	def discard(self, key):
+		element_to_delete = next(c for c in self.children if c.name == key)
+		element_to_delete.__delete__()
+		self._children.discard(element_to_delete)
 
 	# ──────────────
 	# Textualization
@@ -1107,8 +1207,13 @@ class XMPValue(XMPElement):
 
 	@property
 	def desynchronized(self):
-		raise self.libxmp_metadata.does_property_exist(schema_ns = self.namespace.uid,
-		                                               prop_name = self.address)
+		return not self.libxmp_metadata.does_property_exist(schema_ns = self.namespace.uid,
+		                                                    prop_name = self.address)
+
+	# ───────────────────────────────
+	# TreeManipulationMixin overrides
+
+	def create(self, value = None):
 		raise NotImplementedError # TODO
 
 	# ────────────────────
