@@ -15,6 +15,20 @@ ALDEBARAN_NS = ALDEBARAN_NS_V1
 SUGGESTED_ALDEBARAN_NS_PREFIX=u"aldebaran"
 libxmp.exempi.register_namespace(ALDEBARAN_NS, SUGGESTED_ALDEBARAN_NS_PREFIX)
 
+class CONSTANTS:
+	kXMP_InsertBeforeItem = 0x00004000L
+	kXMP_InsertAfterItem  = 0x00008000L
+
+if CONSTANTS.kXMP_InsertBeforeItem in libxmp.consts.XMP_PROP_OPTIONS.values():
+	raise RuntimeWarning("Constant kXMP_InsertBeforeItem has been defined by libxmp in a new version")
+if CONSTANTS.kXMP_InsertAfterItem  in libxmp.consts.XMP_PROP_OPTIONS.values():
+	raise RuntimeWarning("Constant kXMP_InsertAfterItem has been defined by libxmp in a new version")
+
+libxmp.consts.prop_array_insert_before = CONSTANTS.kXMP_InsertBeforeItem
+libxmp.consts.prop_array_insert_after  = CONSTANTS.kXMP_InsertAfterItem
+libxmp.consts.XMP_PROP_OPTIONS["prop_array_insert_before"] = CONSTANTS.kXMP_InsertBeforeItem
+libxmp.consts.XMP_PROP_OPTIONS["prop_array_insert_after"]  = CONSTANTS.kXMP_InsertAfterItem
+
 # ─────────────────────
 # Formatting parameters
 
@@ -855,7 +869,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 			pass
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
-		raise NotImplementedError # TODO
+		self.__getitem__(key).__set__(self, value)
 
 	def __delitem__(self, key_or_index):
 		if isinstance(key_or_index, (int,long)):
@@ -863,11 +877,10 @@ class XMPStructure(XMPElement, ContainerMixin, collections.MutableSequence, coll
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
 
-		# TODO
-		raise NotImplementedError # TODO
+		self.__getitem__(key).__delete__()
 
 	def __len__(self):
-		return sum(1 for _ in self.children)
+		return len(self._children)
 
 	def __contains__(self, key):
 		if not isinstance(key, basestring):
@@ -962,7 +975,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.Sequence):
 
 	@property
 	def value(self):
-		return [c.value for c in self.children]
+		return list(c.value for c in self.children)
 
 	@property
 	def desynchronized(self):
@@ -1182,7 +1195,7 @@ class XMPNamespace(XMPStructure):
 
 	def __unicode__(self):
 		if self.children:
-			unicode_children = (unicode(e) for e in self.children)
+			unicode_children = (unicode(e) for e in self.iterchildren())
 			return u"{}\n{}".format(self.uid, "\n".join(unicode_children)).replace("\n","\n\t")
 		else:
 			return self.uid
