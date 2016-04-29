@@ -114,13 +114,17 @@ class EditableTree(QTreeWidget):
                 inputWidget.textChanged[str].connect(lambda x: self._onChanged(item, x))
                 self.setItemWidget(item, 1, inputWidget)
 
-            elif type(obj) in [list, tuple]:
+            elif type(obj) in [TypedList]:
                 # obj is a list, add a button to add elements
                 inputWidget = QPushButton(self)
                 inputWidget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
                 inputWidget.setText("Add element")
-                # inputWidget.clicked.connect(lambda: self.elementAdditionRequired(item, parent_item, path, name, obj, obj_type))
+                inputWidget.clicked.connect(lambda: self._elementAdditionRequired(obj, item))
                 self.setItemWidget(item, 1, inputWidget)
+
+            elif type(obj) in [list, tuple]:
+                # obj is a list without type, addition is not supported
+                pass
 
         # Add sub-elements if any
         for subobj_name, subobj in subobjs:
@@ -141,3 +145,10 @@ class EditableTree(QTreeWidget):
 
         else:
             parent_obj[index] = obj_type(newvalue)
+
+    def _elementAdditionRequired(self, obj, item):
+        obj.appendDefault()
+        len_obj = len(obj)
+        w = int(math.ceil(math.log10(len_obj)))
+        added_element_name = '[%*d]' % (w, len_obj-1)
+        self._display_sub_items(item, obj, added_element_name, obj[-1])
