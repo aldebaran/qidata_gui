@@ -3,6 +3,8 @@
 from PySide.QtCore import Qt
 from PySide.QtGui import QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton, QSizePolicy
 
+from qidata.annotationitems import TypedList, AnnotationTypes
+
 import math
 
 class EditableTree(QTreeWidget):
@@ -64,7 +66,7 @@ class EditableTree(QTreeWidget):
         value = None
         subobjs = []
 
-        if hasattr(obj, '__dict__'):
+        if type(obj).__name__ in AnnotationTypes:
             # obj is a class instance => retrieve its attributes to be displayed as sub-elements
             subobjs = obj.__dict__.items()
 
@@ -72,7 +74,7 @@ class EditableTree(QTreeWidget):
             # obj is a container with keys  => retrieve its content to be displayed as sub-elements
             subobjs = obj.items()
 
-        elif type(obj) in [list, tuple]:
+        elif type(obj) in [list, tuple, TypedList]:
             # obj is a container  without keys => retrieve its content to be displayed as sub-elements by numbers
             # Give those sub-elements a number as name (like "[42]")
             len_obj = len(obj)
@@ -109,7 +111,7 @@ class EditableTree(QTreeWidget):
                 # obj is a value, display it in an editor widget
                 inputWidget = QLineEdit(self)
                 inputWidget.setText(value)
-                # inputWidget.textChanged[str].connect(lambda x: self.onChanged(item, type(obj), x))
+                inputWidget.textChanged[str].connect(lambda x: self._onChanged(item, x))
                 self.setItemWidget(item, 1, inputWidget)
 
             elif type(obj) in [list, tuple]:
@@ -123,3 +125,19 @@ class EditableTree(QTreeWidget):
         # Add sub-elements if any
         for subobj_name, subobj in subobjs:
             self._display_sub_items(item, obj, subobj_name, subobj)
+
+    def _onChanged(self, item, newvalue):
+        parent_obj = item.data(0, Qt.UserRole)[0]
+        obj_type = item.data(0, Qt.UserRole)[1]
+
+        if item.text(0).startswith("["):
+            index = int(item.text(0)[1:-1])
+        else:
+            index = item.text(0)
+
+        if hasattr(parent_obj, '__dict__'):
+            # obj is a class instance => retrieve its attributes to be displayed as sub-elements
+            parent_obj.__setattr__(index, obj_type(newvalue))
+
+        else:
+            parent_obj[index] = obj_type(newvalue)
