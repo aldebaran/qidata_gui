@@ -52,10 +52,13 @@ class EditableTree(QTreeWidget):
         self.resizeColumnToContents(0)
         self.update()
 
-    def _refresh_msg_object(self):
-        self._display_sub_items(None, '', self._message)
+    # ────────────────
+    # Internal methods
 
-    def _display_sub_items(self, parent_item, name, obj):
+    def _refresh_msg_object(self):
+        self._display_sub_items(None, None, '', self._message)
+
+    def _display_sub_items(self, parent_item, parent_obj, name, obj):
         pass
 
         value = None
@@ -65,9 +68,13 @@ class EditableTree(QTreeWidget):
             # obj is a class instance => retrieve its attributes to be displayed as sub-elements
             subobjs = obj.__dict__.items()
 
+        elif type(obj) == dict:
+            # obj is a container with keys  => retrieve its content to be displayed as sub-elements
+            subobjs = obj.items()
+
         elif type(obj) in [list, tuple]:
-            # obj is a container  => retrieve its content to be displayed as sub-elements
-            # Give thos sub-elements a number as name (like "[42]")
+            # obj is a container  without keys => retrieve its content to be displayed as sub-elements by numbers
+            # Give those sub-elements a number as name (like "[42]")
             len_obj = len(obj)
             if len_obj != 0:
                 w = int(math.ceil(math.log10(len_obj)))
@@ -85,6 +92,7 @@ class EditableTree(QTreeWidget):
 
         # First column
         item = QTreeWidgetItem([name, '']) # Set name in first column and leave the second one blank
+        item.setData(0, Qt.UserRole, (parent_obj, type(obj))) # Store some info about displayed data
 
         if name == '':
             # Empty name means obj is the root => do nothing
@@ -114,4 +122,4 @@ class EditableTree(QTreeWidget):
 
         # Add sub-elements if any
         for subobj_name, subobj in subobjs:
-            self._display_sub_items(item, subobj_name, subobj)
+            self._display_sub_items(item, obj, subobj_name, subobj)
