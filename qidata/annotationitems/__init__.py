@@ -6,6 +6,7 @@ This package contains different classes representing structured dataTypes for an
 
 from person import Person
 from face import Face
+from typedlist import TypedList
 
 __all__ = ["Face", "Person"]
 
@@ -16,3 +17,5 @@ def makeAnnotationItems(itemName):
         return Face()
     else:
         raise TypeError("Required annotation item (%s) does not exist"%itemName)
+
+AnnotationTypes = ["Face", "Person"]
