@@ -6,13 +6,26 @@ from PySide.QtGui import QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton, Q
 import math
 
 class EditableTree(QTreeWidget):
+
+    # ───────────
+    # Constructor
+
     def __init__(self, parent):
         super(EditableTree, self).__init__(parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setColumnCount(2)
-        self.setHeaderHidden(True)
-        self._message = None
 
+        # Take as much space as possible
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Two columns (key, value)
+        self.setColumnCount(2)
+
+        # Do not display column headers
+        self.setHeaderHidden(True)
+
+        # Resize the columns when some items are opened / close
+        self.itemExpanded.connect(lambda: self.resizeColumnToContents(0))
+        self.itemCollapsed.connect(lambda: self.resizeColumnToContents(0))
+        self._message = None
 
     # ──────────
     # Properties
