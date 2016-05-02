@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem
+from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem
 from PySide.QtCore import QPoint, Signal, QObject
 from ..datawidget import DataWidget
 
@@ -33,30 +33,39 @@ class RectWidget(QGraphicsRectItem, QObject):
 		r.setRight(r.right()+5*step)
 		self.setRect(r)
 
-	# def mouseDoubleClickEvent(self, event):
-	# 	position_scene = self.mapToScene(event.x(),event.y())
-	# 	position_widget = QPoint(event.x(), event.y())
 
-	# 	if len(self.items(position_widget)) == 1:
-	# 		# If no item is already there, create a new rectangle
-			# selectedItem = self.__addFocusedRect([[position_scene.x()-30, position_scene.y()-30], [position_scene.x()+30, position_scene.y()+30]])
-	# 		# self.objectSelected.emit(selectedItem)
 
-	# 	else:
-	# 		# A rectangle exists, retrieve it
-	# 		selectedItem = self.items(position_widget)[0]
+class PixmapWidget(QGraphicsPixmapItem, QObject):
 
-	# 		focusedItem = self.scene().focusItem()
-	# 		if focusedItem is not None  and selectedItem == focusedItem:
-	# 			# If the selected rectangle is the focused one, just replace it
-	# 			rect = focusedItem.rect()
-	# 			rect.moveCenter(position_scene)
-	# 			focusedItem.setRect(rect)
+	# ───────
+	# Signals
+
+	isClicked = Signal(list)
+
+	# ──────────
+	# Contructor
+
+	def __init__(self, image):
+		QGraphicsPixmapItem.__init__(self, image)
+		QObject.__init__(self)
+
+	# ─────
+	# Slots
+
+	def mousePressEvent(self, event):
+		self.isClicked.emit([event.scenePos().x(), event.scenePos().y()])
+
+
 
 class ImageWidget(QGraphicsView, DataWidget):
 
+	# ───────
+	# Signals
+
+	objectAdditionRequired = Signal(list)
+
 	# ───────────
-	# CONSTRUCTOR
+	# Constructor
 
 	def __init__(self, imageItem):
 		QGraphicsView.__init__(self)
@@ -64,63 +73,21 @@ class ImageWidget(QGraphicsView, DataWidget):
 
 		# Create scene
 		scene = QGraphicsScene()
-		self.pixmapItem = scene.addPixmap(imageItem.data)
 
-		# Add scene to widget
+		# Create pixmap
+		p = PixmapWidget(imageItem.data)
+
+		# When pixmap is clicked, add a new box
+		p.isClicked.connect(self.objectAdditionRequired)
+
+		# Add pixmap to scene and scene to widget
+		scene.addItem(p)
 		self.setScene(scene)
 
-		# Add a rectangle for each element
-		# This depends on dataItem API (ie dataItem version)
-		# Keep a reference to the data through the visual items
-		# self.__linkViewModel = dict()
-		# for person in imageItem.metadata["persons"]:
-		# 	r = self.__addRect(person[1])
-		# 	self.__linkViewModel[r] = person[0]
-
-		# for face in imageItem.metadata["faces"]:
-		# 	self.__addRect(face[1])
-		# 	self.__linkViewModel[r] = face[0]
-
 	# ───────
-	# SIGNALS
-
-	objectSelected = Signal(list())
-	objectPositionUpdated = Signal(list())
-
-	# ─────
-	# SLOTS
-
-	# def mousePressEvent(self, event):
-	# 	position_scene = self.mapToScene(event.x(),event.y())
-	# 	position_widget = QPoint(event.x(), event.y())
-
-	# 	if len(self.items(position_widget)) == 1:
-	# 		# If no item is already there, create a new rectangle
-			# selectedItem = self.__addFocusedRect([[position_scene.x()-30, position_scene.y()-30], [position_scene.x()+30, position_scene.y()+30]])
-	# 		# self.objectSelected.emit(selectedItem)
-
-	# 	else:
-	# 		# A rectangle exists, retrieve it
-	# 		selectedItem = self.items(position_widget)[0]
-
-	# 		focusedItem = self.scene().focusItem()
-	# 		if focusedItem is not None  and selectedItem == focusedItem:
-	# 			# If the selected rectangle is the focused one, just replace it
-	# 			rect = focusedItem.rect()
-	# 			rect.moveCenter(position_scene)
-	# 			focusedItem.setRect(rect)
-	# 			# self.objectPositionUpdated.emit(selectedItem)
-	# 		else:
-	# 			# If it is a different one, give him focus
-	# 			self.__setFocus(selectedItem)
-	# 			# self.objectSelected.emit(selectedItem)
-
-	# ───────────────
-	# PRIVATE METHODS
+	# Methods
 
 	def addRect(self, coordinates, model_index):
-		"""
-		"""
 		r = RectWidget(coordinates, model_index)
 		r.setFlags(QGraphicsItem.ItemIsFocusable)
 		self.scene().addItem(r)
