@@ -216,11 +216,12 @@ class XMPStructure(XMPTestCase):
 		self.assertEqual(self.exif_ns.Flash.RedEyeMode.value, "False")
 
 	def test_setattr_existing(self):
-		# Existing attribute
 		jpg_filepath = fixtures.sandboxed(fixtures.JPG_PHOTO)
+
 		with xmp.XMPFile(jpg_filepath, rw=True) as xmp_file:
 			xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber = "314/141"
 			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "314/141")
+
 		with xmp.XMPFile(jpg_filepath) as xmp_file:
 			# libxmp doesn't allow persistence of standard namespaces such as EXIF
 			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "32/10")
@@ -229,6 +230,11 @@ class XMPStructure(XMPTestCase):
 		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
 		with xmp.XMPFile(sandboxed_photo, rw=True) as xmp_file:
 			xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12
+			self.assertIsInstance(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element,
+			                      xmp.XMPValue)
+			self.assertEqual(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element.value, "12")
+
+		with xmp.XMPFile(sandboxed_photo) as xmp_file:
 			self.assertIsInstance(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element,
 			                      xmp.XMPValue)
 			self.assertEqual(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element.value, "12")

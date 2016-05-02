@@ -237,7 +237,7 @@ class XMPMetadata(collections.Mapping):
 
 	def pretty_str(self):
 		import libxmp.utils
-		raw_pretty_string = XMP.textualizeXMPDict(libxmp.utils.object_to_dict(self.libxmp_metadata))
+		raw_pretty_string = XMPMetadata.textualizeXMPDict(libxmp.utils.object_to_dict(self.libxmp_metadata))
 		return raw_pretty_string.encode("utf-8")
 
 	def xml(self):
@@ -251,11 +251,11 @@ class XMPMetadata(collections.Mapping):
 	def textualizeXMPDict(x, indent = ""):
 		rep = ""
 		if isinstance(x, dict):
-			textualized_items = [str(k)+": " + XMP.textualizeXMPDict(v, indent+' '*(2+len(str(k))))
+			textualized_items = [str(k)+": " + XMPMetadata.textualizeXMPDict(v, indent+' '*(2+len(str(k))))
 			                     for k,v in x.iteritems()]
-			rep += ("\n"+indent).join(items)
+			rep += ("\n"+indent).join(textualized_items)
 		elif isinstance(x, list):
-			rep += ("\n"+indent).join([u"⁃ " + XMP.textualizeXMPDict(e, indent+' '*2) for e in x])
+			rep += ("\n"+indent).join([u"⁃ " + XMPMetadata.textualizeXMPDict(e, indent+' '*2) for e in x])
 		elif isinstance(x, tuple) and len(x) == 3:
 			node_name  = x[0]
 			node_value = x[1]
@@ -793,6 +793,12 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 		# TODO Check that no element in the xmp packet exist that do not exist among children
 		#      (false-negatives)
 
+	# ───────────
+	# General API
+
+	def __nonzero__(self):
+		return len(self) > 0
+
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
@@ -924,6 +930,8 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	def __getitem__(self, key_or_index):
 		if isinstance(key_or_index, (int,long)):
 			return self._children[self.__indexToKey(key_or_index)]
+		elif isinstance(key_or_index, slice):
+			return [self._children[k] for k in self.__indexToKey(key_or_index)]
 		elif not isinstance(key_or_index, basestring):
 			raise TypeError("Wrong index type "+str(type(key_or_index)))
 
@@ -1027,19 +1035,19 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 		return self.name + "\n\t" + children.replace("\n", "\n\t")
 
 	def __unicode__(self):
-		if self.children:
-			mid_children = [TREE_MID_INDENT+unicode(c) for c in self.children[:-1]]
-			last_child = TREE_LAST_INDENT+unicode(self.children[-1])
-			children = mid_children + [last_child]
+		if self:
+			mid_children_str = [TREE_MID_INDENT+unicode(c) for c in self[:-1]]
+			last_child_str = TREE_LAST_INDENT+unicode(self[-1])
+			children_str = mid_children_str + [last_child_str]
 		else:
-			children = []
-		return self.name + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children])
+			children_str = []
+		return self.name + "\n" + "\n".join([c.replace("\n","\n"+INDENT)for c in children_str])
 
 	# ───────
 	# Helpers
 
-	def __indexToKey(self, index):
-		return self._children.keys()[index]
+	def __indexToKey(self, index_or_slice):
+		return self._children.keys()[index_or_slice]
 
 class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
