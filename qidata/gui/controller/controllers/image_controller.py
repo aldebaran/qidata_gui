@@ -67,8 +67,8 @@ class ImageController(DataController):
         # Display it in the image widget
         r = self.widget.addRect(self.model[obj_index][1], obj_index)
         r.isSelected.connect(self.onItemSelected)
-        r.isMoved.connect(self.onItemResized)
-        r.isResized.connect(self.onItemResized)
+        r.isMoved.connect(self.onItemCoordinatesChange)
+        r.isResized.connect(self.onItemCoordinatesChange)
 
         # Display information on it in data editor widget
         r.select()
