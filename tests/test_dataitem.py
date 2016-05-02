@@ -3,7 +3,7 @@
 # Standard Library
 import unittest
 # Qidata
-from qidata.dataitem import DataItem
+from qidata.gui.models.dataitem import DataItem
 import qidata.xmp
 from . import fixtures
 
