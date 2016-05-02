@@ -25,7 +25,12 @@ class ImageController(DataController):
         DataController.model = self.modelHandler.metadata
         DataController.widget = makeWidget(self.modelHandler)
 
+        # Remember which item on the image widget was lastly selected
         self.last_selected_item = None
+
+        # Remember which type was lastly required by user.
+        # If none was required, use first annotation type
+        self.last_selected_item_type = AnnotationTypes[0]
 
         for annotationIndex in range(0,len(self.model)):
             r = self.widget.addRect(self.model[annotationIndex][1], annotationIndex)
@@ -40,4 +45,5 @@ class ImageController(DataController):
 
     def onTypeChangeRequest(self, message_type):
         self.model[self.last_selected_item][0] = makeAnnotationItems(message_type)
+        self.last_selected_item_type = message_type
         self.selectionChanged.emit(self.model[self.last_selected_item][0])
