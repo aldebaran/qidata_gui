@@ -19,7 +19,7 @@ class EditableTree(QTreeWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Two columns (key, value)
-        self.setColumnCount(2)
+        self.setColumnCount(3)
 
         # Do not display column headers
         self.setHeaderHidden(True)
@@ -93,7 +93,7 @@ class EditableTree(QTreeWidget):
         ## Create item
 
         # First column
-        item = QTreeWidgetItem([name, '']) # Set name in first column and leave the second one blank
+        item = QTreeWidgetItem([name, '', '']) # Set name in first column and leave the second and third ones blank
         item.setData(0, Qt.UserRole, (parent_obj, type(obj))) # Store some info about displayed data
 
         if name == '':
@@ -126,6 +126,15 @@ class EditableTree(QTreeWidget):
                 # obj is a list without type, addition is not supported
                 pass
 
+        # Third column
+        if name.startswith("[") and type(parent_obj) in [TypedList]:
+            # This is an element of a custom list, that we might want to remove
+            inputWidget = QPushButton(self)
+            inputWidget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            inputWidget.setText("Remove element")
+            inputWidget.clicked.connect(lambda: self._elementDeletionRequired(parent_obj, parent_item, item, name))
+            self.setItemWidget(item, 2, inputWidget)
+
         # Add sub-elements if any
         for subobj_name, subobj in subobjs:
             self._display_sub_items(item, obj, subobj_name, subobj)
@@ -152,3 +161,11 @@ class EditableTree(QTreeWidget):
         w = int(math.ceil(math.log10(len_obj)))
         added_element_name = '[%*d]' % (w, len_obj-1)
         self._display_sub_items(item, obj, added_element_name, obj[-1])
+
+    def _elementDeletionRequired(self, parent_obj, parent_item, item, name):
+        # Retrieve the item index in the name
+        index = int(name[1:-1])
+
+        # parent_obj is the TypedList containing the element to remove
+        parent_obj.pop(index)
+        parent_item.removeChild(item)
