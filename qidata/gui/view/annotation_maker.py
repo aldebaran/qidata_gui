@@ -1,10 +1,21 @@
+# -*- coding: utf-8 -*-
+
 from .editable_tree import EditableTree
 
 from PySide.QtGui import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QComboBox
+from PySide.QtCore import Signal
 
 from qidata import annotationitems
 
 class AnnotationMaker(QWidget):
+
+    # ───────
+    # Signals
+
+    messageTypeChangeRequested = Signal(str)
+
+    # ───────────
+    # Constructor
 
     def __init__(self):
         super(AnnotationMaker, self).__init__()
@@ -15,6 +26,7 @@ class AnnotationMaker(QWidget):
         self.definition_widget = QWidget(self)
 
         self.annotation_type_selection_widget = QComboBox(self.definition_widget)
+        self.annotation_type_selection_widget.setEnabled(False)
 
         self.topic_vlayout = QVBoxLayout(self)
         self.topic_vlayout.addWidget(self.annotation_type_selection_widget)
@@ -52,13 +64,45 @@ class AnnotationMaker(QWidget):
         self.import_button.setEnabled(True)
 
         # Topic selection
+        self.annotation_type_selection_widget.addItems(annotationitems.AnnotationTypes) # we add some message type
         self.annotation_type_selection_widget.currentIndexChanged['QString'].connect(self._handle_message_selected)
-        self.annotation_type_selection_widget.addItems(annotationitems.__all__) # we add some message type
+
+    # ──────────
+    # Properties
 
     @property
     def msg(self):
-        return self.editable_tree.msg
+        return self.editable_tree.message
+
+    @msg.setter
+    def msg(self, new_msg):
+        self.editable_tree.message = new_msg
+
+    # ───────
+    # Methods
+
+    def displayMessage(self, new_msg):
+        # Enable type selector widget
+        self.annotation_type_selection_widget.setEnabled(True)
+
+        # Add message to the editable tree
+        self.msg = new_msg
+
+        # Set the selector to the type we just received (this will raise an event...)
+        index = self.annotation_type_selection_widget.findText(type(new_msg).__name__)
+        self.annotation_type_selection_widget.setCurrentIndex(index)
+
+    def clearMessage(self):
+        # Disable type selector widget
+        self.annotation_type_selection_widget.setEnabled(True)
+
+        # Remove message in the editable tree
+        self.msg = None
+
+    # ─────
+    # Slots
 
     def _handle_message_selected(self, message_name):
-        if message_name != '':
-            self.editable_tree.message = annotationitems.makeAnnotationItems(message_name)
+        if message_name != '' and message_name != type(self.msg).__name__:
+            # If the message name received is the same as the message type, do nothing
+            self.messageTypeChangeRequested.emit(message_name)

@@ -8,8 +8,6 @@ from person import Person
 from face import Face
 from typedlist import TypedList
 
-__all__ = ["Face", "Person"]
-
 def makeAnnotationItems(itemName):
     if itemName == "Person":
         return Person()

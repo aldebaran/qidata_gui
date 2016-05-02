@@ -25,6 +25,8 @@ class ImageController(DataController):
         DataController.model = self.modelHandler.metadata
         DataController.widget = makeWidget(self.modelHandler)
 
+        self.last_selected_item = None
+
         for annotationIndex in range(0,len(self.model)):
             r = self.widget.addRect(self.model[annotationIndex][1], annotationIndex)
             r.isSelected.connect(self.onItemSelected)
@@ -33,5 +35,9 @@ class ImageController(DataController):
     # Slots
 
     def onItemSelected(self, item_selected):
-        print self.model[item_selected][0].id
+        self.last_selected_item = item_selected
         self.selectionChanged.emit(self.model[item_selected][0])
+
+    def onTypeChangeRequest(self, message_type):
+        self.model[self.last_selected_item][0] = makeAnnotationItems(message_type)
+        self.selectionChanged.emit(self.model[self.last_selected_item][0])

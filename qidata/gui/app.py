@@ -69,6 +69,8 @@ class QiDataApp(QApplication):
 				self.data_controller = controllerfactory.makeDataController(path)
 				self.main_window.visualization_widget = self.data_controller.widget
 				self.main_window.visualization_widget.showMaximized()
+				self.data_controller.selectionChanged.connect(self.dataitem_editor.displayMessage)
+				self.dataitem_editor.messageTypeChangeRequested.connect(self.data_controller.onTypeChangeRequest)
 			except TypeError, e:
 				print e
 
@@ -78,6 +80,10 @@ class QiDataApp(QApplication):
 	@property
 	def data_explorer(self):
 		return self.main_window.data_explorer
+
+	@property
+	def dataitem_editor(self):
+		return self.main_window.message_creation
 
 	@property
 	def desktop_geometry(self):
