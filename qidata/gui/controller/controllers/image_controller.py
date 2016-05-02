@@ -15,6 +15,7 @@ class ImageController(DataController):
     # Signals
 
     selectionChanged = Signal((Person,), (Face,))
+    clearAnnotation = Signal()
 
     # ───────────
     # Constructor
@@ -48,6 +49,7 @@ class ImageController(DataController):
         r.isSelected.connect(lambda:self.onItemSelected(r))
         r.isMoved.connect(lambda x:self.onItemCoordinatesChange(r, x))
         r.isResized.connect(lambda x:self.onItemCoordinatesChange(r, x))
+        r.suppressionRequired.connect(lambda: self.deleteAnnotation(r))
         self.item_list.append(r)
         return r
 
@@ -79,3 +81,11 @@ class ImageController(DataController):
 
         # Display information on it in data editor widget
         r.select()
+
+    def deleteAnnotation(self, item):
+        if self.widget.askForItemDeletion(item):
+            self.last_selected_item = None
+            index = self.item_list.index(item)
+            self.item_list.remove(item)
+            self.model.pop(index)
+            self.clearAnnotation.emit()

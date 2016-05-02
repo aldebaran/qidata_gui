@@ -94,7 +94,7 @@ class AnnotationMaker(QWidget):
 
     def clearMessage(self):
         # Disable type selector widget
-        self.annotation_type_selection_widget.setEnabled(True)
+        self.annotation_type_selection_widget.setEnabled(False)
 
         # Remove message in the editable tree
         self.msg = None

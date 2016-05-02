@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem
+from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem, QMessageBox
 from PySide.QtCore import Signal, QObject, Qt
 from ..datawidget import DataWidget
 
@@ -12,6 +12,7 @@ class RectWidget(QGraphicsRectItem, QObject):
 	isSelected = Signal()
 	isMoved = Signal(list)
 	isResized = Signal(list)
+	suppressionRequired = Signal()
 
 	# ──────────
 	# Contructor
@@ -57,6 +58,10 @@ class RectWidget(QGraphicsRectItem, QObject):
 		elif event.key() == Qt.Key_Left: # LEFT
 			r.setLeft(r.left()+5)
 			r.setRight(r.right()-5)
+		elif event.key() == Qt.Key_Delete: # DEL
+			self.suppressionRequired.emit()
+			return
+
 		self.setRect(r)
 
 		# Emit new coordinates
@@ -81,6 +86,8 @@ class RectWidget(QGraphicsRectItem, QObject):
 
 	def mousePressEvent(self, event):
 		# This give the focus to the item
+		if event.button() == Qt.RightButton:
+			self.suppressionRequired.emit()
 		event.accept()
 
 	def mouseReleaseEvent(self, event):
@@ -168,3 +175,10 @@ class ImageWidget(QGraphicsView, DataWidget):
 		r.setFlags(QGraphicsItem.ItemIsFocusable)
 		self.scene().addItem(r)
 		return r
+
+	def askForItemDeletion(self, item):
+		response = QMessageBox.warning(self, "Suppression", "Are you sure you want to remove this annotation ?", QMessageBox.Yes | QMessageBox.No)
+		if response == QMessageBox.Yes:
+			self.scene().removeItem(item)
+			return True
+		return False
