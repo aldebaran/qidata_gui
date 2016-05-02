@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem
-from PySide.QtCore import QPoint, Signal, QObject
+from PySide.QtCore import Signal, QObject, Qt
 from ..datawidget import DataWidget
 
 class RectWidget(QGraphicsRectItem, QObject):
@@ -11,6 +11,8 @@ class RectWidget(QGraphicsRectItem, QObject):
 
 	isSelected = Signal(int)
 	isMoved = Signal(int, list)
+	isResized = Signal(int, list)
+
 	# ──────────
 	# Contructor
 
@@ -31,13 +33,42 @@ class RectWidget(QGraphicsRectItem, QObject):
 	# Slots
 
 	def focusInEvent(self, event):
+		# Color in white
 		self.setPen(QPen(QColor(255,255,255)))
 		self.isSelected.emit(self.model_index)
 
 	def focusOutEvent(self, event):
+		# Color in black
 		self.setPen(QPen(QColor(0,0,0)))
 
+	def keyReleaseEvent(self, event):
+		event.accept()
+
+		# Resize the box depending on the hit key
+		r = self.rect()
+		if event.key() == Qt.Key_Up: # UP
+			r.setTop(r.top()-5)
+			r.setBottom(r.bottom()+5)
+		elif event.key() == Qt.Key_Down: # DOWN
+			r.setTop(r.top()+5)
+			r.setBottom(r.bottom()-5)
+		elif event.key() == Qt.Key_Right: # RIGHT
+			r.setLeft(r.left()-5)
+			r.setRight(r.right()+5)
+		elif event.key() == Qt.Key_Left: # LEFT
+			r.setLeft(r.left()+5)
+			r.setRight(r.right()-5)
+		self.setRect(r)
+
+		# Emit new coordinates
+		self.isResized.emit(self.model_index,
+			[
+				[self.pos().x(), self.pos().y()],
+				[self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]
+			])
+
 	def mouseMoveEvent(self, event):
+		# Update box position in the scene
 		p2 = event.scenePos()
 		p1 = event.lastScenePos()
 		self.moveBy(p2.x()-p1.x(), p2.y()-p1.y())
@@ -47,10 +78,15 @@ class RectWidget(QGraphicsRectItem, QObject):
 		event.accept()
 
 	def mouseReleaseEvent(self, event):
-		# When mouse is released, update the position in case it was moved
-		self.isMoved.emit(self.model_index, [[self.pos().x(), self.pos().y()], [self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]])
+		# When mouse is released, emit coordinates in case it was moved
+		self.isMoved.emit(self.model_index,
+			[
+				[self.pos().x(), self.pos().y()],
+				[self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]
+			])
 
 	def wheelEvent(self, event):
+		# Resize the box depending on wheel direction
 		r = self.rect()
 		step = event.delta() / 120
 		r.setTop(r.top()-5*step)
@@ -58,6 +94,13 @@ class RectWidget(QGraphicsRectItem, QObject):
 		r.setLeft(r.left()-5*step)
 		r.setRight(r.right()+5*step)
 		self.setRect(r)
+
+		# Emit new coordinates
+		self.isResized.emit(self.model_index,
+			[
+				[self.pos().x(), self.pos().y()],
+				[self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]
+			])
 
 
 
