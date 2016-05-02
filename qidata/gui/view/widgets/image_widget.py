@@ -63,15 +63,22 @@ class RectWidget(QGraphicsRectItem, QObject):
 		# Emit new coordinates
 		self.isResized.emit(self.model_index,
 			[
-				[self.pos().x(), self.pos().y()],
-				[self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]
+				[r.left(), r.top()],
+				[r.right(), r.bottom()]
 			])
 
 	def mouseMoveEvent(self, event):
 		# Update box position in the scene
 		p2 = event.scenePos()
 		p1 = event.lastScenePos()
-		self.moveBy(p2.x()-p1.x(), p2.y()-p1.y())
+		dx = p2.x()-p1.x()
+		dy = p2.y()-p1.y()
+		r = self.rect()
+		r.setTop(r.top() + dy)
+		r.setBottom(r.bottom() + dy)
+		r.setLeft(r.left() + dx)
+		r.setRight(r.right() + dx)
+		self.setRect(r)
 
 	def mousePressEvent(self, event):
 		# This give the focus to the item
@@ -79,10 +86,11 @@ class RectWidget(QGraphicsRectItem, QObject):
 
 	def mouseReleaseEvent(self, event):
 		# When mouse is released, emit coordinates in case it was moved
+		r = self.rect()
 		self.isMoved.emit(self.model_index,
 			[
-				[self.pos().x(), self.pos().y()],
-				[self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]
+				[r.left(), r.top()],
+				[r.right(), r.bottom()]
 			])
 
 	def wheelEvent(self, event):
@@ -98,8 +106,8 @@ class RectWidget(QGraphicsRectItem, QObject):
 		# Emit new coordinates
 		self.isResized.emit(self.model_index,
 			[
-				[self.pos().x(), self.pos().y()],
-				[self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]
+				[r.left(), r.top()],
+				[r.right(), r.bottom()]
 			])
 
 
