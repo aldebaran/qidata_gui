@@ -16,6 +16,9 @@ ALDEBARAN_NS = ALDEBARAN_NS_V1
 SUGGESTED_ALDEBARAN_NS_PREFIX=u"aldebaran"
 libxmp.exempi.register_namespace(ALDEBARAN_NS, SUGGESTED_ALDEBARAN_NS_PREFIX)
 
+# ────────────────────────────────
+# libxmp insertion monkey-patching
+
 class CONSTANTS:
 	kXMP_InsertBeforeItem = 0x00004000L
 	kXMP_InsertAfterItem  = 0x00008000L
@@ -198,22 +201,24 @@ class XMPMetadata(collections.Mapping):
 
 	@property
 	def namespaces(self):
-		return [n for n in self._namespaces.itervalues()]
+		return [n for n in self]
 
 	# ───────────
 	# Mapping API
 
 	def __len__(self):
-		return len(self._namespaces)
+		return sum(1 for n in self)
 
 	def __iter__(self):
-		return iter(self._namespaces)
+		return (n for n in self._namespaces.itervalues() if n)
 
 	def __getitem__(self, key):
 		try:
 			return self._namespaces[key]
 		except KeyError:
-			return XMPNamespace(self, key)
+			# If the namespace doesn't exist, create it
+			self._namespaces[key] = XMPNamespace(self, key)
+			return self._namespaces[key]
 
 	def __setitem__(self, key, value):
 		if not isinstance(value, XMPNamespace):
@@ -224,7 +229,7 @@ class XMPMetadata(collections.Mapping):
 		self._namespaces[key].delete()
 
 	def __contains__(self, uid):
-		return uid in self._namespaces
+		return uid in self._namespaces and self._namespaces[uid]
 
 	# ──────────────
 	# Textualization
@@ -485,6 +490,22 @@ class FreezeMixin:
 		# Bypass the objet's setattr, which may have additional semantics
 		object.__setattr__(self, FreezeMixin.marker(classname), value)
 
+	def __raw_getattr__(self, name):
+		# Search in the object, then in all parent classes if not found
+		for o in [self] + self.__class__.mro():
+			try:
+				return o.__dict__[name]
+			except KeyError:
+				continue
+		raise AttributeError
+
+	def __raw_hasattr__(self, name):
+		try:
+			self.__raw_getattr__(name)
+			return True
+		except AttributeError:
+			return False
+
 class ContainerMixin:
 	def iterchildren(self):
 		""" Iterator over children with mutable semantics; must be overriden. """
@@ -564,6 +585,9 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 	# ────────
 	# CRUD API
 
+	# Warning: This API removes things from the XMP packet without doing the
+	# associated book-keeping in the object tree.
+
 	def create(self, value = None):
 		"""
 		Creates an element given that its parent already has been created.
@@ -626,7 +650,7 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 		return "{namespace}@{address}".format(namespace = unicode(self.namespace.uid),
 		                                        address = self.address)
 
-class XMPVirtualElement(object, TreeManipulationMixin):
+class XMPVirtualElement(object, TreeManipulationMixin, FreezeMixin):
 	"""
 	Element in an XMP packet.
 
@@ -649,11 +673,12 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 			address: The fully-qualified, absolute address of the element in its namespace.
 		"""
 
-		if namespace is not None and not isinstance(namespace, weakref.ReferenceType):
+		if not isinstance(namespace, weakref.ReferenceType):
 			self._namespace = weakref.ref(namespace)
 		else:
 			self._namespace = namespace
 		self.address = address
+		self.freeze(XMPVirtualElement)
 
 	# ──────────
 	# Properties
@@ -688,20 +713,25 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 
 		# A subfield of a virtual element is also virtual
 		qualified_field_name = self.namespace.qualify(name)
-		return XMPVirtualElement(self.namespace,
-		                         self.absoluteAddress(qualified_field_name))
+		return XMPVirtualElement(self.namespace, self.absoluteAddress(qualified_field_name))
+
+	def __setattr__(self, name, value):
+		if self.frozen and not self.__raw_hasattr__(name):
+			child = self.__getattr__(name)
+			assert(hasattr(child, "__set__") and callable(child.__set__))
+			child.__set__(self, value)
+		else:
+			object.__setattr__(self, name, value)
 
 	# ───────────
 	# [] operator
 
 	def __getitem__(self, key):
 		if isinstance(key, (int, long)):
-			return XMPVirtualElement(self.namespace,
-			                         self.absoluteAddress("[%s]"%key))
+			return XMPVirtualElement(self.namespace, self.absoluteAddress("[%s]"%key))
 		elif isinstance(key, basestring):
 			qualified_field_name = self.namespace.qualify(key)
-			return XMPVirtualElement(self.namespace,
-				                     self.absoluteAddress(qualified_field_name))
+			return XMPVirtualElement(self.namespace, self.absoluteAddress(qualified_field_name))
 		else:
 			raise TypeError("Wrong index type "+str(type(key)))
 
@@ -718,7 +748,6 @@ class XMPVirtualElement(object, TreeManipulationMixin):
 		"""
 
 		parent = self.parent
-
 		if type(parent) is XMPVirtualElement:
 			# Set was called on chained virtual elements; go up the chain, recursing to the
 			# base case where the parent exists.
@@ -802,13 +831,15 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
+	# Warning: This API removes things from the XMP packet without doing the
+	# associated book-keeping in the object tree.
+
 	def create(self, value = None):
 		if value is None:
 			pass
 		elif not isinstance(value, collections.Mapping):
 			raise TypeError("XMPStructure can only be set with collections.Mapping values; given " + str(type(value)))
 
-		self.namespace.createIfVirtual()
 		self.libxmp_metadata.set_property(schema_ns = self.namespace.uid,
 		                                  prop_name = self.address,
 		                                 prop_value = "",
@@ -821,7 +852,13 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 		return collections.OrderedDict((c.name, c.value) for c in self)
 
 	def update(self, value):
-		raise NotImplementedError # TODO
+		if value is None:
+			self.delete()
+		elif not isinstance(value, collections.Mapping):
+			raise TypeError("XMPStructure can only be set with collections.Mapping values; given " + str(type(value)))
+
+		for field_name, field_value in value.iteritems():
+			self.set(field_name, field_value)
 
 	# ───────────
 	# General API
@@ -845,9 +882,11 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 			new_element = XMPElement.fromValue(self.namespace, self.absoluteAddress(key), value)
 			new_element.create(value)
 			self._children[key] = new_element
+		elif value is None:
+			self._children[key].delete()
+			del self._children[key]
 		else:
-			# Update it
-			raise NotImplementedError # TODO
+			self._children[key].update(value)
 
 	# ───────────────────
 	# Descriptor protocol
@@ -861,22 +900,6 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	def has(self, field_name):
 		qualified_field_name = self.namespace.qualify(field_name)
 		return any(qualified_field_name == c.name for c in self)
-
-	def __raw_getattr__(self, name):
-		# Search in the object, then in all parent classes if not found
-		for o in [self] + self.__class__.mro():
-			try:
-				return o.__dict__[name]
-			except KeyError:
-				continue
-		raise AttributeError
-
-	def __raw_hasattr__(self, name):
-		try:
-			self.__raw_getattr__(name)
-			return True
-		except AttributeError:
-			return False
 
 	def __getattr__(self, name):
 		"""
@@ -895,8 +918,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 			return field
 		else:
 			qualified_field_name = self.namespace.qualify(name)
-			return XMPVirtualElement(self.namespace,
-			                         self.absoluteAddress(qualified_field_name))
+			return XMPVirtualElement(self.namespace, self.absoluteAddress(qualified_field_name))
 
 	def __setattr__(self, name, value):
 		"""
@@ -1049,6 +1071,82 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	def __indexToKey(self, index_or_slice):
 		return self._children.keys()[index_or_slice]
 
+class XMPNamespace(XMPStructure):
+	""" Convenience wrapper around libXMP to manipulate a namespace. """
+
+	# ──────────
+	# Properties
+
+	def __init__(self, xmp, uid):
+		XMPStructure.__init__(self, None, "", [])
+		if not isinstance(xmp, weakref.ReferenceType):
+			self._xmp = weakref.ref(xmp)
+		else:
+			self._xmp = xmp
+		self.uid = uid
+		self.freeze(XMPNamespace)
+
+	# ──────────
+	# Properties
+
+	@property
+	def xmp(self):
+		return self._xmp()
+
+	@property
+	def namespace(self):
+		return self
+
+	@property
+	def libxmp_metadata(self):
+		return self.xmp.libxmp_metadata
+
+	@property
+	def prefix(self):
+		return self.libxmp_metadata.get_prefix_for_namespace(self.uid)[:-1]
+
+	@property
+	def exists(self):
+		return self.uid in self.xmp
+
+	# ───────────────────────────────
+	# CRUD API (XMPElement overrides)
+
+	# Warning: This API removes things from the XMP packet without doing the
+	# associated book-keeping in the object tree.
+
+	def delete(self):
+		for child in self:
+			child.delete()
+
+	# ──────────────
+	# Comparison API
+
+	def __eq__(self, other):
+		return isinstance(other, self.__class__) \
+		   and self.xmp is other.xmp \
+		   and self.uid == other.uid
+
+	# ───────────
+	# Utility API
+
+	def qualify(self, name):
+		if isQualified(name): return name
+		return qualify(name, self.prefix)
+
+	# ──────────────
+	# Textualization
+
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		if self.children:
+			unicode_children = (unicode(e) for e in self.iterchildren())
+			return u"{}\n{}".format(self.uid, "\n".join(unicode_children)).replace("\n","\n\t")
+		else:
+			return self.uid
+
 class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	""" Convenience wrapper around libXMP to manipulate an XMP array (rdf:Seq). """
 
@@ -1079,13 +1177,15 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
+	# Warning: This API removes things from the XMP packet without doing the
+	# associated book-keeping in the object tree.
+
 	def create(self, value = None):
 		if value is None:
 			pass
-		elif not isinstance(value, collections.Set):
+		elif not isinstance(value, collections.Sequence):
 			raise TypeError("XMPArray can only be set with collections.Sequence values; given " + str(type(value)))
 
-		self.namespace.createIfVirtual()
 		self.libxmp_metadata.set_property(schema_ns = self.namespace.uid,
 		                                  prop_name = self.address,
 		                                 prop_value = "",
@@ -1100,7 +1200,16 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		return list(c.value for c in self.children)
 
 	def update(self, value):
-		raise NotImplementedError # TODO
+		if value is None:
+			self.delete()
+		elif not isinstance(value, collections.Sequence):
+			raise TypeError("XMPArray can only be set with collections.Sequence values; given " + str(type(value)))
+
+		print
+		print "Updating value of", self.address, "to", value
+		for i, v in enumerate(value):
+			print "Setting", i, "to", v
+			self.set(i, v)
 
 	# ────────────────────────
 	# ContainerMixin overrides
@@ -1149,14 +1258,23 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		return len(self.children)
 
 	def insert(self, i, value):
-		self.libxmp_metadata.set_array_item(schema_ns  = self.namespace.uid,
-		                                    array_name = self.address,
-		                                    item_index = i,
-		                                    item_value = None,
-		                                    prop_array_insert_before= True)
-		# XMPValue(self.namespace, self.absoluteAddress("[%s]"%x))
-
-		raise NotImplementedError# TODO
+		print "Inserting value", value, "at index", i
+		xmp_i = i+1
+		new_element = XMPElement.fromValue(self.namespace,
+		                                   self.absoluteAddress("[%s]"%xmp_i),
+		                                   value)
+		if isinstance(new_element, XMPValue):
+			self.libxmp_metadata.set_array_item(schema_ns  = self.namespace.uid,
+			                                    array_name = self.address,
+			                                    item_index = xmp_i,
+			                                    item_value = None,
+			                                    prop_array_insert_before= True)
+			new_element.update(value)
+			self._children.insert(i, new_element)
+		else:
+			raise NotImplementedError# TODO
+			new_element.create(value)
+			self._children.insert(i, new_element)
 
 	# Note: the following methods are automatically implemented as mixin methods
 	#       using the Sequence ABC:
@@ -1213,13 +1331,15 @@ class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
+	# Warning: This API removes things from the XMP packet without doing the
+	# associated book-keeping in the object tree.
+
 	def create(self, value = None):
 		if value is None:
 			pass
 		elif not isinstance(value, collections.Set):
 			raise TypeError("XMPSet can only be set with collections.Set values; given " + str(type(value)))
 
-		self.namespace.createIfVirtual()
 		self.libxmp_metadata.set_property(schema_ns = self.namespace.uid,
 		                                  prop_name = self.address,
 		                                 prop_value = "",
@@ -1304,8 +1424,10 @@ class XMPValue(XMPElement):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
+	# Warning: This API removes things from the XMP packet without doing the
+	# associated book-keeping in the object tree.
+
 	def create(self, value = None):
-		self.namespace.createIfVirtual()
 		self.update(value)
 
 	@property
@@ -1349,83 +1471,3 @@ class XMPValue(XMPElement):
 
 	def __unicode__(self):
 		return self.name + " = " + unicode(self.value)
-
-class XMPNamespace(XMPStructure):
-	""" Convenience wrapper around libXMP to manipulate a namespace. """
-
-	# ──────────
-	# Properties
-
-	def __init__(self, xmp, uid):
-		XMPStructure.__init__(self, None, "", [])
-		if not isinstance(xmp, weakref.ReferenceType):
-			self._xmp = weakref.ref(xmp)
-		else:
-			self._xmp = xmp
-		self.uid = uid
-		self.freeze(XMPNamespace)
-
-	# ──────────
-	# Properties
-
-	@property
-	def xmp(self):
-		return self._xmp()
-
-	@property
-	def namespace(self):
-		return self
-
-	@property
-	def libxmp_metadata(self):
-		return self.xmp.libxmp_metadata
-
-	@property
-	def prefix(self):
-		return self.libxmp_metadata.get_prefix_for_namespace(self.uid)[:-1]
-
-	@property
-	def exists(self):
-		return self.uid in self.xmp
-
-	# ───────────────────────────────
-	# CRUD API (XMPElement overrides)
-
-	def delete(self):
-		for child in self:
-			child.delete()
-
-	# ───────────
-	# General API
-
-	def createIfVirtual(self):
-		if not self.exists:
-			self.xmp[self.uid] = self
-
-	# ──────────────
-	# Comparison API
-
-	def __eq__(self, other):
-		return isinstance(other, self.__class__) \
-		   and self.xmp is other.xmp \
-		   and self.uid == other.uid
-
-	# ───────────
-	# Utility API
-
-	def qualify(self, name):
-		if isQualified(name): return name
-		return qualify(name, self.prefix)
-
-	# ──────────────
-	# Textualization
-
-	def __str__(self):
-		return unicode(self).encode("utf-8")
-
-	def __unicode__(self):
-		if self.children:
-			unicode_children = (unicode(e) for e in self.iterchildren())
-			return u"{}\n{}".format(self.uid, "\n".join(unicode_children)).replace("\n","\n\t")
-		else:
-			return self.uid
