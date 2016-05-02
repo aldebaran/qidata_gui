@@ -9,19 +9,18 @@ class RectWidget(QGraphicsRectItem, QObject):
 	# ───────
 	# Signals
 
-	isSelected = Signal(int)
-	isMoved = Signal(int, list)
-	isResized = Signal(int, list)
+	isSelected = Signal()
+	isMoved = Signal(list)
+	isResized = Signal(list)
 
 	# ──────────
 	# Contructor
 
-	def __init__(self, coordinates, model_index):
+	def __init__(self, coordinates):
 		x_min, y_min = coordinates[0]
 		x_max, y_max = coordinates[1]
 		QGraphicsRectItem.__init__(self, x_min, y_min, x_max-x_min, y_max-y_min)
 		QObject.__init__(self)
-		self.model_index = model_index
 
 	# ───────
 	# Methods
@@ -35,7 +34,7 @@ class RectWidget(QGraphicsRectItem, QObject):
 	def focusInEvent(self, event):
 		# Color in white
 		self.setPen(QPen(QColor(255,255,255)))
-		self.isSelected.emit(self.model_index)
+		self.isSelected.emit()
 
 	def focusOutEvent(self, event):
 		# Color in black
@@ -61,7 +60,7 @@ class RectWidget(QGraphicsRectItem, QObject):
 		self.setRect(r)
 
 		# Emit new coordinates
-		self.isResized.emit(self.model_index,
+		self.isResized.emit(
 			[
 				[r.left(), r.top()],
 				[r.right(), r.bottom()]
@@ -87,7 +86,7 @@ class RectWidget(QGraphicsRectItem, QObject):
 	def mouseReleaseEvent(self, event):
 		# When mouse is released, emit coordinates in case it was moved
 		r = self.rect()
-		self.isMoved.emit(self.model_index,
+		self.isMoved.emit(
 			[
 				[r.left(), r.top()],
 				[r.right(), r.bottom()]
@@ -104,7 +103,7 @@ class RectWidget(QGraphicsRectItem, QObject):
 		self.setRect(r)
 
 		# Emit new coordinates
-		self.isResized.emit(self.model_index,
+		self.isResized.emit(
 			[
 				[r.left(), r.top()],
 				[r.right(), r.bottom()]
@@ -164,8 +163,8 @@ class ImageWidget(QGraphicsView, DataWidget):
 	# ───────
 	# Methods
 
-	def addRect(self, coordinates, model_index):
-		r = RectWidget(coordinates, model_index)
+	def addRect(self, coordinates):
+		r = RectWidget(coordinates)
 		r.setFlags(QGraphicsItem.ItemIsFocusable)
 		self.scene().addItem(r)
 		return r

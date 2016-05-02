@@ -32,23 +32,34 @@ class ImageController(DataController):
         # If none was required, use first annotation type
         self.last_selected_item_type = AnnotationTypes[0]
 
+        # Store created items in same order as annotations in model
+        self.item_list = []
+
         for annotationIndex in range(0,len(self.model)):
-            r = self.widget.addRect(self.model[annotationIndex][1], annotationIndex)
-            r.isSelected.connect(self.onItemSelected)
-            r.isMoved.connect(self.onItemCoordinatesChange)
-            r.isResized.connect(self.onItemCoordinatesChange)
+            self.addAnnotationItem(self.model[annotationIndex][1])
 
         self.widget.objectAdditionRequired.connect(self.createNewItem)
+
+    # ───────────
+    # Methods
+
+    def addAnnotationItem(self, annotation_item):
+        r = self.widget.addRect(annotation_item)
+        r.isSelected.connect(lambda:self.onItemSelected(r))
+        r.isMoved.connect(lambda x:self.onItemCoordinatesChange(r, x))
+        r.isResized.connect(lambda x:self.onItemCoordinatesChange(r, x))
+        self.item_list.append(r)
+        return r
 
     # ─────
     # Slots
 
-    def onItemSelected(self, item_selected):
-        self.last_selected_item = item_selected
-        self.selectionChanged.emit(self.model[item_selected][0])
+    def onItemSelected(self, item):
+        self.last_selected_item = self.item_list.index(item)
+        self.selectionChanged.emit(self.model[self.last_selected_item][0])
 
-    def onItemCoordinatesChange(self, item_selected, coordinates):
-        self.model[item_selected][1] = coordinates
+    def onItemCoordinatesChange(self, item, coordinates):
+        self.model[self.item_list.index(item)][1] = coordinates
 
     def onTypeChangeRequest(self, message_type):
         self.model[self.last_selected_item][0] = makeAnnotationItems(message_type)
@@ -60,15 +71,11 @@ class ImageController(DataController):
         y=center_coordinates[1]
 
         # Create the new object in the model as required
-        obj_index = len(self.model)
         new_object = [makeAnnotationItems(self.last_selected_item_type),[[x-30,y-30],[x+30,y+30]]]
         self.model.append(new_object)
 
         # Display it in the image widget
-        r = self.widget.addRect(self.model[obj_index][1], obj_index)
-        r.isSelected.connect(self.onItemSelected)
-        r.isMoved.connect(self.onItemCoordinatesChange)
-        r.isResized.connect(self.onItemCoordinatesChange)
+        r = self.addAnnotationItem(self.model[-1][1])
 
         # Display information on it in data editor widget
         r.select()
