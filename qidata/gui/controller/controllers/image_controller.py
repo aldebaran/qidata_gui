@@ -37,6 +37,8 @@ class ImageController(DataController):
             r.isSelected.connect(self.onItemSelected)
             r.isMoved.connect(self.onItemCoordinatesChange)
 
+        self.widget.objectAdditionRequired.connect(self.createNewItem)
+
     # ─────
     # Slots
 
@@ -51,3 +53,20 @@ class ImageController(DataController):
         self.model[self.last_selected_item][0] = makeAnnotationItems(message_type)
         self.last_selected_item_type = message_type
         self.selectionChanged.emit(self.model[self.last_selected_item][0])
+
+    def createNewItem(self, center_coordinates):
+        x=center_coordinates[0]
+        y=center_coordinates[1]
+
+        # Create the new object in the model as required
+        obj_index = len(self.model)
+        new_object = [makeAnnotationItems(self.last_selected_item_type),[[x-30,y-30],[x+30,y+30]]]
+        self.model.append(new_object)
+
+        # Display it in the image widget
+        r = self.widget.addRect(self.model[obj_index][1], obj_index)
+        r.isSelected.connect(self.onItemSelected)
+        r.isMoved.connect(self.onItemResized)
+
+        # Display information on it in data editor widget
+        r.select()

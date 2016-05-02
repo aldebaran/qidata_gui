@@ -21,6 +21,12 @@ class RectWidget(QGraphicsRectItem, QObject):
 		QObject.__init__(self)
 		self.model_index = model_index
 
+	# ───────
+	# Methods
+
+	def select(self):
+		self.setFocus()
+
 	# ─────
 	# Slots
 
