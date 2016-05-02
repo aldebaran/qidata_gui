@@ -25,12 +25,21 @@ class DataItem(object):
     def xmp(self):
         return self.xmp_file.metadata
 
+    # ───────────
+    # General API
+
+    def open(self):
+        self.xmp_file.__enter__()
+        return self
+
+    def close(self):
+        self.xmp_file.__exit__(None, None, None)
+
     # ───────────────
     # Context Manager
 
     def __enter__(self):
-        self.xmp_file.__enter__()
-        return self
+        return self.open()
 
     def __exit__(self, type, value, traceback):
         self.xmp_file.__exit__(type, value, traceback)

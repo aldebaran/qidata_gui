@@ -31,12 +31,17 @@ class XMPFile(unittest.TestCase):
 		self.assertEqual(original_sha1, noop_sha1)
 
 	def test_modify_readonly(self):
-		with self.assertRaises(RuntimeWarning):
+		import warnings
+		with warnings.catch_warnings(record=True) as w:
+			warnings.simplefilter("always")
 			with xmp.XMPFile(self.jpg_path) as f:
 				ald_prefix = f.libxmp_metadata.get_prefix_for_namespace(xmp.ALDEBARAN_NS)
 				f.libxmp_metadata.set_property(schema_ns=xmp.ALDEBARAN_NS,
 				                               prop_name=ald_prefix+"Property",
 				                               prop_value="Value")
+			self.assertEqual(len(w), 1)
+			self.assertEqual(w[-1].category, RuntimeWarning)
+
 	def test_modify_readwrite(self):
 		original_sha1 = sha1(self.jpg_path)
 		with xmp.XMPFile(self.jpg_path, rw=True) as f:
@@ -215,13 +220,15 @@ class XMPStructure(XMPTestCase):
 		jpg_filepath = fixtures.sandboxed(fixtures.JPG_PHOTO)
 		with xmp.XMPFile(jpg_filepath, rw=True) as xmp_file:
 			xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber = "314/141"
-		with xmp.XMPFile(jpg_filepath) as xmp_file:
 			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "314/141")
+		with xmp.XMPFile(jpg_filepath) as xmp_file:
+			# libxmp doesn't allow persistence of standard namespaces such as EXIF
+			self.assertEqual(xmp_file.metadata[libxmp.consts.XMP_NS_EXIF].FNumber.value, "32/10")
 
 	def test_setattr_inexistent(self):
 		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
 		with xmp.XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			metadata = xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12
+			xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element = 12
 			self.assertIsInstance(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element,
 			                      xmp.XMPValue)
 			self.assertEqual(xmp_file.metadata[xmp.ALDEBARAN_NS].inexistent_element.value, "12")
