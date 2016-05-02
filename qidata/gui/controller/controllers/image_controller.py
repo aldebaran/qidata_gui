@@ -35,6 +35,7 @@ class ImageController(DataController):
         for annotationIndex in range(0,len(self.model)):
             r = self.widget.addRect(self.model[annotationIndex][1], annotationIndex)
             r.isSelected.connect(self.onItemSelected)
+            r.isMoved.connect(self.onItemCoordinatesChange)
 
     # ─────
     # Slots
@@ -42,6 +43,9 @@ class ImageController(DataController):
     def onItemSelected(self, item_selected):
         self.last_selected_item = item_selected
         self.selectionChanged.emit(self.model[item_selected][0])
+
+    def onItemCoordinatesChange(self, item_selected, coordinates):
+        self.model[item_selected][1] = coordinates
 
     def onTypeChangeRequest(self, message_type):
         self.model[self.last_selected_item][0] = makeAnnotationItems(message_type)

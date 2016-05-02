@@ -5,10 +5,14 @@ from PySide.QtCore import QPoint, Signal, QObject
 from ..datawidget import DataWidget
 
 class RectWidget(QGraphicsRectItem, QObject):
-	"""docstring for Rect"""
+
+	# ───────
+	# Signals
 
 	isSelected = Signal(int)
-	isMoved = Signal()
+	isMoved = Signal(int, list)
+	# ──────────
+	# Contructor
 
 	def __init__(self, coordinates, model_index):
 		x_min, y_min = coordinates[0]
@@ -17,12 +21,28 @@ class RectWidget(QGraphicsRectItem, QObject):
 		QObject.__init__(self)
 		self.model_index = model_index
 
+	# ─────
+	# Slots
+
 	def focusInEvent(self, event):
 		self.setPen(QPen(QColor(255,255,255)))
 		self.isSelected.emit(self.model_index)
 
 	def focusOutEvent(self, event):
 		self.setPen(QPen(QColor(0,0,0)))
+
+	def mouseMoveEvent(self, event):
+		p2 = event.scenePos()
+		p1 = event.lastScenePos()
+		self.moveBy(p2.x()-p1.x(), p2.y()-p1.y())
+
+	def mousePressEvent(self, event):
+		# This give the focus to the item
+		event.accept()
+
+	def mouseReleaseEvent(self, event):
+		# When mouse is released, update the position in case it was moved
+		self.isMoved.emit(self.model_index, [[self.pos().x(), self.pos().y()], [self.pos().x()+self.rect().width(), self.pos().y()+self.rect().height()]])
 
 	def wheelEvent(self, event):
 		r = self.rect()
