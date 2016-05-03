@@ -23,7 +23,9 @@ class ImageController(DataController):
     def __init__(self, source_path):
         super(ImageController, self).__init__()
         DataController.modelHandler = makeDataItem(source_path)
-        DataController.model = self.modelHandler.metadata
+        DataController.model = []
+        for annotation_list in self.modelHandler.annotations.values():
+            DataController.model += annotation_list
         DataController.widget = makeWidget(self.modelHandler)
 
         # Remember which item on the image widget was lastly selected
