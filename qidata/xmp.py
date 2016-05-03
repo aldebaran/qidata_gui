@@ -1229,7 +1229,11 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 			raise TypeError("XMPArray can only be set with collections.Sequence values; given " + str(type(value)))
 
 		for i, v in enumerate(value):
-			self.set(i, v)
+			self[i] = v
+
+		if len(self) > len(value):
+			for i in reversed(range(len(self) - len(value), len(self))):
+				del self[i]
 
 	# ────────────────────────
 	# ContainerMixin overrides
@@ -1237,6 +1241,12 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	@property
 	def children(self):
 		return self._children
+
+	# ───────────────────
+	# Descriptor protocol
+
+	def __set__(self, owner_object, value):
+		self.update(value)
 
 	# ───────────
 	# General API
@@ -1263,15 +1273,15 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	# MutableSequence API
 
 	def __getitem__(self, i):
-		return self.children[i]
+		return self._children[i]
 
 	def __setitem__(self, i, value):
 		self.set(i, value)
 
 	def __delitem__(self, i):
 		element_to_delete = self.children[i]
-		element_to_delete.__delete__()
-		del self.children
+		element_to_delete.__delete__(self)
+		del self._children[i]
 		return element_to_delete
 
 	def __len__(self):
