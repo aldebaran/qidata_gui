@@ -882,15 +882,18 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	def set(self, key, value):
 		""" Sets the attribute named key, even if it doesn't exist, and do all book-keeping. """
 
-		if self.get(key, default=None) is None:
-			new_element = XMPElement.fromValue(self.namespace, self.absoluteAddress(key), value)
+		qualified_key = self.namespace.qualify(key)
+		if self.get(qualified_key, default=None) is None:
+			new_element = XMPElement.fromValue(self.namespace,
+			                                   self.absoluteAddress(qualified_key),
+			                                   value)
 			new_element.create(value)
-			self._children[key] = new_element
+			self._children[qualified_key] = new_element
 		elif value is None:
-			self._children[key].delete()
-			del self._children[key]
+			self._children[qualified_key].delete()
+			del self._children[qualified_key]
 		else:
-			self._children[key].update(value)
+			self._children[qualified_key].update(value)
 
 	# ───────────────────
 	# Descriptor protocol

@@ -300,6 +300,34 @@ class XMPStructureTests(XMPTestCase):
 			self.assertIsInstance(root_array[2].nested_structure, XMPValue)
 			self.assertEqual(root_array[2].nested_structure.value, "12")
 
+	def test_setattr_nested_struct_from_dict(self):
+		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
+		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
+			xmp_file.metadata[ALDEBARAN_NS].test_struct = { "a": 1,
+			                                                "b": 2,
+			                                                "c": { "x": 3,
+			                                                       "y": 4,
+			                                                       "z": 5 } }
+			test_struct = xmp_file.metadata[ALDEBARAN_NS].test_struct
+
+			self.assertIsInstance(test_struct, XMPStructure)
+			self.assertIsInstance(test_struct.a, XMPValue)
+			self.assertIsInstance(test_struct.b, XMPValue)
+			self.assertIsInstance(test_struct.c, XMPStructure)
+
+			self.assertEqual(len(test_struct), 3)
+			self.assertEqual(len(test_struct.c), 3)
+
+			self.assertEqual(test_struct.a.value, "1")
+			self.assertEqual(test_struct.b.value, "2")
+			self.assertEqual(test_struct.c.x.value, "3")
+			self.assertEqual(test_struct.c.y.value, "4")
+			self.assertDictEqual(test_struct.value, { "aldebaran:a": "1",
+			                                          "aldebaran:b": "2",
+			                                          "aldebaran:c": { "aldebaran:x": "3",
+			                                                           "aldebaran:y": "4",
+			                                                           "aldebaran:z": "5" } })
+
 class XMPVirtualElementTests(XMPTestCase):
 	def setUp(self):
 		super(XMPVirtualElementTests, self).setUp()
