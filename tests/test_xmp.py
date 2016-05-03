@@ -329,6 +329,19 @@ class XMPStructureTests(XMPTestCase):
 		                                                           "aldebaran:y": "4",
 		                                                           "aldebaran:z": "5" } })
 
+	def test_setattr_namespace(self):
+		metadata = XMPMetadata()
+		aldebaran_metadata = metadata[ALDEBARAN_NS]
+		aldebaran_metadata.update({"a": 12,
+		                           "b": [1,2]})
+
+		self.assertEqual(len(aldebaran_metadata), 2)
+		self.assertIsInstance(aldebaran_metadata.a, XMPValue)
+		self.assertEqual(aldebaran_metadata.a.value, "12")
+		self.assertIsInstance(aldebaran_metadata.b, XMPArray)
+		self.assertEqual(len(aldebaran_metadata.b), 2)
+		self.assertListEqual(aldebaran_metadata.b.value, ["1","2"])
+
 class XMPVirtualElementTests(XMPTestCase):
 	def setUp(self):
 		super(XMPVirtualElementTests, self).setUp()
