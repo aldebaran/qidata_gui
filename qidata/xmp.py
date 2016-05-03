@@ -316,7 +316,7 @@ class TreePredicatesMixin:
 		array_pattern_match = TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self.address)
 		if not array_pattern_match:
 			raise ValueError("Not an array element; please check this is an array element before getting its index")
-		return array_pattern_match.group(2)
+		return int(array_pattern_match.group(2))
 
 	# ────────────────────
 	# Address manipulation
@@ -1429,8 +1429,12 @@ class XMPValue(XMPElement):
 	@property
 	def value(self):
 		try:
-			return self.libxmp_metadata.get_property(schema_ns = self.namespace.uid,
-			                                         prop_name = self.address)
+			value = self.libxmp_metadata.get_property(schema_ns = self.namespace.uid,
+			                                          prop_name = self.address)
+			if value:
+				return value
+			else:
+				return None
 		except libxmp.XMPError:
 			return None
 
