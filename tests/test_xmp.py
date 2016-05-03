@@ -272,6 +272,17 @@ class XMPStructureTests(XMPTestCase):
 			self.assertEqual(created_array.value, ["1", ["2","3","4"], "5"])
 			self.assertEqual(created_array[1].value, ["2","3","4"])
 
+	def test_setattr_array_in_struct(self):
+		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
+		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
+			xmp_file.metadata[ALDEBARAN_NS].container.nested_array = [3.14, u"π"]
+			tested_array = xmp_file.metadata[ALDEBARAN_NS].container.nested_array
+			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].container, XMPStructure)
+			self.assertEqual(len(xmp_file.metadata[ALDEBARAN_NS].container), 1)
+			self.assertIsInstance(tested_array, XMPArray)
+			self.assertEqual(len(tested_array), 2)
+			self.assertEqual(tested_array.value, ["3.14", u"π"])
+
 class XMPVirtualElementTests(XMPTestCase):
 	def setUp(self):
 		super(XMPVirtualElementTests, self).setUp()
