@@ -1259,7 +1259,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		return len(self.children)
 
 	def insert(self, i, value):
-		xmp_i = i+1
+		xmp_i = i+1 # libXMP uses 1-indexing
 		new_element = XMPElement.fromValue(self.namespace,
 		                                   self.absoluteAddress("[%s]"%xmp_i),
 		                                   value)
@@ -1269,7 +1269,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 			                                    item_index = xmp_i,
 			                                    item_value = None,
 			                                    prop_array_insert_before= True)
-		new_element.update(value)
+		new_element.create(value)
 		self._children.insert(i, new_element)
 
 	# Note: the following methods are automatically implemented as mixin methods

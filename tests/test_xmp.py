@@ -257,9 +257,20 @@ class XMPStructureTests(XMPTestCase):
 			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].top_level_array.value, list)
 			self.assertListEqual(xmp_file.metadata[ALDEBARAN_NS].top_level_array.value,
 			                     ["1","2","3","a","b","c"])
+
+	def test_setattr_array_in_array(self):
+		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
 		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			print
-			print xmp_file.metadata[ALDEBARAN_NS].top_level_array
+			xmp_file.metadata[ALDEBARAN_NS].top_level_array = [1,[2,3,4],5]
+			created_array = xmp_file.metadata[ALDEBARAN_NS].top_level_array
+			self.assertIsInstance(created_array, XMPArray)
+			self.assertEqual(len(created_array), 3)
+			self.assertIsInstance(created_array.value, list)
+			self.assertIsInstance(created_array[1], XMPArray)
+			self.assertEqual(len(created_array[1]), 3)
+			self.assertIsInstance(created_array.value, list)
+			self.assertEqual(created_array.value, ["1", ["2","3","4"], "5"])
+			self.assertEqual(created_array[1].value, ["2","3","4"])
 
 class XMPVirtualElementTests(XMPTestCase):
 	def setUp(self):
