@@ -592,7 +592,7 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 	# Warning: This API removes things from the XMP packet without doing the
 	# associated book-keeping in the object tree.
 
-	def create(self, value = None):
+	def _create(self, value = None):
 		"""
 		Creates an element given that its parent already has been created.
 
@@ -608,7 +608,7 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 	def update(self, value):
 		raise NotImplementedError("Must be overriden")
 
-	def delete(self):
+	def _delete(self):
 		self.libxmp_metadata.delete_property(schema_ns=self.namespace.uid, prop_name=self.address)
 
 	# ───────────────────
@@ -618,7 +618,7 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 		raise NotImplementedError("Must be overriden")
 
 	def __delete__(self, obj):
-		self.delete()
+		self._delete()
 
 	# ──────────
 	# Properties
@@ -835,10 +835,16 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
-	# Warning: This API removes things from the XMP packet without doing the
-	# associated book-keeping in the object tree.
+	# Warning: This API may desync the object tree. In particular, the create (resp.
+	#          delete) function desyncs the object tree; it adds (resp. removes) a
+	#          node in the XMP packet without adding (resp. removing) the associated
+	#          object in the element's parent.
+	#
+	#          Take care to add or remove the corresponding object in the parent if
+	#          the call was successful.
 
-	def create(self, value = None):
+	def _create(self, value = None):
+
 		if value is None:
 			pass
 		elif not isinstance(value, collections.Mapping):
@@ -857,7 +863,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 
 	def update(self, value):
 		if value is None:
-			self.delete()
+			self._delete()
 		elif not isinstance(value, collections.Mapping):
 			raise TypeError("XMPStructure can only be set with collections.Mapping values; given " + str(type(value)))
 
@@ -887,7 +893,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 			new_element = XMPElement.fromValue(self.namespace,
 			                                   self.absoluteAddress(qualified_key),
 			                                   value)
-			new_element.create(value)
+			new_element._create(value)
 			self._children[qualified_key] = new_element
 		elif value is None:
 			self._children[qualified_key].delete()
@@ -1119,10 +1125,15 @@ class XMPNamespace(XMPStructure):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
-	# Warning: This API removes things from the XMP packet without doing the
-	# associated book-keeping in the object tree.
+	# Warning: This API may desync the object tree. In particular, the create (resp.
+	#          delete) function desyncs the object tree; it adds (resp. removes) a
+	#          node in the XMP packet without adding (resp. removing) the associated
+	#          object in the element's parent.
+	#
+	#          Take care to add or remove the corresponding object in the parent if
+	#          the call was successful.
 
-	def delete(self):
+	def _delete(self):
 		for child in self:
 			child.delete()
 
@@ -1184,10 +1195,15 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
-	# Warning: This API removes things from the XMP packet without doing the
-	# associated book-keeping in the object tree.
+	# Warning: This API may desync the object tree. In particular, the create (resp.
+	#          delete) function desyncs the object tree; it adds (resp. removes) a
+	#          node in the XMP packet without adding (resp. removing) the associated
+	#          object in the element's parent.
+	#
+	#          Take care to add or remove the corresponding object in the parent if
+	#          the call was successful.
 
-	def create(self, value = None):
+	def _create(self, value = None):
 		if value is None:
 			pass
 		elif not isinstance(value, collections.Sequence):
@@ -1208,7 +1224,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 
 	def update(self, value):
 		if value is None:
-			self.delete()
+			self._delete()
 		elif not isinstance(value, collections.Sequence):
 			raise TypeError("XMPArray can only be set with collections.Sequence values; given " + str(type(value)))
 
@@ -1272,7 +1288,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 			                                    item_index = xmp_i,
 			                                    item_value = None,
 			                                    prop_array_insert_before= True)
-		new_element.create(value)
+		new_element._create(value)
 		self._children.insert(i, new_element)
 
 	# Note: the following methods are automatically implemented as mixin methods
@@ -1330,10 +1346,15 @@ class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
-	# Warning: This API removes things from the XMP packet without doing the
-	# associated book-keeping in the object tree.
+	# Warning: This API may desync the object tree. In particular, the create (resp.
+	#          delete) function desyncs the object tree; it adds (resp. removes) a
+	#          node in the XMP packet without adding (resp. removing) the associated
+	#          object in the element's parent.
+	#
+	#          Take care to add or remove the corresponding object in the parent if
+	#          the call was successful.
 
-	def create(self, value = None):
+	def _create(self, value = None):
 		if value is None:
 			pass
 		elif not isinstance(value, collections.Set):
@@ -1423,10 +1444,15 @@ class XMPValue(XMPElement):
 	# ───────────────────────────────
 	# CRUD API (XMPElement overrides)
 
-	# Warning: This API removes things from the XMP packet without doing the
-	# associated book-keeping in the object tree.
+	# Warning: This API may desync the object tree. In particular, the create (resp.
+	#          delete) function desyncs the object tree; it adds (resp. removes) a
+	#          node in the XMP packet without adding (resp. removing) the associated
+	#          object in the element's parent.
+	#
+	#          Take care to add or remove the corresponding object in the parent if
+	#          the call was successful.
 
-	def create(self, value = None):
+	def _create(self, value = None):
 		self.update(value)
 
 	@property
