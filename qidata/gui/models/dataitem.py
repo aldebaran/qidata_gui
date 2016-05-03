@@ -3,11 +3,32 @@
 from qidata.xmp import XMPFile, XMPMetadata, ALDEBARAN_NS
 
 class DataItem(object):
+
+    # ───────────
+    # Constructor
+
     def __init__(self, file_path, rw = False):
         self.xmp_file = XMPFile(file_path, rw)
+        self.data = None
 
     # ──────────
     # Properties
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, new_data):
+        self._data = new_data
+
+    @property
+    def annotations(self):
+        return self._annotations
+
+    @annotations.setter
+    def annotations(self, new_annotations):
+        self._annotations = new_annotations
 
     @property
     def rw(self):

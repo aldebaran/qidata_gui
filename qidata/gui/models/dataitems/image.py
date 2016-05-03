@@ -6,17 +6,16 @@ from PySide.QtGui import QPixmap
 from ..dataitem import DataItem
 
 class Image(DataItem):
+
+    # ───────────
+    # Constructor
+
     def __init__(self, source_path):
-        self.pixmap = QPixmap()
-        self.pixmap.load(source_path)
-        self.loadXMP(source_path)
+        # Load XMP and open it
+        super(Image, self).__init__(source_path, True)
 
-    @staticmethod
-    def fromFile(source_path):
-        # TODO
-        pass
+        # Load image
+        self.data = QPixmap()
+        self.data.load(source_path)
 
-    @staticmethod
-    def fromNaoqiImage(source_buffer):
-        # TODO
-        pass
+        self.annotations = dict()
