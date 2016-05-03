@@ -242,91 +242,92 @@ class XMPStructureTests(XMPTestCase):
 			self.assertEqual(xmp_file.metadata[ALDEBARAN_NS].inexistent_element.value, "12")
 
 	def test_setattr_nested_inexistent(self):
-		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			xmp_file.metadata[ALDEBARAN_NS].A.B = 12
-			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].A,   XMPStructure)
-			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].A.B, XMPValue)
-			self.assertEqual(xmp_file.metadata[ALDEBARAN_NS].A.B.value, "12")
+		metadata = XMPMetadata()
+		metadata[ALDEBARAN_NS].A.B = 12
+
+		self.assertIsInstance(metadata[ALDEBARAN_NS].A,   XMPStructure)
+		self.assertIsInstance(metadata[ALDEBARAN_NS].A.B, XMPValue)
+		self.assertEqual(metadata[ALDEBARAN_NS].A.B.value, "12")
 
 	def test_setattr_top_level_array(self):
-		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			xmp_file.metadata[ALDEBARAN_NS].top_level_array = [1,2,3,"a","b","c"]
-			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].top_level_array, XMPArray)
-			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].top_level_array.value, list)
-			self.assertListEqual(xmp_file.metadata[ALDEBARAN_NS].top_level_array.value,
-			                     ["1","2","3","a","b","c"])
+		metadata = XMPMetadata()
+		metadata[ALDEBARAN_NS].top_level_array = [1,2,3,"a","b","c"]
+
+		self.assertIsInstance(metadata[ALDEBARAN_NS].top_level_array, XMPArray)
+		self.assertIsInstance(metadata[ALDEBARAN_NS].top_level_array.value, list)
+		self.assertListEqual(metadata[ALDEBARAN_NS].top_level_array.value,
+		                     ["1","2","3","a","b","c"])
 
 	def test_setattr_array_in_array(self):
-		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			xmp_file.metadata[ALDEBARAN_NS].top_level_array = [1,[2,3,4],5]
-			created_array = xmp_file.metadata[ALDEBARAN_NS].top_level_array
-			self.assertIsInstance(created_array, XMPArray)
-			self.assertEqual(len(created_array), 3)
-			self.assertIsInstance(created_array.value, list)
-			self.assertIsInstance(created_array[1], XMPArray)
-			self.assertEqual(len(created_array[1]), 3)
-			self.assertIsInstance(created_array.value, list)
-			self.assertEqual(created_array.value, ["1", ["2","3","4"], "5"])
-			self.assertEqual(created_array[1].value, ["2","3","4"])
+		metadata = XMPMetadata()
+		metadata[ALDEBARAN_NS].top_level_array = [1,[2,3,4],5]
+
+		created_array = metadata[ALDEBARAN_NS].top_level_array
+		self.assertIsInstance(created_array, XMPArray)
+		self.assertEqual(len(created_array), 3)
+		self.assertIsInstance(created_array.value, list)
+		self.assertIsInstance(created_array[1], XMPArray)
+		self.assertEqual(len(created_array[1]), 3)
+		self.assertIsInstance(created_array.value, list)
+		self.assertEqual(created_array.value, ["1", ["2","3","4"], "5"])
+		self.assertEqual(created_array[1].value, ["2","3","4"])
 
 	def test_setattr_array_in_struct(self):
-		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			xmp_file.metadata[ALDEBARAN_NS].container.nested_array = [3.14, u"π"]
-			tested_array = xmp_file.metadata[ALDEBARAN_NS].container.nested_array
-			self.assertIsInstance(xmp_file.metadata[ALDEBARAN_NS].container, XMPStructure)
-			self.assertEqual(len(xmp_file.metadata[ALDEBARAN_NS].container), 1)
-			self.assertIsInstance(tested_array, XMPArray)
-			self.assertEqual(len(tested_array), 2)
-			self.assertEqual(tested_array.value, ["3.14", u"π"])
+		metadata = XMPMetadata()
+		metadata[ALDEBARAN_NS].container.nested_array = [3.14, u"π"]
+
+		tested_array = metadata[ALDEBARAN_NS].container.nested_array
+		self.assertIsInstance(metadata[ALDEBARAN_NS].container, XMPStructure)
+		self.assertEqual(len(metadata[ALDEBARAN_NS].container), 1)
+		self.assertIsInstance(tested_array, XMPArray)
+		self.assertEqual(len(tested_array), 2)
+		self.assertEqual(tested_array.value, ["3.14", u"π"])
 
 	def test_setattr_struct_in_array(self):
-		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			xmp_file.metadata[ALDEBARAN_NS].root_array[2].nested_structure = 12
-			root_array = xmp_file.metadata[ALDEBARAN_NS].root_array
-			self.assertIsInstance(root_array, XMPArray)
-			self.assertEqual(len(root_array), 3)
-			self.assertIsInstance(root_array[0], XMPValue)
-			self.assertIsNone(root_array[0].value)
-			self.assertIsInstance(root_array[1], XMPValue)
-			self.assertIsNone(root_array[1].value)
-			self.assertIsInstance(root_array[2], XMPStructure)
-			self.assertEqual(len(root_array[2]), 1)
-			self.assertEqual(root_array[2].value, {"aldebaran:nested_structure": "12"})
-			self.assertIsInstance(root_array[2].nested_structure, XMPValue)
-			self.assertEqual(root_array[2].nested_structure.value, "12")
+		metadata = XMPMetadata()
+		metadata[ALDEBARAN_NS].root_array[2].nested_structure = 12
+
+		root_array = metadata[ALDEBARAN_NS].root_array
+
+		self.assertIsInstance(root_array, XMPArray)
+		self.assertEqual(len(root_array), 3)
+		self.assertIsInstance(root_array[0], XMPValue)
+		self.assertIsNone(root_array[0].value)
+		self.assertIsInstance(root_array[1], XMPValue)
+		self.assertIsNone(root_array[1].value)
+		self.assertIsInstance(root_array[2], XMPStructure)
+		self.assertEqual(len(root_array[2]), 1)
+		self.assertEqual(root_array[2].value, {"aldebaran:nested_structure": "12"})
+		self.assertIsInstance(root_array[2].nested_structure, XMPValue)
+		self.assertEqual(root_array[2].nested_structure.value, "12")
 
 	def test_setattr_nested_struct_from_dict(self):
-		sandboxed_photo = fixtures.sandboxed(fixtures.JPG_PHOTO)
-		with XMPFile(sandboxed_photo, rw=True) as xmp_file:
-			xmp_file.metadata[ALDEBARAN_NS].test_struct = { "a": 1,
-			                                                "b": 2,
-			                                                "c": { "x": 3,
-			                                                       "y": 4,
-			                                                       "z": 5 } }
-			test_struct = xmp_file.metadata[ALDEBARAN_NS].test_struct
+		metadata = XMPMetadata()
+		metadata[ALDEBARAN_NS].test_struct = { "a": 1,
+		                                       "b": 2,
+		                                       "c": { "x": 3,
+		                                              "y": 4,
+		                                              "z": 5 } }
 
-			self.assertIsInstance(test_struct, XMPStructure)
-			self.assertIsInstance(test_struct.a, XMPValue)
-			self.assertIsInstance(test_struct.b, XMPValue)
-			self.assertIsInstance(test_struct.c, XMPStructure)
+		test_struct = metadata[ALDEBARAN_NS].test_struct
 
-			self.assertEqual(len(test_struct), 3)
-			self.assertEqual(len(test_struct.c), 3)
+		self.assertIsInstance(test_struct, XMPStructure)
+		self.assertIsInstance(test_struct.a, XMPValue)
+		self.assertIsInstance(test_struct.b, XMPValue)
+		self.assertIsInstance(test_struct.c, XMPStructure)
 
-			self.assertEqual(test_struct.a.value, "1")
-			self.assertEqual(test_struct.b.value, "2")
-			self.assertEqual(test_struct.c.x.value, "3")
-			self.assertEqual(test_struct.c.y.value, "4")
-			self.assertDictEqual(test_struct.value, { "aldebaran:a": "1",
-			                                          "aldebaran:b": "2",
-			                                          "aldebaran:c": { "aldebaran:x": "3",
-			                                                           "aldebaran:y": "4",
-			                                                           "aldebaran:z": "5" } })
+		self.assertEqual(len(test_struct), 3)
+		self.assertEqual(len(test_struct.c), 3)
+
+		self.assertEqual(test_struct.a.value, "1")
+		self.assertEqual(test_struct.b.value, "2")
+		self.assertEqual(test_struct.c.x.value, "3")
+		self.assertEqual(test_struct.c.y.value, "4")
+		self.assertDictEqual(test_struct.value, { "aldebaran:a": "1",
+		                                          "aldebaran:b": "2",
+		                                          "aldebaran:c": { "aldebaran:x": "3",
+		                                                           "aldebaran:y": "4",
+		                                                           "aldebaran:z": "5" } })
 
 class XMPVirtualElementTests(XMPTestCase):
 	def setUp(self):
