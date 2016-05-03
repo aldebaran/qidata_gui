@@ -182,3 +182,7 @@ class ImageWidget(QGraphicsView, DataWidget):
 			self.scene().removeItem(item)
 			return True
 		return False
+
+	def askForDataSave(self):
+		response = QMessageBox.warning(self, "Leaving..", "You are about to leave this file. Do you want to save your modifications ?", QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+		return response

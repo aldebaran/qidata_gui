@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from PySide.QtCore import QObject, Signal
+from PySide.QtGui import QMessageBox
+
+class SelectionChangeCanceledByUser(Exception):
+    def __init__(self):
+        pass
 
 class DataController(QObject):
 
@@ -42,3 +47,10 @@ class DataController(QObject):
     @modelHandler.setter
     def modelHandler(self, new_modelHandler):
         self._modelHandler = new_modelHandler
+
+    def onExit(self):
+        savingRequest = self.widget.askForDataSave()
+        if savingRequest == QMessageBox.Yes:
+            self.modelHandler.save_annotations()
+        if savingRequest == QMessageBox.Cancel:
+            raise SelectionChangeCanceledByUser()

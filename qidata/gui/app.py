@@ -10,6 +10,7 @@ from PySide.QtGui import QApplication
 import qidata
 from .models import data
 from .view import QiDataMainWindow
+from .controller.datacontroller import SelectionChangeCanceledByUser
 from .controller import controllerfactory
 
 class QiDataApp(QApplication):
@@ -25,6 +26,10 @@ class QiDataApp(QApplication):
 		# GUI
 
 		self.main_window = QiDataMainWindow(self.desktop_geometry)
+
+
+		# Controller for displayed data
+		self.data_controller = None
 
 		# ───────────────
 		# Connect signals
@@ -66,6 +71,9 @@ class QiDataApp(QApplication):
 		if data.isSupported(path):
 			# Show the item in an visualization widget
 			try:
+				if self.data_controller is not None:
+					# There is already a controller, leave properly before switching
+					self.data_controller.onExit()
 				self.data_controller = controllerfactory.makeDataController(path)
 				self.main_window.visualization_widget = self.data_controller.widget
 				self.main_window.visualization_widget.showMaximized()
@@ -74,6 +82,8 @@ class QiDataApp(QApplication):
 				self.dataitem_editor.messageTypeChangeRequested.connect(self.data_controller.onTypeChangeRequest)
 			except TypeError, e:
 				print e
+			except SelectionChangeCanceledByUser:
+				self.data_explorer._cancelSelectionChange()
 
 	# ──────────
 	# Properties

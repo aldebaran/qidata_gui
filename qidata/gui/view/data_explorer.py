@@ -5,7 +5,7 @@ import os.path
 # Qt
 from PySide.QtCore import QDir
 from PySide.QtCore import Signal, Slot
-from PySide.QtGui import QWidget, QFileSystemModel, QTreeView, QSortFilterProxyModel
+from PySide.QtGui import QWidget, QFileSystemModel, QTreeView, QSortFilterProxyModel, QItemSelectionModel
 # qidata
 from ..models import data
 
@@ -35,6 +35,8 @@ class DataExplorer(QTreeView):
 
 		self.setRoot(root)
 		self.__setParameters()
+		self._previousIndex = None
+		self._ignore_events = False
 
 	# ────────
 	# Main API
@@ -47,15 +49,24 @@ class DataExplorer(QTreeView):
 		self.setModel(self.data_fs_model)
 		self.setRootIndex(self.data_fs_model.mapFromSource(self.__fs_model.index(new_root)))
 
+	def _cancelSelectionChange(self):
+		self._ignore_events = True
+		self.selectionModel().select(self._previousIndex, QItemSelectionModel.ClearAndSelect)
+		self._ignore_events = False
+
 	# ───────────────────
 	# QTreeView overrides
 
 	def selectionChanged(self, selected, deselected):
 		super(DataExplorer, self).selectionChanged(selected, deselected)
+		if self._ignore_events:
+			return
 		indexes = selected.indexes()
 		index = indexes[0]
 		path = self.__fs_model.filePath(self.data_fs_model.mapToSource(index))
+		self._previousIndex = deselected
 		self.path_selected.emit(path)
+
 
 	# ───────
 	# Helpers
