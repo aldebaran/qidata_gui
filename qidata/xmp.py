@@ -573,7 +573,11 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 
 	@staticmethod
 	def fromValue(namespace, address, value):
-		if isinstance(value, collections.Mapping):
+		if isinstance(value, basestring):
+			# basestrings are also collections.Sequence, so we cna't put this case in the
+			# else case
+			return XMPValue(namespace, address)
+		elif isinstance(value, collections.Mapping):
 			return XMPStructure(namespace, address, [])
 		elif isinstance(value, collections.Sequence):
 			return XMPArray(namespace, address, [])
@@ -1205,10 +1209,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		elif not isinstance(value, collections.Sequence):
 			raise TypeError("XMPArray can only be set with collections.Sequence values; given " + str(type(value)))
 
-		print
-		print "Updating value of", self.address, "to", value
 		for i, v in enumerate(value):
-			print "Setting", i, "to", v
 			self.set(i, v)
 
 	# ────────────────────────
@@ -1258,7 +1259,6 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		return len(self.children)
 
 	def insert(self, i, value):
-		print "Inserting value", value, "at index", i
 		xmp_i = i+1
 		new_element = XMPElement.fromValue(self.namespace,
 		                                   self.absoluteAddress("[%s]"%xmp_i),
@@ -1269,12 +1269,8 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 			                                    item_index = xmp_i,
 			                                    item_value = None,
 			                                    prop_array_insert_before= True)
-			new_element.update(value)
-			self._children.insert(i, new_element)
-		else:
-			raise NotImplementedError# TODO
-			new_element.create(value)
-			self._children.insert(i, new_element)
+		new_element.update(value)
+		self._children.insert(i, new_element)
 
 	# Note: the following methods are automatically implemented as mixin methods
 	#       using the Sequence ABC:
