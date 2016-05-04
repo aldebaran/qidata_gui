@@ -385,6 +385,19 @@ class XMPSetTests(XMPTestCase):
 		self.assertEqual(len(aldebaran_metadata.root_set), 3)
 		self.assertSetEqual(aldebaran_metadata.root_set.value, {"3", "1", "4"})
 
+	def test_contains(self):
+		metadata = XMPMetadata()
+		aldebaran_metadata = metadata[ALDEBARAN_NS]
+		aldebaran_metadata.root_set = {3, 1, 4}
+
+		self.assertTrue(3 in aldebaran_metadata.root_set)
+		self.assertTrue(1 in aldebaran_metadata.root_set)
+		self.assertTrue(4 in aldebaran_metadata.root_set)
+
+		self.assertFalse(2 in aldebaran_metadata.root_set)
+		for i in range(5,20):
+			self.assertFalse(i in aldebaran_metadata.root_set)
+
 class XMPNamespaceTests(XMPTestCase):
 	def test_update_namespace(self):
 		metadata = XMPMetadata()

@@ -1433,8 +1433,10 @@ class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 	# ──────────────
 	# MutableSet API
 
-	def __contains__(self, key):
-		return namespace.qualify(key) in [c.name for c in self.children]
+	def __contains__(self, value):
+		# TODO Implement support for nested, "deep" values
+		string_value = unicode(value)
+		return string_value in self.value
 
 	def __iter__(self):
 		return iter(self.children)
