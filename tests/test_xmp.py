@@ -10,7 +10,7 @@ import libxmp.consts
 # Qidata
 from qidata.xmp import (ALDEBARAN_NS, XMPFile, XMPMetadata,
                         XMPElement,   XMPVirtualElement,
-                        XMPNamespace, XMPStructure, XMPArray, XMPValue)
+                        XMPNamespace, XMPStructure, XMPArray, XMPSet, XMPValue)
 from . import fixtures
 
 def sha1(file_path):
@@ -375,6 +375,16 @@ class XMPArrayTests(XMPTestCase):
 		del metadata[ALDEBARAN_NS].test_array[:]
 		self.assertListEqual(metadata[ALDEBARAN_NS].test_array.value, [])
 
+class XMPSetTests(XMPTestCase):
+	def test_setattr_set(self):
+		metadata = XMPMetadata()
+		aldebaran_metadata = metadata[ALDEBARAN_NS]
+		aldebaran_metadata.root_set = {3, 1, 4}
+
+		self.assertIsInstance(aldebaran_metadata.root_set, XMPSet)
+		self.assertEqual(len(aldebaran_metadata.root_set), 3)
+		self.assertSetEqual(aldebaran_metadata.root_set.value, {"3", "1", "4"})
+
 class XMPNamespaceTests(XMPTestCase):
 	def test_update_namespace(self):
 		metadata = XMPMetadata()
@@ -405,3 +415,10 @@ class XMPVirtualElementTests(XMPTestCase):
 		self.assertIsInstance(self.exif_ns.virtual_element.parent, XMPNamespace)
 		self.assertIsInstance(self.exif_ns.virtual_element.nested_virtual_element.parent,
 		                      XMPVirtualElement)
+
+class ComplexTests(XMPTestCase):
+	def test_setattr_complex(self):
+		metadata = XMPMetadata()
+		aldebaran_metadata = metadata[ALDEBARAN_NS]
+
+		aldebaran_metadata.root_value = 12

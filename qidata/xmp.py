@@ -1415,7 +1415,13 @@ class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 		return set(c.value for c in self.children)
 
 	def update(self, value):
-		raise NotImplementedError # TODO
+		if value is None:
+			self.clear()
+		elif not isinstance(value, collections.Set):
+			raise TypeError("XMPSet can only be set with collections.Set values; given " + str(type(value)))
+
+		for e in value:
+			self.add(e)
 
 	# ────────────────────────
 	# ContainerMixin overrides
@@ -1424,7 +1430,7 @@ class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 	def children(self):
 		return self._children
 
-	# ───────
+	# ──────────────
 	# MutableSet API
 
 	def __contains__(self, key):
@@ -1437,12 +1443,43 @@ class XMPSet(XMPElement, ContainerMixin, collections.MutableSet):
 		return len(self.children)
 
 	def add(self, value):
-		raise NotImplementedError # TODO
+		index = len(self)
+		xmp_index = index+1
+		new_element = XMPElement.fromValue(self.namespace,
+		                                   self.absoluteAddress("[%s]"%xmp_index),
+		                                   value)
+		self.libxmp_metadata.append_array_item(schema_ns  = self.namespace.uid,
+		                                       array_name = self.address,
+		                                       item_value = None)
+		new_element._create(value)
+		self._children.add(new_element)
 
 	def discard(self, key):
 		element_to_delete = next(c for c in self.children if c.name == key)
 		element_to_delete.__delete__()
 		self._children.discard(element_to_delete)
+
+	# Note: the following methods are automatically implemented as mixin methods
+	#       using the MutableSet ABC:
+	#       • __le__
+	#       • __lt__
+	#       • __eq__
+	#       • __ne__
+	#       • __gt__
+	#       • __ge__
+	#       • __and__
+	#       • __or__
+	#       • __sub__
+	#       • __xor__
+	#       • isdisjoint
+	#       • clear
+	#       • pop
+	#       • remove
+	#       • __ior__
+	#       • __iand__
+	#       • __ixor__
+	#       •  __isub__
+	# For more information: https://docs.python.org/2/library/collections.html
 
 	# ──────────────
 	# Textualization
