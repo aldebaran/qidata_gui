@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from qidata.xmp import XMPFile, XMPMetadata, ALDEBARAN_NS
+from qidata.annotationitems import makeAnnotationItems, AnnotationTypes
 
 class DataItem(object):
 
@@ -68,6 +69,15 @@ class DataItem(object):
 
     def close(self):
         self.xmp_file.__exit__(None, None, None)
+
+    def save_annotations(self):
+        with self.xmp_file as tmp:
+            for (annotationClassName, annotations) in self.__annotations.iteritems():
+                self.metadata[annotationClassName] = []
+                for annotation in annotations:
+                    tmp_dict = dict(info=annotation[0].toDict(), location=annotation[1])
+                    tmp_dict["info"]["version"] = annotation[0].version
+                    self.metadata.__getattr__(annotationClassName).append(tmp_dict)
 
     # ───────────
     # Private API
