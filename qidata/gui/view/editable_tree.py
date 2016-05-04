@@ -85,7 +85,7 @@ class EditableTree(QTreeWidget):
             # obj is a plain value  => display it
             if type(obj) == float:
                 value = '%.6f' % obj
-            elif type(obj) in [str, bool, int, long]:
+            elif type(obj) in [str, bool, int, long, unicode]:
                 value = str(obj)
             else:
                 print "Warning, unsupported type %s"%type(obj)
