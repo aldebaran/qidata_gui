@@ -73,7 +73,7 @@ class QiDataApp(QApplication):
 			try:
 				if self.data_controller is not None:
 					# There is already a controller, leave properly before switching
-					self.data_controller.onExit()
+					self.data_controller.onExit(self.main_window.auto_save)
 				self.data_controller = controllerfactory.makeDataController(path)
 				self.main_window.visualization_widget = self.data_controller.widget
 				self.main_window.visualization_widget.showMaximized()
@@ -81,7 +81,7 @@ class QiDataApp(QApplication):
 				self.data_controller.clearAnnotation.connect(self.dataitem_editor.clearMessage)
 				self.dataitem_editor.messageTypeChangeRequested.connect(self.data_controller.onTypeChangeRequest)
 			except TypeError, e:
-				print e
+				print "TypeError:%s"%e
 			except SelectionChangeCanceledByUser:
 				self.data_explorer._cancelSelectionChange()
 

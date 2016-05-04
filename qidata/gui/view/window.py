@@ -41,6 +41,12 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self.toggle_explorer_action = QtGui.QAction("Toggle &Explorer", self,
 		                                            shortcut="Ctrl+E",
 		                                            triggered=self.explorer_dock.toggleViewAction().trigger)
+		self.toggle_annotation_action = QtGui.QAction("Toggle &Annotation", self,
+		                                            shortcut="Ctrl+W",
+		                                            triggered=self.annotation_dock.toggleViewAction().trigger)
+
+		self.activate_auto_save = QtGui.QAction("Toggle automatic save", self,
+												triggered=self.toggleAutoSave)
 
 		# ─────
 		# Menus
@@ -48,15 +54,21 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self.file_menu = QtGui.QMenu("&File", self)
 		self.file_menu.addAction(self.exit_action)
 
+		self.data_menu = QtGui.QMenu("&Data", self)
+		self.data_menu.addAction(self.activate_auto_save)
+
 		self.view_menu = QtGui.QMenu("&View", self)
 		self.view_menu.addAction(self.toggle_explorer_action)
+		self.view_menu.addAction(self.toggle_annotation_action)
 
 		self.menuBar().addMenu(self.file_menu)
+		self.menuBar().addMenu(self.data_menu)
 		self.menuBar().addMenu(self.view_menu)
 
 		# ──────────────────
 		# State and geometry
 
+		self.auto_save = False
 		self.setDefaultGeometry(desktop_geometry)
 		self.__restore()
 
@@ -102,3 +114,9 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	def __restore(self):
 		self.restoreGeometry(QtCore.QSettings().value("geometry"))
 		self.restoreState(QtCore.QSettings().value("windowState"))
+
+	# ───────────
+	# User config
+
+	def toggleAutoSave(self):
+		self.auto_save = not self.auto_save

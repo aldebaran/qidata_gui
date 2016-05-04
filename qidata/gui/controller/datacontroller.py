@@ -48,8 +48,8 @@ class DataController(QObject):
     def modelHandler(self, new_modelHandler):
         self._modelHandler = new_modelHandler
 
-    def onExit(self):
-        savingRequest = self.widget.askForDataSave()
+    def onExit(self, auto_save):
+        savingRequest = (QMessageBox.Yes if auto_save else self.widget.askForDataSave())
         if savingRequest == QMessageBox.Yes:
             self.modelHandler.save_annotations()
         if savingRequest == QMessageBox.Cancel:
