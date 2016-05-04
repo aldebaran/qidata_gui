@@ -3,6 +3,7 @@
 # Standard Library
 import collections
 from compiler.misc import mangle
+import itertools
 import os.path
 import re
 import warnings
@@ -509,6 +510,9 @@ class ContainerMixin:
 	def iterchildren(self):
 		""" Iterator over children with mutable semantics; must be overriden. """
 		raise NotImplementedError("Must be overriden")
+
+	def itertraverse(self):
+		return itertools.chain([self], self.iterchildren())
 
 	# ────────────────────
 	# XMPElement overrides
