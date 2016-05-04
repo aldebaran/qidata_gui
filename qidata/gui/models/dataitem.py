@@ -10,25 +10,38 @@ class DataItem(object):
     def __init__(self, file_path, rw = False):
         self.xmp_file = XMPFile(file_path, rw)
         self.data = None
+        self.__annotations = None
 
     # ──────────
     # Properties
 
     @property
     def data(self):
-        return self._data
+        return self.__data
 
     @data.setter
     def data(self, new_data):
-        self._data = new_data
+        self.__data = new_data
 
     @property
     def annotations(self):
-        return self._annotations
+        if self.__annotations is None:
+            self.__annotations = dict()
+            with self.xmp_file as tmp:
+                for annotationClassName in AnnotationTypes:
+                    self.__annotations[annotationClassName] = []
+                    try:
+                        for annotation in self.metadata[annotationClassName]:
+                            obj = makeAnnotationItems(annotationClassName, annotation.info.value)
+                            loc = annotation.location.value
+                            self.__unicodeListToFloatList(loc)
+                            self.__annotations[annotationClassName].append([obj, loc])
 
-    @annotations.setter
-    def annotations(self, new_annotations):
-        self._annotations = new_annotations
+                    except KeyError, e:
+                        # annotationClassName does not exist in file => it's ok
+                        pass
+
+        return self.__annotations
 
     @property
     def rw(self):
@@ -55,6 +68,17 @@ class DataItem(object):
 
     def close(self):
         self.xmp_file.__exit__(None, None, None)
+
+    # ───────────
+    # Private API
+
+    def __unicodeListToFloatList(self, list_to_convert):
+        for i in range(0,len(list_to_convert)):
+            if type(list_to_convert[i]) == list:
+                self.__unicodeListToFloatList(list_to_convert[i])
+            elif type(list_to_convert[i]) in [unicode, str]:
+                list_to_convert[i] = float(list_to_convert[i])
+
 
     # ───────────────
     # Context Manager
