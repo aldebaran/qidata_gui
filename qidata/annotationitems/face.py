@@ -23,9 +23,9 @@ class Face(object):
             # name : str
             # age : int
             # id : int
-            return Face(face_data["name"],
-                int(face_data["age"]),
-                int(face_data["id"])
+            return Face(face_data["aldebaran:name"] if face_data.has_key("aldebaran:name") else "",
+                int(face_data["aldebaran:age"]) if face_data.has_key("aldebaran:age") else 0,
+                int(face_data["aldebaran:id"]) if face_data.has_key("aldebaran:id") else 0
                 )
 
     @property

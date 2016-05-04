@@ -17,7 +17,8 @@ class Person(object):
         if not person_data.has_key("version") or float(person_data["version"]) > 0:
             # name : str
             # id : int
-            return Person(person_data["name"], int(person_data["id"]))
+            return Person(person_data["aldebaran:name"] if person_data.has_key("aldebaran:name") else "",
+                int(person_data["aldebaran:id"]) if person_data.has_key("aldebaran:id") else 0)
 
     @property
     def version(self):
