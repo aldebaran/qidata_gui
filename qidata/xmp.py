@@ -3,7 +3,6 @@
 # Standard Library
 import collections
 from compiler.misc import mangle
-from itertools import islice
 import os.path
 import re
 import warnings
@@ -1224,7 +1223,8 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 
 	def update(self, value):
 		if value is None:
-			self._delete()
+			del self[:]
+
 		elif not isinstance(value, collections.Sequence):
 			raise TypeError("XMPArray can only be set with collections.Sequence values; given " + str(type(value)))
 
@@ -1232,8 +1232,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 			self[i] = v
 
 		if len(self) > len(value):
-			for i in reversed(range(len(self) - len(value), len(self))):
-				del self[i]
+			del self[len(value):]
 
 	# ────────────────────────
 	# ContainerMixin overrides
@@ -1279,10 +1278,17 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		self.set(i, value)
 
 	def __delitem__(self, i):
-		element_to_delete = self.children[i]
-		element_to_delete.__delete__(self)
-		del self._children[i]
-		return element_to_delete
+		if isinstance(i, (int, long)):
+			indices_to_delete = [range(len(self))[i]]
+		elif isinstance(i, slice):
+			indices_to_delete = range(len(self))[i]
+
+		children_to_delete = [self[i] for i in indices_to_delete]
+		for i in reversed(indices_to_delete):
+			self._children[i].__delete__(self)
+			del self._children[i]
+
+		return children_to_delete
 
 	def __len__(self):
 		return len(self.children)
