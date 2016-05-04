@@ -26,10 +26,13 @@ class QiDataApp(QApplication):
 		# GUI
 
 		self.main_window = QiDataMainWindow(self.desktop_geometry)
+		self.main_window.copyRequested.connect(self.copy)
+		self.main_window.pasteRequested.connect(self.paste)
 
 
 		# Controller for displayed data
 		self.data_controller = None
+		self._clipboard = None
 
 		# ───────────────
 		# Connect signals
@@ -80,10 +83,21 @@ class QiDataApp(QApplication):
 				self.data_controller.selectionChanged.connect(self.dataitem_editor.displayMessage)
 				self.data_controller.clearAnnotation.connect(self.dataitem_editor.clearMessage)
 				self.dataitem_editor.messageTypeChangeRequested.connect(self.data_controller.onTypeChangeRequest)
+				self.main_window.copy_all_msg.setEnabled(True)
 			except TypeError, e:
 				print "TypeError:%s"%e
 			except SelectionChangeCanceledByUser:
 				self.data_explorer._cancelSelectionChange()
+
+	def copy(self):
+		if self.data_controller is not None:
+			self._clipboard = self.data_controller.local_model
+			self.main_window.paste_all_msg.setEnabled(True)
+
+	def paste(self):
+		if self.data_controller is not None and self._clipboard is not None:
+			self.data_controller.addAnnotationItems(self._clipboard)
+		pass
 
 	# ──────────
 	# Properties

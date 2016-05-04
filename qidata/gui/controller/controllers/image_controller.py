@@ -39,14 +39,14 @@ class ImageController(DataController):
         self.item_list = []
 
         for annotationIndex in range(0,len(self.local_model)):
-            self.addAnnotationItem(self.local_model[annotationIndex][1])
+            self.addAnnotationItemOnView(self.local_model[annotationIndex][1])
 
         self.widget.objectAdditionRequired.connect(self.createNewItem)
 
     # ───────────
     # Methods
 
-    def addAnnotationItem(self, annotation_item):
+    def addAnnotationItemOnView(self, annotation_item):
         r = self.widget.addRect(annotation_item)
         r.isSelected.connect(lambda:self.onItemSelected(r))
         r.isMoved.connect(lambda x:self.onItemCoordinatesChange(r, x))
@@ -54,6 +54,20 @@ class ImageController(DataController):
         r.suppressionRequired.connect(lambda: self.deleteAnnotation(r))
         self.item_list.append(r)
         return r
+
+    def addAnnotationItems(self, annotationsToAdd):
+        for annotationIndex in range(0,len(annotationsToAdd)):
+            if not type(annotationsToAdd[annotationIndex][0]).__name__ in ["Person", "Face"]:
+                continue
+
+            # Add to local model
+            self.local_model.append(annotationsToAdd[annotationIndex])
+
+            # Add to general model
+            self.model[type(annotationsToAdd[annotationIndex][0]).__name__].append(annotationsToAdd[annotationIndex])
+
+            # Add them on the view
+            self.addAnnotationItemOnView(annotationsToAdd[annotationIndex][1])
 
     # ─────
     # Slots
@@ -94,7 +108,7 @@ class ImageController(DataController):
         self.model[self.last_selected_item_type].append(new_object)
 
         # Display it in the image widget
-        r = self.addAnnotationItem(self.local_model[-1][1])
+        r = self.addAnnotationItemOnView(self.local_model[-1][1])
 
         # Display information on it in data editor widget
         r.select()

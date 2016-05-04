@@ -8,8 +8,13 @@ from PySide import QtGui, QtCore
 from .data_explorer import DataExplorer
 from .annotation_maker import AnnotationMaker
 from PySide.QtGui import QWidget
+from PySide.QtCore import Signal
 
 class QiDataMainWindow(QtGui.QMainWindow):
+
+	copyRequested = Signal()
+	pasteRequested = Signal()
+
 	def __init__(self, desktop_geometry = None):
 		super(QiDataMainWindow, self).__init__()
 		self.setWindowTitle("qidata annotate")
@@ -48,6 +53,16 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self.activate_auto_save = QtGui.QAction("Toggle automatic save", self,
 												triggered=self.toggleAutoSave)
 
+		self.copy_all_msg = QtGui.QAction("Copy all annotations", self,
+												shortcut="Ctrl+C",
+												triggered=self.copyAllMsg)
+		self.copy_all_msg.setEnabled(False)
+
+		self.paste_all_msg = QtGui.QAction("Paste", self,
+												shortcut="Ctrl+V",
+												triggered=self.pasteAllMsg)
+		self.paste_all_msg.setEnabled(False)
+
 		# ─────
 		# Menus
 
@@ -56,6 +71,8 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 		self.data_menu = QtGui.QMenu("&Data", self)
 		self.data_menu.addAction(self.activate_auto_save)
+		self.data_menu.addAction(self.copy_all_msg)
+		self.data_menu.addAction(self.paste_all_msg)
 
 		self.view_menu = QtGui.QMenu("&View", self)
 		self.view_menu.addAction(self.toggle_explorer_action)
@@ -120,3 +137,9 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 	def toggleAutoSave(self):
 		self.auto_save = not self.auto_save
+
+	def copyAllMsg(self):
+		self.copyRequested.emit()
+
+	def pasteAllMsg(self):
+		self.pasteRequested.emit()
