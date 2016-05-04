@@ -23,9 +23,9 @@ class ImageController(DataController):
     def __init__(self, source_path):
         super(ImageController, self).__init__()
         DataController.modelHandler = makeDataItem(source_path)
-        DataController.model = []
-        for annotation_list in self.modelHandler.annotations.values():
-            DataController.model += annotation_list
+        DataController.model = self.modelHandler.annotations
+        self.local_model = self.model["Person"] + self.model["Face"]
+
         DataController.widget = makeWidget(self.modelHandler)
 
         # Remember which item on the image widget was lastly selected
@@ -35,11 +35,11 @@ class ImageController(DataController):
         # If none was required, use first annotation type
         self.last_selected_item_type = AnnotationTypes[0]
 
-        # Store created items in same order as annotations in model
+        # Store created items in same order as annotations in local_model
         self.item_list = []
 
-        for annotationIndex in range(0,len(self.model)):
-            self.addAnnotationItem(self.model[annotationIndex][1])
+        for annotationIndex in range(0,len(self.local_model)):
+            self.addAnnotationItem(self.local_model[annotationIndex][1])
 
         self.widget.objectAdditionRequired.connect(self.createNewItem)
 
@@ -60,26 +60,41 @@ class ImageController(DataController):
 
     def onItemSelected(self, item):
         self.last_selected_item = self.item_list.index(item)
-        self.selectionChanged.emit(self.model[self.last_selected_item][0])
+        self.selectionChanged.emit(self.local_model[self.last_selected_item][0])
 
     def onItemCoordinatesChange(self, item, coordinates):
-        self.model[self.item_list.index(item)][1] = coordinates
+        # This will also affect the real model as it is a pointer
+        self.local_model[self.item_list.index(item)][1] = coordinates
 
     def onTypeChangeRequest(self, message_type):
-        self.model[self.last_selected_item][0] = makeAnnotationItems(message_type)
+        # Retrieve the current type of the annotation
+        old_message_type = type(self.local_model[self.last_selected_item][0]).__name__
+
+        # Remove annotation from its former category in model, and add it to the new one
+        self.model[old_message_type].remove(self.local_model[self.last_selected_item])
+        self.model[message_type].append(self.local_model[self.last_selected_item])
+
+        # Then change the annotation type in the local_model (this will also be done in model because
+        # it's a pointer)
+        self.local_model[self.last_selected_item][0] = makeAnnotationItems(message_type)
+
+        # Register the current message type and send the selection signal as usual
         self.last_selected_item_type = message_type
-        self.selectionChanged.emit(self.model[self.last_selected_item][0])
+        self.selectionChanged.emit(self.local_model[self.last_selected_item][0])
 
     def createNewItem(self, center_coordinates):
         x=center_coordinates[0]
         y=center_coordinates[1]
 
-        # Create the new object in the model as required
+        # Create the new object as required
         new_object = [makeAnnotationItems(self.last_selected_item_type),[[x-30,y-30],[x+30,y+30]]]
-        self.model.append(new_object)
+
+        # Add it to local and general model
+        self.local_model.append(new_object)
+        self.model[self.last_selected_item_type].append(new_object)
 
         # Display it in the image widget
-        r = self.addAnnotationItem(self.model[-1][1])
+        r = self.addAnnotationItem(self.local_model[-1][1])
 
         # Display information on it in data editor widget
         r.select()
@@ -89,5 +104,6 @@ class ImageController(DataController):
             self.last_selected_item = None
             index = self.item_list.index(item)
             self.item_list.remove(item)
-            self.model.pop(index)
+            annotation = self.local_model.pop(index)
+            self.model[type(annotation[0]).__name__].remove(annotation)
             self.clearAnnotation.emit()
