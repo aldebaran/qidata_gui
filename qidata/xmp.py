@@ -908,7 +908,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 	# Descriptor protocol
 
 	def __set__(self, owner_object, value):
-		raise NotImplementedError # TODO
+		self.update(value)
 
 	# ─────────────
 	# Attribute API
