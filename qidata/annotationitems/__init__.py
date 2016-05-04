@@ -16,4 +16,4 @@ def makeAnnotationItems(itemName, data = None):
     else:
         raise TypeError("Required annotation item (%s) does not exist"%itemName)
 
-AnnotationTypes = ["Face", "FacialExpression", "Person"]
+AnnotationTypes = ["Face", "Person"]

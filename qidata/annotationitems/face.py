@@ -1,9 +1,20 @@
 # -*- coding: utf-8 -*-
 
+from typedlist import TypedList
+
+class FacialExpression(object):
+    """Contains annotation details for a face"""
+
+    def __init__(self):
+        super(FacialExpression, self).__init__()
+        self.valence = 0
+        self.smile_level = 0.5
+        self.tamereenshort = [0,0]
+
 class Face(object):
     """Contains annotation details for a face"""
 
-    def __init__(self, name="", age=0, fid=0, facial=[]):
+    def __init__(self, name="", age=0, fid=0):
         super(Face, self).__init__()
         self.name = name
         self.age = age
