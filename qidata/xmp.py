@@ -620,7 +620,7 @@ class XMPElement(object, TreeManipulationMixin, FreezeMixin):
 	def __set__(self, owner_object, value):
 		raise NotImplementedError("Must be overriden")
 
-	def __delete__(self, obj):
+	def __delete__(self, _ = None):
 		self._delete()
 
 	# ──────────
@@ -959,7 +959,7 @@ class XMPStructure(XMPElement, ContainerMixin, collections.Sequence, collections
 				raise
 			child = self.__getattr__(name)
 			assert(hasattr(child, "__set__") and callable(child.__set__))
-			child.__delete__(self)
+			child.__delete__()
 			raise
 
 	# ────────────────────────────────────
@@ -1264,6 +1264,7 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 		"""
 
 		if 0 <= i < len(self):
+			# If the child exists, update it
 			return self.children[i].__set__(self, value)
 		else:
 			# Pad with None elements if any needed
@@ -1283,16 +1284,28 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 
 	def __delitem__(self, i):
 		if isinstance(i, (int, long)):
-			indices_to_delete = [range(len(self))[i]]
+			child_to_delete = self._children[i]
+			child_to_delete.__delete__()
+			del self._children[i]
+			# Adjust the indices of all items that moved/"fell" from the deletion of the
+			# element before them
+			for k in range(i,len(self)):
+				array_indexing_match = TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self[k].address)
+				assert(array_indexing_match)
+				previous_index = int(array_indexing_match.group(2))
+				self[k].address = array_indexing_match.group(1) + "[%s]"%(previous_index-1)
+
+			return child_to_delete
 		elif isinstance(i, slice):
 			indices_to_delete = range(len(self))[i]
 
-		children_to_delete = [self[i] for i in indices_to_delete]
-		for i in reversed(indices_to_delete):
-			self._children[i].__delete__(self)
-			del self._children[i]
+			children_to_delete = [self[i] for i in indices_to_delete]
+			for i in reversed(indices_to_delete):
+				del self[i]
 
-		return children_to_delete
+			return children_to_delete
+		else:
+			raise TypeError("Wrong index type "+str(type(key)))
 
 	def __len__(self):
 		return len(self.children)
@@ -1310,6 +1323,14 @@ class XMPArray(XMPElement, ContainerMixin, collections.MutableSequence):
 			                                    prop_array_insert_before= True)
 		new_element._create(value)
 		self._children.insert(i, new_element)
+
+		# Adjust the indices of all items that moved/pushed by the insertion of the
+		# element before them
+		for k in range(i+1,len(self)):
+			array_indexing_match = TreePredicatesMixin.ARRAY_ELEMENT_REGEX.match(self[k].address)
+			assert(array_indexing_match)
+			previous_index = int(array_indexing_match.group(2))
+			self[k].address = array_indexing_match.group(1) + "[%s]"%(previous_index+1)
 
 	# Note: the following methods are automatically implemented as mixin methods
 	#       using the Sequence ABC:
