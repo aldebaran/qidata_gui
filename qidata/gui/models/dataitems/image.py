@@ -13,7 +13,3 @@ class Image(DataItem):
     def __init__(self, source_path):
         # Load XMP and open it
         super(Image, self).__init__(source_path, True)
-
-        # Load image
-        self.data = QPixmap()
-        self.data.load(source_path)

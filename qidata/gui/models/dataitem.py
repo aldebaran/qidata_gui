@@ -10,19 +10,15 @@ class DataItem(object):
 
     def __init__(self, file_path, rw = False):
         self.xmp_file = XMPFile(file_path, rw)
-        self.data = None
+        self.__datapath = file_path
         self.__annotations = None
 
     # ──────────
     # Properties
 
     @property
-    def data(self):
-        return self.__data
-
-    @data.setter
-    def data(self, new_data):
-        self.__data = new_data
+    def datapath(self):
+        return self.__datapath
 
     @property
     def annotations(self):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem, QMessageBox
+from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem, QMessageBox, QPixmap
 from PySide.QtCore import Signal, QObject, Qt
 from ..datawidget import DataWidget
 
@@ -158,7 +158,9 @@ class ImageWidget(QGraphicsView, DataWidget):
 		scene = QGraphicsScene()
 
 		# Create pixmap
-		p = PixmapWidget(imageItem.data)
+		tmp_pix = QPixmap()
+		tmp_pix.load(imageItem.datapath)
+		p = PixmapWidget(tmp_pix)
 
 		# When pixmap is clicked, add a new box
 		p.isClicked.connect(self.objectAdditionRequired)
