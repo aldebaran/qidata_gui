@@ -1,23 +1,29 @@
 # -*- coding: utf-8 -*-
 
-import os, glob
+# Standard Library
+import os.path
+import re
 
-# ––––––––––––––––––
-# Export all modules
+from image_widget import ImageWidget
+from qidata_file import *
 
-__all__ = [os.path.basename(f)[:-3] for f in glob.glob(os.path.dirname(__file__)+"/*.py")]
 
-try: del f # Cleanup the iteration variable so that it's not exported
-except: pass
+# ────────────
+# Data Widgets
+
+LOOKUP_WIDGET_MODEL = {
+    Image: ImageWidget,
+}
+
+def makeWidget(qidataFile):
+    for qidataFileType in LOOKUP_WIDGET_MODEL:
+        if isinstance(qidataFile, qidataFileType):
+            return LOOKUP_WIDGET_MODEL[qidataFileType](qidataFile)
+    raise TypeError("No available widget for this item")
 
 # ––––––––––––––––––––––––––––
 # Convenience version variable
 
 VERSION = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "VERSION")).read().split()[0]
-
-# ––––––––––––––––––––
-# Hook for qiq plugins
-
-QIQ_PLUGIN_PACKAGES = ["qiq"]
 
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––#

@@ -2,7 +2,7 @@
 
 from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsItem, QPen, QColor, QGraphicsRectItem, QGraphicsPixmapItem, QMessageBox, QPixmap
 from PySide.QtCore import Signal, QObject, Qt
-from ..datawidget import DataWidget
+from .qidatawidget import QiDataWidget
 
 class RectWidget(QGraphicsRectItem, QObject):
 
@@ -140,7 +140,7 @@ class PixmapWidget(QGraphicsPixmapItem, QObject):
 
 
 
-class ImageWidget(QGraphicsView, DataWidget):
+class ImageWidget(QGraphicsView, QiDataWidget):
 
 	# ───────
 	# Signals
@@ -152,7 +152,7 @@ class ImageWidget(QGraphicsView, DataWidget):
 
 	def __init__(self, imageItem):
 		QGraphicsView.__init__(self)
-		DataWidget.__init__(self)
+		QiDataWidget.__init__(self)
 
 		# Create scene
 		scene = QGraphicsScene()

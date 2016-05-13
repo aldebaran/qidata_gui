@@ -2,7 +2,7 @@
 
 from PySide.QtCore import Signal
 
-class DataWidget(object):
+class QiDataWidget(object):
     def __init__(self):
         pass
 
