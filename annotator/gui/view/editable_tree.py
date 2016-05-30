@@ -3,7 +3,7 @@
 from PySide.QtCore import Qt
 from PySide.QtGui import QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton, QSizePolicy
 
-from qidata.annotationitems import TypedList, AnnotationTypes
+from qidata_objects import TypedList, DataObjectTypes
 
 import math
 
@@ -66,7 +66,7 @@ class EditableTree(QTreeWidget):
         value = None
         subobjs = []
 
-        if type(obj).__name__ in AnnotationTypes:
+        if type(obj).__name__ in DataObjectTypes:
             # obj is a class instance => retrieve its attributes to be displayed as sub-elements
             subobjs = obj.__dict__.items()
 

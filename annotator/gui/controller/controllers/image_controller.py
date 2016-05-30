@@ -4,10 +4,10 @@
 from PySide.QtCore import Signal
 
 # qidata
-from ...models import makeDataItem
-from ...view import makeWidget
+from qidata_file import openQiDataFile
+from qidata_widgets import makeWidget
 from ..datacontroller import DataController
-from qidata.annotationitems import *
+from qidata_objects import *
 
 class ImageController(DataController):
 
@@ -22,7 +22,7 @@ class ImageController(DataController):
 
     def __init__(self, source_path):
         super(ImageController, self).__init__()
-        DataController.modelHandler = makeDataItem(source_path)
+        DataController.modelHandler = openQiDataFile(source_path)
         DataController.model = self.modelHandler.annotations
         self.local_model = self.model["Person"] + self.model["Face"]
 
@@ -33,7 +33,7 @@ class ImageController(DataController):
 
         # Remember which type was lastly required by user.
         # If none was required, use first annotation type
-        self.last_selected_item_type = AnnotationTypes[0]
+        self.last_selected_item_type = DataObjectTypes[0]
 
         # Store created items in same order as annotations in local_model
         self.item_list = []
@@ -90,7 +90,7 @@ class ImageController(DataController):
 
         # Then change the annotation type in the local_model (this will also be done in model because
         # it's a pointer)
-        self.local_model[self.last_selected_item][0] = makeAnnotationItems(message_type)
+        self.local_model[self.last_selected_item][0] = makeDataObject(message_type)
 
         # Register the current message type and send the selection signal as usual
         self.last_selected_item_type = message_type
@@ -101,7 +101,7 @@ class ImageController(DataController):
         y=center_coordinates[1]
 
         # Create the new object as required
-        new_object = [makeAnnotationItems(self.last_selected_item_type),[[x-30,y-30],[x+30,y+30]]]
+        new_object = [makeDataObject(self.last_selected_item_type),[[x-30,y-30],[x+30,y+30]]]
 
         # Add it to local and general model
         self.local_model.append(new_object)

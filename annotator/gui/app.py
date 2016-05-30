@@ -7,8 +7,8 @@ import sys
 from PySide.QtCore import Signal, Slot
 from PySide.QtGui import QApplication
 # qidata
-import qidata
-from .models import data
+import annotator
+from qidata_file import *
 from .view import QiDataMainWindow
 from .controller.datacontroller import SelectionChangeCanceledByUser
 from .controller import controllerfactory
@@ -59,7 +59,7 @@ class QiDataApp(QApplication):
 		containing_dataset = None
 
 		candidate_dataset = path
-		while not data.isDataset(candidate_dataset):
+		while not isDataset(candidate_dataset):
 			if self.fs_root and os.path.samefile(candidate_dataset, self.fs_root):
 				break
 			candidate_dataset = os.path.dirname(candidate_dataset)
@@ -71,7 +71,7 @@ class QiDataApp(QApplication):
 		# ───────────
 		# ?
 
-		if data.isSupported(path):
+		if isSupported(path):
 			# Show the item in an visualization widget
 			try:
 				if self.data_controller is not None:
@@ -127,5 +127,5 @@ class QiDataApp(QApplication):
 	def __setMetaInfo(self):
 		self.setOrganizationName("Aldebaran")
 		self.setOrganizationDomain("aldebaran.com")
-		self.setApplicationName("qidata")
-		self.setApplicationVersion(qidata.VERSION)
+		self.setApplicationName("qidata annotator")
+		self.setApplicationVersion(annotator.VERSION)

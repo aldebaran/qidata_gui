@@ -1,2 +1,2 @@
-**qidata** is a data management CLI.
+**annotator** is a graphical dataset annotator.
 

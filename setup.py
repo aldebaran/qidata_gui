@@ -7,21 +7,22 @@ import os
 CONTAINING_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 setup(
-    name='qidata',
-    version=open(os.path.join(CONTAINING_DIRECTORY,"qidata/VERSION")).read().split()[0],
-    author='Louis-Kenzo Cahier',
-    author_email='lkcahier@aldebaran.com',
-    packages=['qidata', 'qidata.commands', 'qidata.gui', 'qidata.annotationitems', 'qidata.qiq'],
-    package_data={"qidata":["VERSION"]},
-    scripts=['bin/qidata'],
+    name='annotator',
+    version=open(os.path.join(CONTAINING_DIRECTORY,"annotator/VERSION")).read().split()[0],
+    author='Surya Ambrose',
+    author_email='sambrose@aldebaran.com',
+    packages=['annotator', 'annotator.gui', 'annotator.qiq'],
+    package_data={"annotator":["VERSION"]},
+    scripts=['bin/annotator'],
     url='.',
     license='LICENSE.txt',
-    description='Dataset management CLI',
+    description='Graphical dataset annotator',
     long_description=open(os.path.join(CONTAINING_DIRECTORY,'README.md')).read(),
     test_suite="tests",
     install_requires=[
         "PySide >= 1.2.2",
-        "python-xmp-toolkit >= 2.0.1",
+        "qidata_widgets >= 0.1",
+        "qidata_file >= 0.1",
         "argcomplete >= 1.1.0"
     ]
 )

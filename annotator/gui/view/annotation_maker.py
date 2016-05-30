@@ -5,7 +5,7 @@ from .editable_tree import EditableTree
 from PySide.QtGui import QWidget, QVBoxLayout, QComboBox
 from PySide.QtCore import Signal
 
-from qidata import annotationitems
+import qidata_objects
 
 class AnnotationMaker(QWidget):
 
@@ -45,7 +45,7 @@ class AnnotationMaker(QWidget):
         ## GUI ELEMENT SETUP
 
         # Topic selection
-        self.annotation_type_selection_widget.addItems(annotationitems.AnnotationTypes) # we add some message type
+        self.annotation_type_selection_widget.addItems(qidata_objects.DataObjectTypes) # we add some message type
         self.annotation_type_selection_widget.currentIndexChanged['QString'].connect(self._handle_message_selected)
 
     # ──────────

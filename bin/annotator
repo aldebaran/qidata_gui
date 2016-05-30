@@ -13,8 +13,8 @@ try:
 	has_argcomplete = True
 except ImportError:
 	has_argcomplete = False
-# qidata
-import qidata.commands.main
+# annotator
+import annotator.commands.main
 
 # When this program is launched by argcomplete, sys.argv only contains the name
 # of the program, and argcomplete.autocomplete actually uses the partial command
@@ -31,7 +31,7 @@ else:
 # ––––––––––––
 # Build parser
 
-main_parser = qidata.commands.main.main_parser
+main_parser = annotator.commands.main.main_parser
 
 # –––––––––––––––
 # Auto-completion
