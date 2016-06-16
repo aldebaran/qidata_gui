@@ -22,6 +22,7 @@ class RectWidget(QGraphicsRectItem, QObject):
 		x_max, y_max = coordinates[1]
 		QGraphicsRectItem.__init__(self, x_min, y_min, x_max-x_min, y_max-y_min)
 		QObject.__init__(self)
+		self.setPen(QPen(QColor(255,0,0)))
 
 	# ───────
 	# Methods
@@ -34,12 +35,14 @@ class RectWidget(QGraphicsRectItem, QObject):
 
 	def focusInEvent(self, event):
 		# Color in white
-		self.setPen(QPen(QColor(255,255,255)))
+		pen = QPen(QColor(255,255,255))
+		pen.setWidth(3)
+		self.setPen(pen)
 		self.isSelected.emit()
 
 	def focusOutEvent(self, event):
 		# Color in black
-		self.setPen(QPen(QColor(0,0,0)))
+		self.setPen(QPen(QColor(255,0,0)))
 
 	def keyReleaseEvent(self, event):
 		event.accept()
