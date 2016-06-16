@@ -11,7 +11,7 @@ setup(
     version=open(os.path.join(CONTAINING_DIRECTORY,"annotator/VERSION")).read().split()[0],
     author='Surya Ambrose',
     author_email='sambrose@aldebaran.com',
-    packages=['annotator', 'annotator.gui', 'annotator.qiq'],
+    packages=['annotator', 'annotator.commands', 'annotator.gui', 'annotator.qiq'],
     package_data={"annotator":["VERSION"]},
     scripts=['bin/annotator'],
     url='.',
