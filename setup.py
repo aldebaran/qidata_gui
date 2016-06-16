@@ -18,6 +18,7 @@ setup(
     description='Contains different Qt Widget to display data_objects and interact with it.',
     long_description=open(os.path.join(CONTAINING_DIRECTORY,'README.md')).read(),
     install_requires=[
+        "PySide >= 1.2.2",
         "qidata_objects >= 0.1"
     ]
 )
