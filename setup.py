@@ -21,7 +21,7 @@ setup(
     test_suite="tests",
     install_requires=[
         "PySide >= 1.2.2",
-        "qidata_widgets >= 0.1",
+        "qidata_widgets >= 0.1.1",
         "qidata_file >= 0.1",
         "argcomplete >= 1.1.0"
     ]
