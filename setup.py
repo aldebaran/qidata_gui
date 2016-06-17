@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 
 CONTAINING_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
@@ -11,7 +11,7 @@ setup(
     version=open(os.path.join(CONTAINING_DIRECTORY,"annotator/VERSION")).read().split()[0],
     author='Surya Ambrose',
     author_email='sambrose@aldebaran.com',
-    packages=['annotator', 'annotator.commands', 'annotator.gui', 'annotator.qiq'],
+    packages=find_packages("."),
     package_data={"annotator":["VERSION"]},
     scripts=['bin/annotator'],
     url='.',
