@@ -44,7 +44,7 @@ class QiDataWidget(QWidget):
 
         # Object displaying widget
         self.object_displaying_widget = QiDataObjectDisplayer(self)
-        self.object_displaying_widget.messageTypeChangeRequested.connect(self.objectTypeChangeRequested.emit)
+        self.object_displaying_widget.objectTypeChangeRequested.connect(self.objectTypeChangeRequested.emit)
 
         # Main layout
         self.main_hlayout = QHBoxLayout(self)
