@@ -57,7 +57,7 @@ class ImageWidget(QGraphicsView):
 		scene = QGraphicsScene()
 
 		# Create pixmap
-		p = PixmapWidget(QPixmap(qidata_image.datapath), self)
+		p = PixmapWidget(QPixmap(qidata_image.path), self)
 
 		# When pixmap is clicked, add a new box
 		p.isClicked.connect(self.objectAdditionRequired)
