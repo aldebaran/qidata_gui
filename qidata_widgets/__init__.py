@@ -28,7 +28,7 @@ def makeWidget(widget_type, main_data=None):
         if widget_type == qidata_file_type:
             return QiDataWidget(LOOKUP_WIDGET_MODEL[qidata_file_type](main_data))
     raise TypeError("No available widget for %s, available types are %s"
-                        %(qidata_file_type, LOOKUP_WIDGET_MODEL.keys())
+                        %(widget_type, LOOKUP_WIDGET_MODEL.keys())
                     )
 
 # ––––––––––––––––––––––––––––
