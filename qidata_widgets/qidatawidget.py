@@ -57,10 +57,18 @@ class QiDataWidget(QWidget):
 
     def addObject(self, coordinates):
         """
+        DEPRECATED, use `addObjectToView` instead
+        """
+        print "qidatawidget.addObject is deprecated"
+        print "Use addObjectToView instead"
+        return self.addObjectToView(coordinates)
+
+    def addObjectToView(self, coordinates):
+        """
         Add an object to display on the view.
 
-        This method only add the object on the specialized widget but
-        does not display the object details in the corresponding widget.
+        This method only adds the object on the specialized widget but
+        does not display the object details.
 
         @coordinates :  Coordinates of the object to show (format depends on data type)
         @return      :  Reference to the widget representing the object
@@ -72,9 +80,17 @@ class QiDataWidget(QWidget):
 
     def displayObject(self, qidata_object):
         """
+        DEPRECATED, use `displayObjectDetails` instead
+        """
+        print "qidatawidget.displayObject is deprecated"
+        print "Use displayObjectDetails instead"
+        self.displayObjectDetails(qidata_object)
+
+    def displayObjectDetails(self, qidata_object):
+        """
         Display the object details
 
-        This method only display the object details in the corresponding widget
+        This method only displays the object details in the corresponding widget
         but does not add the object on the specialized widget.
 
         @qidata_object  :  QiDataObject to display
