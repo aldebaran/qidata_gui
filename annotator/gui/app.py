@@ -5,7 +5,7 @@ import os.path
 import sys
 # Qt
 from PySide.QtCore import Signal, Slot
-from PySide.QtGui import QApplication
+from PySide.QtGui import QApplication, QInputDialog
 # qidata
 import annotator
 from qidata_file import *
@@ -21,11 +21,17 @@ class QiDataApp(QApplication):
 		self.fs_root         = path
 		self.current_dataset = None
 		self.current_item    = current_item
+		self.user_name       = ""
+
+		while str(self.user_name) == "":
+			user_setting = QInputDialog.getText(None, "User ID", "Enter your ID (e.g. \"jdoe\")")
+			if user_setting[1]:
+				self.user_name = user_setting[0]
 
 		# ───
 		# GUI
 
-		self.main_window = QiDataMainWindow(self.desktop_geometry)
+		self.main_window = QiDataMainWindow(self.user_name, self.desktop_geometry)
 		self.main_window.copyRequested.connect(self.copy)
 		self.main_window.pasteRequested.connect(self.paste)
 
@@ -77,7 +83,7 @@ class QiDataApp(QApplication):
 				if self.data_controller is not None:
 					# There is already a controller, leave properly before switching
 					self.data_controller.onExit(self.main_window.auto_save)
-				self.data_controller = controllerfactory.makeDataController(path)
+				self.data_controller = controllerfactory.makeDataController(path, self.user_name)
 				self.main_window.visualization_widget = self.data_controller.widget
 				self.main_window.visualization_widget.showMaximized()
 				self.main_window.copy_all_msg.setEnabled(True)

@@ -14,9 +14,9 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	copyRequested = Signal()
 	pasteRequested = Signal()
 
-	def __init__(self, desktop_geometry = None):
+	def __init__(self, user_name="anonymous", desktop_geometry = None):
 		super(QiDataMainWindow, self).__init__()
-		self.setWindowTitle("qidata annotate")
+		self.setWindowTitle("qidata annotate by %s"%user_name)
 		self.printer = QtGui.QPrinter()
 
 		# ───────

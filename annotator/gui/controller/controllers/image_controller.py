@@ -15,13 +15,20 @@ class ImageController(DataController):
     # ───────────
     # Constructor
 
-    def __init__(self, source_path):
+    def __init__(self, source_path, user_name):
         super(ImageController, self).__init__()
         DataController.modelHandler = qidatafile.open(source_path, "w")
-
         DataController.widget = CentralWidget(makeWidget("image", self.modelHandler))
         DataController.widget.annotation_selector_widget.user_selector_widget.addItems(self.modelHandler.annotators)
-        self._loadUserAnnotations(DataController.widget.annotation_selector_widget.user_selector_widget.currentText())
+
+        self.user_name = user_name
+        self._loadUserAnnotations(self.user_name)
+
+        if not user_name in self.modelHandler.annotators:
+            DataController.widget.annotation_selector_widget.user_selector_widget.addItem(user_name)
+        i=DataController.widget.annotation_selector_widget.user_selector_widget.findText(user_name)
+        DataController.widget.annotation_selector_widget.user_selector_widget.setCurrentIndex(i)
+        DataController.widget.userChanged.connect(self.onUserChanged)
 
         # Remember which item on the image widget was lastly selected
         self.last_selected_item = None
@@ -138,4 +145,3 @@ class ImageController(DataController):
     def onUserChanged(self, user_name):
         self._loadUserAnnotations(user_name)
         self._showAnnotations()
-        pass

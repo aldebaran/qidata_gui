@@ -32,8 +32,8 @@ def isSupported(dataPath):
             return True
     return False
 
-def makeDataController(path):
+def makeDataController(path, user_name):
     for pattern in LOOKUP_CONTROLLER_MODEL:
         if pattern.match(path):
-            return LOOKUP_CONTROLLER_MODEL[pattern](path)
+            return LOOKUP_CONTROLLER_MODEL[pattern](path, user_name)
     raise TypeError("Controller not supported")
