@@ -9,11 +9,6 @@ class SelectionChangeCanceledByUser(Exception):
 
 class DataController(QObject):
 
-    # ──────
-    # Signal
-
-    selectionChanged = Signal()
-
     # ───────────
     # Constructor
 
@@ -51,6 +46,7 @@ class DataController(QObject):
     def onExit(self, auto_save):
         savingRequest = (QMessageBox.Yes if auto_save else self.widget.askForDataSave())
         if savingRequest == QMessageBox.Yes:
-            self.modelHandler.save_annotations()
+            self.modelHandler.save()
+            self.modelHandler.close()
         if savingRequest == QMessageBox.Cancel:
             raise SelectionChangeCanceledByUser()

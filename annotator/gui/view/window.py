@@ -4,11 +4,10 @@
 import sys
 # Qt
 from PySide import QtGui, QtCore
-# qidata
-from .data_explorer import DataExplorer
-from .annotation_maker import AnnotationMaker
 from PySide.QtGui import QWidget
 from PySide.QtCore import Signal
+# qidata
+from .data_explorer import DataExplorer
 
 class QiDataMainWindow(QtGui.QMainWindow):
 
@@ -32,13 +31,6 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 		self.visualization_widget = QWidget()
 
-		self.message_creation = AnnotationMaker()
-		self.annotation_dock = QtGui.QDockWidget("Annotation window", parent=self)
-		self.annotation_dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-		self.annotation_dock.setWidget(self.message_creation)
-		self.annotation_dock.setObjectName(self.annotation_dock.windowTitle())
-		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.annotation_dock)
-
 		# ───────
 		# Actions
 
@@ -46,9 +38,6 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self.toggle_explorer_action = QtGui.QAction("Toggle &Explorer", self,
 		                                            shortcut="Ctrl+E",
 		                                            triggered=self.explorer_dock.toggleViewAction().trigger)
-		self.toggle_annotation_action = QtGui.QAction("Toggle &Annotation", self,
-		                                            shortcut="Ctrl+W",
-		                                            triggered=self.annotation_dock.toggleViewAction().trigger)
 
 		self.activate_auto_save = QtGui.QAction("Toggle automatic save", self,
 												triggered=self.toggleAutoSave)
@@ -76,7 +65,6 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 		self.view_menu = QtGui.QMenu("&View", self)
 		self.view_menu.addAction(self.toggle_explorer_action)
-		self.view_menu.addAction(self.toggle_annotation_action)
 
 		self.menuBar().addMenu(self.file_menu)
 		self.menuBar().addMenu(self.data_menu)

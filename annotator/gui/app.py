@@ -80,9 +80,6 @@ class QiDataApp(QApplication):
 				self.data_controller = controllerfactory.makeDataController(path)
 				self.main_window.visualization_widget = self.data_controller.widget
 				self.main_window.visualization_widget.showMaximized()
-				self.data_controller.selectionChanged.connect(self.dataitem_editor.displayMessage)
-				self.data_controller.clearAnnotation.connect(self.dataitem_editor.clearMessage)
-				self.dataitem_editor.messageTypeChangeRequested.connect(self.data_controller.onTypeChangeRequest)
 				self.main_window.copy_all_msg.setEnabled(True)
 			except TypeError, e:
 				print "TypeError:%s"%e

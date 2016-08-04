@@ -4,29 +4,24 @@
 from PySide.QtCore import Signal
 
 # qidata
-from qidata_file import openQiDataFile
+from qidata_file import qidatafile
 from qidata_widgets import makeWidget
 from ..datacontroller import DataController
+from ...view import CentralWidget
 from qidata_objects import *
 
 class ImageController(DataController):
-
-    # ───────
-    # Signals
-
-    selectionChanged = Signal((Person,), (Face,))
-    clearAnnotation = Signal()
 
     # ───────────
     # Constructor
 
     def __init__(self, source_path):
         super(ImageController, self).__init__()
-        DataController.modelHandler = openQiDataFile(source_path)
-        DataController.model = self.modelHandler.annotations
-        self.local_model = self.model["Person"] + self.model["Face"]
+        DataController.modelHandler = qidatafile.open(source_path, "w")
 
-        DataController.widget = makeWidget(self.modelHandler)
+        DataController.widget = CentralWidget(makeWidget("image", self.modelHandler))
+        DataController.widget.annotation_selector_widget.user_selector_widget.addItems(self.modelHandler.annotators)
+        self._loadUserAnnotations(DataController.widget.annotation_selector_widget.user_selector_widget.currentText())
 
         # Remember which item on the image widget was lastly selected
         self.last_selected_item = None
@@ -38,16 +33,16 @@ class ImageController(DataController):
         # Store created items in same order as annotations in local_model
         self.item_list = []
 
-        for annotationIndex in range(0,len(self.local_model)):
-            self.addAnnotationItemOnView(self.local_model[annotationIndex][1])
+        self._showAnnotations()
 
         self.widget.objectAdditionRequired.connect(self.createNewItem)
+        self.widget.objectTypeChangeRequested.connect(self.onTypeChangeRequest)
 
-    # ───────────
+    # ───────
     # Methods
 
     def addAnnotationItemOnView(self, annotation_item):
-        r = self.widget.addRect(annotation_item)
+        r = self.widget.addObject(annotation_item)
         r.isSelected.connect(lambda:self.onItemSelected(r))
         r.isMoved.connect(lambda x:self.onItemCoordinatesChange(r, x))
         r.isResized.connect(lambda x:self.onItemCoordinatesChange(r, x))
@@ -69,12 +64,31 @@ class ImageController(DataController):
             # Add them on the view
             self.addAnnotationItemOnView(annotationsToAdd[annotationIndex][1])
 
+    # ───────────────
+    # Private methods
+
+    def _loadUserAnnotations(self, user_name):
+        if not user_name in self.modelHandler.annotators:
+            self.modelHandler.annotations[user_name] = dict(Face=[], Person=[])
+
+        DataController.model = self.modelHandler.annotations[user_name]
+        self.local_model = self.model["Person"] + self.model["Face"]
+
+    def _showAnnotations(self):
+        # Clear
+        for existing_item in self.item_list:
+            DataController.widget.main_widget.removeObject(existing_item)
+        self.item_list = []
+        # Display
+        for annotationIndex in range(0,len(self.local_model)):
+            self.addAnnotationItemOnView(self.local_model[annotationIndex][1])
+
     # ─────
     # Slots
 
     def onItemSelected(self, item):
         self.last_selected_item = self.item_list.index(item)
-        self.selectionChanged.emit(self.local_model[self.last_selected_item][0])
+        self.widget.displayObject(self.local_model[self.last_selected_item][0])
 
     def onItemCoordinatesChange(self, item, coordinates):
         # This will also affect the real model as it is a pointer
@@ -94,7 +108,7 @@ class ImageController(DataController):
 
         # Register the current message type and send the selection signal as usual
         self.last_selected_item_type = message_type
-        self.selectionChanged.emit(self.local_model[self.last_selected_item][0])
+        self.widget.displayObject(self.local_model[self.last_selected_item][0])
 
     def createNewItem(self, center_coordinates):
         x=center_coordinates[0]
@@ -120,4 +134,8 @@ class ImageController(DataController):
             self.item_list.remove(item)
             annotation = self.local_model.pop(index)
             self.model[type(annotation[0]).__name__].remove(annotation)
-            self.clearAnnotation.emit()
+
+    def onUserChanged(self, user_name):
+        self._loadUserAnnotations(user_name)
+        self._showAnnotations()
+        pass
