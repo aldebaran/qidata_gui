@@ -27,7 +27,7 @@ class SmartTreeWidget(QTreeWidget):
         # Take as much space as possible
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Two columns (key, value)
+        # Three columns (key, value, delete button)
         self.setColumnCount(3)
 
         # Do not display column headers
