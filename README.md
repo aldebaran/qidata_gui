@@ -1,2 +1,1 @@
-**data_displayer** contains different Qt Widget to display data_objects and interact with it.
-
+**qidata_gui** contains Qt Widgets to display metadata objects and interact with it, and also provide Qt Apps
