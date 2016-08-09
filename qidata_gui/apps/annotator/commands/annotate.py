@@ -1,4 +1,4 @@
-from ..gui.app import QiDataApp
+from ..app import QiDataApp
 
 class AnnotateCommand:
     @staticmethod
