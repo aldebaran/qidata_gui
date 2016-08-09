@@ -3,22 +3,31 @@
 from PySide.QtCore import Qt
 from PySide.QtGui import QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton, QSizePolicy
 
-from qidata.annotationitems import TypedList, AnnotationTypes
+from qidata_objects import TypedList, DataObjectTypes
 
 import math
 
-class EditableTree(QTreeWidget):
+class SmartTreeWidget(QTreeWidget):
+    """
+    Tree widget displaying an object and giving the possibility to
+    modify it.
+    """
 
     # ───────────
     # Constructor
 
-    def __init__(self, parent):
-        super(EditableTree, self).__init__(parent)
+    def __init__(self, parent=None):
+        """
+        SmartTreeWidget constructor
+
+        @parent       :  Parent of this widget
+        """
+        super(SmartTreeWidget, self).__init__(parent)
 
         # Take as much space as possible
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Two columns (key, value)
+        # Three columns (key, value, delete button)
         self.setColumnCount(3)
 
         # Do not display column headers
@@ -40,7 +49,8 @@ class EditableTree(QTreeWidget):
     def message(self, new_message):
         """
         Clears the tree view and displays the new message
-        :param new_message: message object to display in the treeview
+
+        @new_message: message object to display in the treeview
         """
         # Remember whether items were expanded or not before deleting
         if self._message:
@@ -66,7 +76,7 @@ class EditableTree(QTreeWidget):
         value = None
         subobjs = []
 
-        if type(obj).__name__ in AnnotationTypes:
+        if type(obj).__name__ in DataObjectTypes:
             # obj is a class instance => retrieve its attributes to be displayed as sub-elements
             subobjs = obj.__dict__.items()
 
