@@ -4,11 +4,11 @@
 from PySide.QtCore import Signal
 
 # qidata
-from qidata_file import qidatafile
-from qidata_widgets import makeWidget
+from qidata.files import qidatafile
+from qidata_gui.widgets import makeWidget
 from ..datacontroller import DataController
 from ...view import CentralWidget
-from qidata_objects import *
+from qidata.metadata_objects import *
 
 class ImageController(DataController):
 

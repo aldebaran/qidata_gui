@@ -7,8 +7,8 @@ import sys
 from PySide.QtCore import Signal, Slot
 from PySide.QtGui import QApplication, QInputDialog
 # qidata
-import annotator
-from qidata_file import *
+from qidata.files import *
+import qidata_gui
 from .view import QiDataMainWindow
 from .controller.datacontroller import SelectionChangeCanceledByUser
 from .controller import controllerfactory
@@ -131,4 +131,4 @@ class QiDataApp(QApplication):
 		self.setOrganizationName("Aldebaran")
 		self.setOrganizationDomain("aldebaran.com")
 		self.setApplicationName("qidata annotator")
-		self.setApplicationVersion(annotator.VERSION)
+		self.setApplicationVersion(qidata_gui.VERSION)

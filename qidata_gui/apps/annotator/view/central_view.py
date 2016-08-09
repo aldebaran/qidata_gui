@@ -6,7 +6,7 @@ import os.path
 from PySide.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QMessageBox
 from PySide.QtCore import Signal
 # qidata
-from qidata_file import *
+from qidata.files import *
 
 class AnnotationSelectorWidget(QWidget):
     """

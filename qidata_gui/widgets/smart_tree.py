@@ -3,7 +3,7 @@
 from PySide.QtCore import Qt
 from PySide.QtGui import QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton, QSizePolicy
 
-from qidata_objects import TypedList, DataObjectTypes
+from qidata.metadata_objects import TypedList, DataObjectTypes
 
 import math
 

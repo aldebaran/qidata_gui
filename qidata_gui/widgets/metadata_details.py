@@ -6,7 +6,7 @@ from .smart_tree import SmartTreeWidget
 from PySide.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QLabel, QLineEdit
 from PySide.QtCore import Signal
 
-import qidata_objects
+import qidata.metadata_objects
 
 class MetadataDetails(QWidget):
     """

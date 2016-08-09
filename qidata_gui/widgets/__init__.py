@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library
-import os.path
 import re
 
 import data_widgets
