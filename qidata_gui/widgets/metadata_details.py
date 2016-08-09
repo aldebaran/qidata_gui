@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 from .smart_tree import SmartTreeWidget
@@ -7,9 +8,9 @@ from PySide.QtCore import Signal
 
 import qidata_objects
 
-class QiDataObjectDisplayer(QWidget):
+class MetadataDetails(QWidget):
     """
-    Widget to display QiDataObjects detailed information
+    Widget to display MetadataObjects detailed information
     """
 
     # ───────
@@ -22,11 +23,11 @@ class QiDataObjectDisplayer(QWidget):
 
     def __init__(self, parent=None):
         """
-        QiDataObjectDisplayer constructor
+        MetadataDetails constructor
 
         @parent       :  Parent of this widget
         """
-        super(QiDataObjectDisplayer, self).__init__(parent)
+        super(MetadataDetails, self).__init__(parent)
 
         ## VIEW DEFINITION
 

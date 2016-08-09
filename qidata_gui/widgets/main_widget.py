@@ -5,9 +5,9 @@ from PySide.QtCore import Signal
 from PySide.QtGui import QWidget, QHBoxLayout
 
 # qidata
-from qidata_objects_displayer import QiDataObjectDisplayer
+from metadata_details import MetadataDetails
 
-class QiDataWidget(QWidget):
+class MainWidget(QWidget):
     """
     General widget for QiData GUI applications.
 
@@ -26,12 +26,12 @@ class QiDataWidget(QWidget):
 
     def __init__(self, qidata_subwidget, parent=None):
         """
-        QiDataWidget constructor
+        MainWidget constructor
 
         @qidata_subwidget  :  Data specialized widget to use
         @parent            :  Parent of this widget
         """
-        super(QiDataWidget, self).__init__(parent)
+        super(MainWidget, self).__init__(parent)
 
         ## VIEW DEFINITION
 
@@ -43,7 +43,7 @@ class QiDataWidget(QWidget):
         self.main_widget.objectAdditionRequired.connect(self.objectAdditionRequired.emit)
 
         # Object displaying widget
-        self.object_displaying_widget = QiDataObjectDisplayer(self)
+        self.object_displaying_widget = MetadataDetails(self)
         self.object_displaying_widget.objectTypeChangeRequested.connect(self.objectTypeChangeRequested.emit)
 
         # Main layout

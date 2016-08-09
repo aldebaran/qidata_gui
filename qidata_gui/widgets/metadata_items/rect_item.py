@@ -3,7 +3,7 @@
 from PySide.QtGui import QGraphicsItem, QPen, QColor, QGraphicsRectItem
 from PySide.QtCore import Signal, QObject, Qt
 
-class QiDataObjectRectItem(QGraphicsRectItem, QObject):
+class MetadataRectItem(QGraphicsRectItem, QObject):
     """
     Item to show the position of an object on an image.
     """

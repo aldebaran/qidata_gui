@@ -5,8 +5,7 @@ from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QPi
 from PySide.QtCore import Signal, QObject
 
 # qidata
-from .qidatawidget import QiDataWidget
-from qidata_objects_widgets.qidata_object_rect_item import QiDataObjectRectItem
+from ..metadata_items.rect_item import MetadataRectItem
 
 
 class PixmapWidget(QGraphicsPixmapItem, QObject):
@@ -46,7 +45,7 @@ class ImageWidget(QGraphicsView):
 
 	def __init__(self, qidata_image, parent=None):
 		"""
-		QiDataWidget constructor
+		ImageWidget constructor
 
 		@qidata_image  :  File of path containing an image with QiDataObjects
 		@parent        :  Parent of this widget
@@ -79,7 +78,7 @@ class ImageWidget(QGraphicsView):
 		..note:: The returned reference is handy to connect callbacks on the
 		widget signals. This reference is also needed to remove the object.
 		"""
-		r = QiDataObjectRectItem(coordinates)
+		r = MetadataRectItem(coordinates)
 		self.scene().addItem(r)
 		return r
 

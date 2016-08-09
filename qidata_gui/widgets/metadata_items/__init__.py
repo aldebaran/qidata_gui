@@ -1,0 +1,1 @@
+from rect_item import MetadataRectItem
