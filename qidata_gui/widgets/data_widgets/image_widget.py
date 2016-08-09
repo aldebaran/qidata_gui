@@ -19,6 +19,12 @@ class PixmapWidget(QGraphicsPixmapItem, QObject):
 	# Contructor
 
 	def __init__(self, pixmap, parent=None):
+		"""
+		PixmapWidget constructor
+
+		:param pixmap: The image to display
+		:param parent: This widget's parent
+		"""
 		QGraphicsPixmapItem.__init__(self, pixmap)
 		QObject.__init__(self, parent)
 
@@ -47,8 +53,8 @@ class ImageWidget(QGraphicsView):
 		"""
 		ImageWidget constructor
 
-		@qidata_image  :  File of path containing an image with QiDataObjects
-		@parent        :  Parent of this widget
+		:param qidata_image:  File of path containing an image with QiDataObjects
+		:param parent:  Parent of this widget
 		"""
 		super(ImageWidget, self).__init__(parent)
 
@@ -72,11 +78,12 @@ class ImageWidget(QGraphicsView):
 		"""
 		Add an object to display on the view.
 
-		@coordinates :  Coordinates of the object to show (format depends on data type)
-		@return      :  Reference to the widget representing the object
+		:param coordinates:  Coordinates of the object to show (format depends on data type)
+		:return:  Reference to the widget representing the object
 
-		..note:: The returned reference is handy to connect callbacks on the
-		widget signals. This reference is also needed to remove the object.
+		.. note::
+			The returned reference is handy to connect callbacks on the
+			widget signals. This reference is also needed to remove the object.
 		"""
 		r = MetadataRectItem(coordinates)
 		self.scene().addItem(r)
@@ -86,6 +93,6 @@ class ImageWidget(QGraphicsView):
 		"""
 		Remove an object from the widget
 
-		@item  :  Reference to the widget
+		:param item:  Reference to the widget
 		"""
 		self.scene().removeItem(item)

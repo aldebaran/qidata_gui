@@ -20,7 +20,7 @@ class SmartTreeWidget(QTreeWidget):
         """
         SmartTreeWidget constructor
 
-        @parent       :  Parent of this widget
+        :param parent:  Parent of this widget
         """
         super(SmartTreeWidget, self).__init__(parent)
 
@@ -50,7 +50,7 @@ class SmartTreeWidget(QTreeWidget):
         """
         Clears the tree view and displays the new message
 
-        @new_message: message object to display in the treeview
+        :param new_message: message object to display in the treeview
         """
         # Remember whether items were expanded or not before deleting
         if self._message:

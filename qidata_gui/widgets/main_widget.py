@@ -11,14 +11,17 @@ class MainWidget(QWidget):
     """
     General widget for QiData GUI applications.
 
-    Contains two subwidgets, one to display QiDataObjects information,
+    Contains two subwidgets, one to display MetadataObjects information,
     and another specialized in the data displayed (image, audio, ...).
     """
 
     # ───────
     # Signals
 
+    # User asked for a metadata object to be added at location given in parameter
     objectAdditionRequired = Signal(list)
+
+    # User requested to change the type of the selected metadata object
     objectTypeChangeRequested = Signal(str)
 
     # ───────────
@@ -28,8 +31,8 @@ class MainWidget(QWidget):
         """
         MainWidget constructor
 
-        @qidata_subwidget  :  Data specialized widget to use
-        @parent            :  Parent of this widget
+        :param qidata_subwidget:  Data specialized widget to use
+        :param parent:  Parent of this widget
         """
         super(MainWidget, self).__init__(parent)
 
@@ -70,11 +73,12 @@ class MainWidget(QWidget):
         This method only adds the object on the specialized widget but
         does not display the object details.
 
-        @coordinates :  Coordinates of the object to show (format depends on data type)
-        @return      :  Reference to the widget representing the object
+        :param coordinates:  Coordinates of the object to show (format depends on data type)
+        :return:  Reference to the widget representing the object
 
-        ..note:: The returned reference is handy to connect callbacks on the
-        widget signals. This reference is also needed to remove the object.
+        .. note::
+            The returned reference is handy to connect callbacks on the
+            widget signals. This reference is also needed to remove the object.
         """
         return self.main_widget.addObject(coordinates)
 
@@ -93,7 +97,7 @@ class MainWidget(QWidget):
         This method only displays the object details in the corresponding widget
         but does not add the object on the specialized widget.
 
-        @qidata_object  :  QiDataObject to display
+        :param qidata_object:  QiDataObject to display
         """
         self.object_displaying_widget.displayObject(qidata_object)
 
@@ -104,9 +108,8 @@ class MainWidget(QWidget):
         This method removes the object from the specialized view and clears the
         object viewing panel.
 
-        @item  :  Reference to the widget
+        :param item:  Reference to the widget
         """
         self.main_widget.removeItem(item)
         self.object_displaying_widget.clearObject()
 
-    

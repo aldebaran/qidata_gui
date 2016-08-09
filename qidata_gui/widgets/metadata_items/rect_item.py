@@ -23,8 +23,8 @@ class MetadataRectItem(QGraphicsRectItem, QObject):
         """
         QiDataObjectRectItem constructor
 
-        @coordinates  :  Object position
-        @parent       :  Parent of this widget
+        :param coordinates:  Object position
+        :param parent:  Parent of this widget
         """
         x_min, y_min = coordinates[0]
         x_max, y_max = coordinates[1]

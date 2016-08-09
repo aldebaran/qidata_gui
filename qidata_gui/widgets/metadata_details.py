@@ -25,7 +25,7 @@ class MetadataDetails(QWidget):
         """
         MetadataDetails constructor
 
-        @parent       :  Parent of this widget
+        :param parent:  Parent of this widget
         """
         super(MetadataDetails, self).__init__(parent)
 
@@ -54,7 +54,7 @@ class MetadataDetails(QWidget):
         ## GUI ELEMENT SETUP
 
         # Topic selection
-        self.annotation_type_selection_widget.addItems(qidata_objects.DataObjectTypes) # we add some message type
+        self.annotation_type_selection_widget.addItems(qidata.metadata_objects.DataObjectTypes) # we add some message type
         self.annotation_type_selection_widget.currentIndexChanged['QString'].connect(self._handle_message_selected)
 
     # ───────
@@ -64,7 +64,7 @@ class MetadataDetails(QWidget):
         """
         Display the object details
 
-        @qidata_object  :  QiDataObject to display
+        :param qidata_object:  QiDataObject to display
         """
         # Enable type selector widget
         self.annotation_type_selection_widget.setEnabled(True)
