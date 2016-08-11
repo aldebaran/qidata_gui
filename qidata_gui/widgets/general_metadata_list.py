@@ -60,7 +60,10 @@ class GeneralMetadataList(QWidget):
         ..note:: The returned reference is handy to connect callbacks on the
         widget signals. This reference is also needed to remove the object.
         """
-        self.counter += 1
+        if self.annotations_list.count() == 0:
+            self.counter = 1
+        else:
+            self.counter += 1
         return MetadataListItem("annotation_%d"%self.counter, self.annotations_list)
 
     def removeItem(self, item):
@@ -69,4 +72,6 @@ class GeneralMetadataList(QWidget):
 
         @item  :  Item to remove
         """
+        if self.annotations_list.row(item) == self.annotations_list.count()-1:
+            self.counter -= 1
         self.annotations_list.takeItem(self.annotations_list.row(item))

@@ -87,7 +87,7 @@ class ImageController(DataController):
     def _showAnnotations(self):
         # Clear
         for existing_item in self.item_list:
-            DataController.widget.main_widget.removeObject(existing_item)
+            DataController.widget.main_widget.removeMetadataObject(existing_item)
         self.item_list = []
         # Display
         for annotationIndex in range(0,len(self.local_model)):
