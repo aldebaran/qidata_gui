@@ -23,7 +23,8 @@ from .controllers import *
 
 LOOKUP_CONTROLLER_MODEL = {
     re.compile(".*\.png"): image_controller.ImageController,
-    re.compile(".*\.jpg"): image_controller.ImageController
+    re.compile(".*\.jpg"): image_controller.ImageController,
+    re.compile(".*\.wav"): audio_controller.AudioController
 }
 
 def isSupported(dataPath):
