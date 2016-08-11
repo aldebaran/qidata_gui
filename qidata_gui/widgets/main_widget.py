@@ -25,6 +25,7 @@ class MainWidget(QWidget):
 
     LOOKUP_WIDGET_MODEL = {
         "Image": data_widgets.ImageWidget,
+        "Audio": data_widgets.AudioWidget,
     }
 
     # ───────
