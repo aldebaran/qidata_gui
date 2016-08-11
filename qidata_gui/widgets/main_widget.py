@@ -2,19 +2,22 @@
 
 # Qt
 from PySide.QtCore import Signal
-from PySide.QtGui import QWidget, QHBoxLayout
+from PySide.QtGui import QWidget, QHBoxLayout, QVBoxLayout
 
 # qidata
 from metadata_details import MetadataDetails
+from general_metadata_list import GeneralMetadataList
 from qidata.types import CheckCompatibility, MetadataType
+from metadata_items.list_item import MetadataListItem
 import data_widgets
 
 class MainWidget(QWidget):
     """
     General widget for QiData GUI applications.
 
-    Contains two subwidgets, one to display MetadataObjects information,
-    and another specialized in the data displayed (image, audio, ...).
+    Contains three subwidgets, one to display MetadataObjects information,
+    a second to show metadata that is not localized on data, and a third
+    specialized in the data displayed (image, audio, ...).
     """
 
     # ────────────
@@ -57,14 +60,27 @@ class MainWidget(QWidget):
         # Bind main widget's signals
         self.main_widget.objectAdditionRequired.connect(self.objectAdditionRequired.emit)
 
+        # Right panel widget
+        self.right_panel_widget = QWidget(self)
+
+        # Widget displaying annotations concerning the whole file / image / sound / ...
+        self.overall_annotations_displayer_widget = GeneralMetadataList(self.right_panel_widget)
+        self.overall_annotations_displayer_widget.objectAdditionRequired.connect(self.objectAdditionRequired)
+
         # Object displaying widget
         self.object_displaying_widget = MetadataDetails(CheckCompatibility.getCompatibleMetadataTypes(data_object.type), self)
         self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.objectTypeChangeRequested.emit(MetadataType[type_name]))
 
+        # Right layout
+        self.right_panel_layout = QVBoxLayout(self)
+        self.right_panel_layout.addWidget(self.overall_annotations_displayer_widget)
+        self.right_panel_layout.addWidget(self.object_displaying_widget)
+        self.right_panel_widget.setLayout(self.right_panel_layout)
+
         # Main layout
         self.main_hlayout = QHBoxLayout(self)
         self.main_hlayout.addWidget(self.main_widget)
-        self.main_hlayout.addWidget(self.object_displaying_widget)
+        self.main_hlayout.addWidget(self.right_panel_widget)
         self.setLayout(self.main_hlayout)
 
     # ───────
@@ -84,7 +100,10 @@ class MainWidget(QWidget):
             The returned reference is handy to connect callbacks on the
             widget signals. This reference is also needed to remove the object.
         """
-        return self.main_widget.addObject(coordinates)
+        if coordinates is None:
+            return self.overall_annotations_displayer_widget.addObject()
+        else:
+            return self.main_widget.addObject(coordinates)
 
     def displayMetadataObjectDetails(self, metadata_object):
         """
@@ -106,6 +125,9 @@ class MainWidget(QWidget):
 
         :param item:  Reference to the widget
         """
-        self.main_widget.removeItem(item)
+        if type(item) == MetadataListItem:
+            self.overall_annotations_displayer_widget.removeItem(item)
+        else:
+            self.main_widget.removeItem(item)
         self.object_displaying_widget.clearObject()
 

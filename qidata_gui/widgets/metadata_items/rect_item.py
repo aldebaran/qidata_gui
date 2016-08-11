@@ -3,7 +3,9 @@
 from PySide.QtGui import QGraphicsItem, QPen, QColor, QGraphicsRectItem
 from PySide.QtCore import Signal, QObject, Qt
 
-class MetadataRectItem(QGraphicsRectItem, QObject):
+from .base_item import MetadataBaseItem
+
+class MetadataRectItem(QGraphicsRectItem, MetadataBaseItem):
     """
     Item to show the position of an object on an image.
     """
@@ -29,7 +31,7 @@ class MetadataRectItem(QGraphicsRectItem, QObject):
         x_min, y_min = coordinates[0]
         x_max, y_max = coordinates[1]
         QGraphicsRectItem.__init__(self, x_min, y_min, x_max-x_min, y_max-y_min)
-        QObject.__init__(self, parent)
+        MetadataBaseItem.__init__(self, parent)
         self.setFlags(QGraphicsItem.ItemIsFocusable)
         self.setPen(QPen(QColor(255,0,0)))
 
