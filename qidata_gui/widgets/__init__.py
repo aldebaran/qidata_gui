@@ -29,16 +29,8 @@
 # Standard Library
 import re
 
-import data_widgets
 from main_widget import MainWidget
 
-
-# ────────────
-# Data Widgets
-
-LOOKUP_WIDGET_MODEL = {
-    "image": data_widgets.ImageWidget,
-}
 
 def makeWidget(widget_type, main_data=None):
     """

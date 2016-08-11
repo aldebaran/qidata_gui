@@ -6,6 +6,8 @@ from PySide.QtGui import QWidget, QHBoxLayout
 
 # qidata
 from metadata_details import MetadataDetails
+from qidata.types import CheckCompatibility, MetadataType
+import data_widgets
 
 class MainWidget(QWidget):
     """
@@ -15,6 +17,13 @@ class MainWidget(QWidget):
     and another specialized in the data displayed (image, audio, ...).
     """
 
+    # ────────────
+    # Data Widgets
+
+    LOOKUP_WIDGET_MODEL = {
+        "Image": data_widgets.ImageWidget,
+    }
+
     # ───────
     # Signals
 
@@ -22,16 +31,16 @@ class MainWidget(QWidget):
     objectAdditionRequired = Signal(list)
 
     # User requested to change the type of the selected metadata object
-    objectTypeChangeRequested = Signal(str)
+    objectTypeChangeRequested = Signal([MetadataType])
 
     # ───────────
     # Constructor
 
-    def __init__(self, qidata_subwidget, parent=None):
+    def __init__(self, data_object, parent=None):
         """
         MainWidget constructor
 
-        :param qidata_subwidget:  Data specialized widget to use
+        :param data_object:  QiDataObject to display (qidata.qidataobject.QiDataObject)
         :param parent:  Parent of this widget
         """
         super(MainWidget, self).__init__(parent)
@@ -39,15 +48,18 @@ class MainWidget(QWidget):
         ## VIEW DEFINITION
 
         # Main widget
-        self.main_widget = qidata_subwidget
+        try:
+            self.main_widget = self.LOOKUP_WIDGET_MODEL[str(data_object.type)](data_object.raw_data)
+        except KeyError:
+            raise TypeError("%s is not supported"%data_object)
         self.main_widget.setParent(self)
 
         # Bind main widget's signals
         self.main_widget.objectAdditionRequired.connect(self.objectAdditionRequired.emit)
 
         # Object displaying widget
-        self.object_displaying_widget = MetadataDetails(self)
-        self.object_displaying_widget.objectTypeChangeRequested.connect(self.objectTypeChangeRequested.emit)
+        self.object_displaying_widget = MetadataDetails(CheckCompatibility.getCompatibleMetadataTypes(data_object.type), self)
+        self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.objectTypeChangeRequested.emit(MetadataType[type_name]))
 
         # Main layout
         self.main_hlayout = QHBoxLayout(self)
@@ -58,15 +70,7 @@ class MainWidget(QWidget):
     # ───────
     # Methods
 
-    def addObject(self, coordinates):
-        """
-        DEPRECATED, use `addObjectToView` instead
-        """
-        print "qidatawidget.addObject is deprecated"
-        print "Use addObjectToView instead"
-        return self.addObjectToView(coordinates)
-
-    def addObjectToView(self, coordinates):
+    def addMetadataObjectToView(self, coordinates):
         """
         Add an object to display on the view.
 
@@ -82,26 +86,18 @@ class MainWidget(QWidget):
         """
         return self.main_widget.addObject(coordinates)
 
-    def displayObject(self, qidata_object):
-        """
-        DEPRECATED, use `displayObjectDetails` instead
-        """
-        print "qidatawidget.displayObject is deprecated"
-        print "Use displayObjectDetails instead"
-        self.displayObjectDetails(qidata_object)
-
-    def displayObjectDetails(self, qidata_object):
+    def displayMetadataObjectDetails(self, metadata_object):
         """
         Display the object details
 
         This method only displays the object details in the corresponding widget
         but does not add the object on the specialized widget.
 
-        :param qidata_object:  QiDataObject to display
+        :param metadata_object:  QiDataObject to display
         """
-        self.object_displaying_widget.displayObject(qidata_object)
+        self.object_displaying_widget.displayObject(metadata_object)
 
-    def removeObject(self, item):
+    def removeMetadataObject(self, item):
         """
         Remove an object from the widget
 

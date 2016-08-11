@@ -21,10 +21,12 @@ class MetadataDetails(QWidget):
     # ───────────
     # Constructor
 
-    def __init__(self, parent=None):
+    def __init__(self, supported_metadata_type_list, parent=None):
         """
         MetadataDetails constructor
 
+        :param supported_metadata_type_list: list of metadata types compatible
+        with the represented data type
         :param parent:  Parent of this widget
         """
         super(MetadataDetails, self).__init__(parent)
@@ -54,7 +56,8 @@ class MetadataDetails(QWidget):
         ## GUI ELEMENT SETUP
 
         # Topic selection
-        self.annotation_type_selection_widget.addItems(qidata.metadata_objects.DataObjectTypes) # we add some message type
+        for metadata_type in supported_metadata_type_list:
+            self.annotation_type_selection_widget.addItem(str(metadata_type)) # we add some message type
         self.annotation_type_selection_widget.currentIndexChanged['QString'].connect(self._handle_message_selected)
 
     # ───────

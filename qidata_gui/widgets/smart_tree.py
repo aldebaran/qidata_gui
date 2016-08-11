@@ -3,7 +3,7 @@
 from PySide.QtCore import Qt
 from PySide.QtGui import QTreeWidget, QTreeWidgetItem, QLineEdit, QPushButton, QSizePolicy
 
-from qidata.metadata_objects import TypedList, DataObjectTypes
+from qidata.metadata_objects import MetadataObjectBase, TypedList
 
 import math
 
@@ -76,7 +76,7 @@ class SmartTreeWidget(QTreeWidget):
         value = None
         subobjs = []
 
-        if type(obj).__name__ in DataObjectTypes:
+        if isinstance(obj, MetadataObjectBase):
             # obj is a class instance => retrieve its attributes to be displayed as sub-elements
             subobjs = obj.__dict__.items()
 

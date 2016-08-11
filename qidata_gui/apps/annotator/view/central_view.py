@@ -7,6 +7,8 @@ from PySide.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboB
 from PySide.QtCore import Signal
 # qidata
 from qidata.files import *
+from qidata_gui.widgets import MainWidget
+from qidata.types import MetadataType
 
 class AnnotationSelectorWidget(QWidget):
     """
@@ -43,7 +45,7 @@ class CentralWidget(QWidget):
     # Signals
 
     objectAdditionRequired = Signal(list)
-    objectTypeChangeRequested = Signal(str)
+    objectTypeChangeRequested = Signal([MetadataType])
     userChanged = Signal(str)
 
     # ───────────
@@ -65,7 +67,8 @@ class CentralWidget(QWidget):
         self.annotation_selector_widget.userChanged.connect(self.userChanged.emit)
 
         # Second widget layer: specialized qidata_widget
-        self.main_widget = main_widget
+        # makeWidget("image", self.modelHandler)
+        self.main_widget = MainWidget(main_widget)
         self.main_widget.objectAdditionRequired.connect(self.objectAdditionRequired.emit)
         self.main_widget.objectTypeChangeRequested.connect(self.objectTypeChangeRequested.emit)
 
@@ -79,15 +82,15 @@ class CentralWidget(QWidget):
     # Methods
 
     def addObject(self, coordinates):
-        return self.main_widget.addObjectToView(coordinates)
+        return self.main_widget.addMetadataObjectToView(coordinates)
 
     def displayObject(self, qidata_object):
-        self.main_widget.displayObjectDetails(qidata_object)
+        self.main_widget.displayMetadataObjectDetails(qidata_object)
 
     def askForItemDeletion(self, item):
         response = QMessageBox.warning(self, "Suppression", "Are you sure you want to remove this annotation ?", QMessageBox.Yes | QMessageBox.No)
         if response == QMessageBox.Yes:
-            self.main_widget.removeObject(item)
+            self.main_widget.removeMetadataObject(item)
             return True
         return False
 

@@ -38,7 +38,7 @@ class PixmapWidget(QGraphicsPixmapItem, QObject):
 
 class ImageWidget(QGraphicsView):
 	"""
-    Widget specialized in displaying image with QiDataObjects
+    Widget specialized in displaying image with Metadata Objects
     """
 
 	# ───────
@@ -49,11 +49,11 @@ class ImageWidget(QGraphicsView):
 	# ───────────
 	# Constructor
 
-	def __init__(self, qidata_image, parent=None):
+	def __init__(self, image_raw_data, parent=None):
 		"""
 		ImageWidget constructor
 
-		:param qidata_image:  File of path containing an image with QiDataObjects
+		:param image_raw_data:  Image raw data
 		:param parent:  Parent of this widget
 		"""
 		super(ImageWidget, self).__init__(parent)
@@ -62,7 +62,9 @@ class ImageWidget(QGraphicsView):
 		scene = QGraphicsScene()
 
 		# Create pixmap
-		p = PixmapWidget(QPixmap(qidata_image.path), self)
+		pix = QPixmap()
+		pix.loadFromData(image_raw_data)
+		p = PixmapWidget(pix, self)
 
 		# When pixmap is clicked, add a new box
 		p.isClicked.connect(self.objectAdditionRequired)
@@ -76,7 +78,7 @@ class ImageWidget(QGraphicsView):
 
 	def addObject(self, coordinates):
 		"""
-		Add an object to display on the view.
+		Add a metadata object to display on the view.
 
 		:param coordinates:  Coordinates of the object to show (format depends on data type)
 		:return:  Reference to the widget representing the object
