@@ -19,7 +19,7 @@ setup(
     long_description=open(os.path.join(CONTAINING_DIRECTORY,'README.md')).read(),
     install_requires=[
         "PySide >= 1.2.2",
-        "qidata >= 0.1",
+        "qidata >= 0.2",
         "argcomplete >= 1.1.0"
     ]
 )
