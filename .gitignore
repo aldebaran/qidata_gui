@@ -4,3 +4,4 @@ dist/*
 build/*
 *.pyc
 .cache/*
+doc/_build/*

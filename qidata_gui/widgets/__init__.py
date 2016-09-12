@@ -24,6 +24,7 @@
     A widget is provided for each specific type of data that can be used, and an
     item is provided for each possible representation of a metadata object on
     raw data.
+
 """
 
 # Standard Library

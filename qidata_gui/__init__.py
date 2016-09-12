@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+"""
+qidata_gui package
+==================
+
+This package contains all widgets necessary to display data and any metadata linked to it.
+It also contains several graphical applications using those widgets.
+"""
+
 import os, glob
 
 # ––––––––––––––––––
