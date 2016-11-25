@@ -121,7 +121,7 @@ class SmartTreeWidget(QTreeWidget):
                 # obj is a value, display it in an editor widget
                 inputWidget = QLineEdit(self)
                 inputWidget.setText(value)
-                inputWidget.textChanged[str].connect(lambda x: self._onChanged(item, x))
+                inputWidget.textChanged[str].connect(lambda x: self._onChanged(parent_obj, item, x))
                 self.setItemWidget(item, 1, inputWidget)
 
             elif type(obj) in [TypedList]:
@@ -149,21 +149,16 @@ class SmartTreeWidget(QTreeWidget):
         for subobj_name, subobj in subobjs:
             self._display_sub_items(item, obj, subobj_name, subobj)
 
-    def _onChanged(self, item, newvalue):
-        parent_obj = item.data(0, Qt.UserRole)[0]
+    def _onChanged(self, parent_obj, item, newvalue):
         obj_type = item.data(0, Qt.UserRole)[1]
 
         if item.text(0).startswith("["):
             index = int(item.text(0)[1:-1])
+            parent_obj[index] = obj_type(newvalue)
         else:
             index = item.text(0)
-
-        if hasattr(parent_obj, '__dict__'):
-            # obj is a class instance => retrieve its attributes to be displayed as sub-elements
             parent_obj.__setattr__(index, obj_type(newvalue))
 
-        else:
-            parent_obj[index] = obj_type(newvalue)
 
     def _elementAdditionRequired(self, obj, item):
         obj.appendDefault()
