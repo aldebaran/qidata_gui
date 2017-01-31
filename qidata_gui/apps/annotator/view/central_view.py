@@ -2,13 +2,17 @@
 
 # Standard Library
 import os.path
+
 # Qt
 from PySide.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QMessageBox
 from PySide.QtCore import Signal
+
 # qidata
 from qidata.files import *
+from qidata import MetadataType
+
+# qidata_gui
 from qidata_gui.widgets import MainWidget
-from qidata.types import MetadataType
 
 class AnnotationSelectorWidget(QWidget):
     """
@@ -36,7 +40,6 @@ class AnnotationSelectorWidget(QWidget):
         self.main_hlayout = QHBoxLayout(self)
         self.main_hlayout.addWidget(self.user_selector_widget)
         self.setLayout(self.main_hlayout)
-
 
 class CentralWidget(QWidget):
     """Central viewer of the annotator."""

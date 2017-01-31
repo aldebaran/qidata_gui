@@ -3,5 +3,5 @@
     ==============================
 
     This package contains different graphical applications based on qidata widgets. It is not meant
-    to be used by importing the libraries, so it won't be described here.
+    to be used directly through libraries import, so it won't be described here.
 """

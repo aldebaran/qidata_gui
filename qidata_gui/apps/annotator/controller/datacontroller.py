@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 
+# Qt
 from PySide.QtCore import QObject, Signal
 from PySide.QtGui import QMessageBox
 
 # qidata
-from qidata.files import qidatafile
-from ..view import CentralWidget
+from qidata import qidatafile
 from qidata.metadata_objects import *
-from qidata.types import CheckCompatibility
+from qidata import MetadataType, makeMetadataObject
 
-class SelectionChangeCanceledByUser(Exception):
-    def __init__(self):
-        pass
+# local
+from ..view import CentralWidget
+
+class SelectionChangeCanceledByUser(Exception): pass
 
 class DataController(QObject):
 
@@ -20,25 +21,28 @@ class DataController(QObject):
 
     def __init__(self, source_path, user_name):
         super(DataController, self).__init__()
-        DataController.modelHandler = qidatafile.open(source_path, "w")
-        DataController.widget = CentralWidget(DataController.modelHandler)
-        DataController.widget.annotation_selector_widget.user_selector_widget.addItems(self.modelHandler.annotators)
+        self.source_path = source_path
+        with qidatafile.open(self.source_path, "r") as _file:
+            self.annotators = _file.annotators
+            self.metadata = _file.metadata
+            self.widget = CentralWidget(_file)
+            self.widget.annotation_selector_widget.user_selector_widget.addItems(_file.annotators)
 
         self.user_name = user_name
         self._loadUserAnnotations(self.user_name)
 
-        if not user_name in self.modelHandler.annotators:
-            DataController.widget.annotation_selector_widget.user_selector_widget.addItem(user_name)
-        i=DataController.widget.annotation_selector_widget.user_selector_widget.findText(user_name)
-        DataController.widget.annotation_selector_widget.user_selector_widget.setCurrentIndex(i)
-        DataController.widget.userChanged.connect(self.onUserChanged)
+        if not user_name in self.annotators:
+            self.widget.annotation_selector_widget.user_selector_widget.addItem(user_name)
+        i=self.widget.annotation_selector_widget.user_selector_widget.findText(user_name)
+        self.widget.annotation_selector_widget.user_selector_widget.setCurrentIndex(i)
+        self.widget.userChanged.connect(self.onUserChanged)
 
         # Remember which item on the image widget was lastly selected
         self.last_selected_item_index = None
 
         # Remember which type was lastly required by user.
         # If none was required, use first annotation type
-        self.last_selected_item_type = CheckCompatibility.getCompatibleMetadataTypes(self.modelHandler.type)[0]
+        self.last_selected_item_type = list(MetadataType)[0]
 
         # Store created items in same order as annotations in local_model
         self.item_list = []
@@ -105,14 +109,15 @@ class DataController(QObject):
     # Private methods
 
     def _loadUserAnnotations(self, user_name):
-        if not user_name in self.modelHandler.annotators:
-            self.modelHandler.metadata[user_name] = dict()
-            for supported_metadata_type in CheckCompatibility.getCompatibleMetadataTypes(self.modelHandler.type):
-                self.modelHandler.metadata[user_name][str(supported_metadata_type)] = []
+        if not user_name in self.annotators:
+            self.metadata[user_name] = dict()
+        for supported_metadata_type in list(MetadataType):
+            if not str(supported_metadata_type) in self.metadata[user_name].keys():
+                self.metadata[user_name][str(supported_metadata_type)] = []
 
-        DataController.model = self.modelHandler.metadata[user_name]
+        self.model = self.metadata[user_name]
         self.local_model = []
-        for supported_metadata_type in CheckCompatibility.getCompatibleMetadataTypes(self.modelHandler.type):
+        for supported_metadata_type in list(MetadataType):
             self.local_model += self.model[str(supported_metadata_type)]
 
     def _showAnnotations(self):
@@ -168,7 +173,7 @@ class DataController(QObject):
     def onExit(self, auto_save):
         savingRequest = (QMessageBox.Yes if auto_save else self.widget.askForDataSave())
         if savingRequest == QMessageBox.Yes:
-            self.modelHandler.save()
-            self.modelHandler.close()
+            with qidatafile.open(self.source_path, "w") as _file:
+                _file.metadata = self.metadata
         if savingRequest == QMessageBox.Cancel:
             raise SelectionChangeCanceledByUser()

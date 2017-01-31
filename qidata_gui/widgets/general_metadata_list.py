@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from .smart_tree import SmartTreeWidget
-
 from PySide.QtGui import QWidget, QVBoxLayout, QListWidget, QPushButton
 from PySide.QtCore import Signal
 

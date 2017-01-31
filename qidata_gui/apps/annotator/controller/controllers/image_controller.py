@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # qidata
-from qidata.metadata_objects import makeMetadataObject
+from qidata import makeMetadataObject
+
+# local
 from ..datacontroller import DataController
 
 class ImageController(DataController):

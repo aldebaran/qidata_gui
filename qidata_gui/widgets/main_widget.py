@@ -7,7 +7,7 @@ from PySide.QtGui import QWidget, QHBoxLayout, QVBoxLayout
 # qidata
 from metadata_details import MetadataDetails
 from general_metadata_list import GeneralMetadataList
-from qidata.types import CheckCompatibility, MetadataType
+from qidata import MetadataType
 from metadata_items.list_item import MetadataListItem
 import data_widgets
 
@@ -24,8 +24,8 @@ class MainWidget(QWidget):
     # Data Widgets
 
     LOOKUP_WIDGET_MODEL = {
-        "Image": data_widgets.ImageWidget,
-        "Audio": data_widgets.AudioWidget,
+        "IMAGE": data_widgets.ImageWidget,
+        "AUDIO": data_widgets.AudioWidget,
     }
 
     # ───────
@@ -69,7 +69,7 @@ class MainWidget(QWidget):
         self.overall_annotations_displayer_widget.objectAdditionRequired.connect(self.objectAdditionRequired)
 
         # Object displaying widget
-        self.object_displaying_widget = MetadataDetails(CheckCompatibility.getCompatibleMetadataTypes(data_object.type), self)
+        self.object_displaying_widget = MetadataDetails(list(MetadataType), self)
         self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.objectTypeChangeRequested.emit(MetadataType[type_name]))
 
         # Right layout

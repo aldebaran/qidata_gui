@@ -2,12 +2,13 @@
 
 # Standard Library
 import os.path
+
 # Qt
-from PySide.QtCore import QDir
-from PySide.QtCore import Signal, Slot
-from PySide.QtGui import QWidget, QFileSystemModel, QTreeView, QSortFilterProxyModel, QItemSelectionModel
+from PySide.QtCore import Signal
+from PySide.QtGui import QFileSystemModel, QTreeView, QSortFilterProxyModel, QItemSelectionModel
+
 # qidata
-from qidata.files import *
+from qidata import qidatafile, qidataset
 
 class DataFSModel(QSortFilterProxyModel):
 	def __init__(self):
@@ -19,7 +20,7 @@ class DataFSModel(QSortFilterProxyModel):
 	def filterAcceptsRow(self, source_row, source_parent):
 		index = self.sourceModel().index(source_row, 0, source_parent)
 		path = self.sourceModel().filePath(index)
-		return  os.path.isdir(path) or isMetadataFile(path) or isSupported(path)
+		return os.path.isdir(path) or qidatafile.isSupported(path) or qidataset.isDataset(path)
 
 class DataExplorer(QTreeView):
 	# ───────

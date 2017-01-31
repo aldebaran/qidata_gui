@@ -2,11 +2,13 @@
 
 # Standard Library
 import sys
+
 # Qt
 from PySide import QtGui, QtCore
 from PySide.QtGui import QWidget
 from PySide.QtCore import Signal
-# qidata
+
+# local
 from .data_explorer import DataExplorer
 
 class QiDataMainWindow(QtGui.QMainWindow):

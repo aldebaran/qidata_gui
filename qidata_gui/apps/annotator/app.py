@@ -3,11 +3,15 @@
 # Standard Library
 import os.path
 import sys
+
 # Qt
 from PySide.QtCore import Signal, Slot
 from PySide.QtGui import QApplication, QInputDialog
+
 # qidata
-from qidata.files import *
+from qidata import qidatafile, qidataset
+
+# local
 import qidata_gui
 from .view import QiDataMainWindow
 from .controller.datacontroller import SelectionChangeCanceledByUser
@@ -65,7 +69,7 @@ class QiDataApp(QApplication):
 		containing_dataset = None
 
 		candidate_dataset = path
-		while not isDataset(candidate_dataset):
+		while not qidataset.isDataset(candidate_dataset):
 			if self.fs_root and os.path.samefile(candidate_dataset, self.fs_root):
 				break
 			candidate_dataset = os.path.dirname(candidate_dataset)
@@ -77,7 +81,7 @@ class QiDataApp(QApplication):
 		# ───────────
 		# ?
 
-		if isSupported(path):
+		if qidatafile.isSupported(path):
 			# Show the item in an visualization widget
 			try:
 				if self.data_controller is not None:

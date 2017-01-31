@@ -1,10 +1,10 @@
 
 # -*- coding: utf-8 -*-
 
-from .smart_tree import SmartTreeWidget
-
 from PySide.QtGui import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QLabel, QLineEdit
 from PySide.QtCore import Signal
+
+from strong_typing import ObjectDisplayWidget
 
 import qidata.metadata_objects
 
@@ -45,12 +45,12 @@ class MetadataDetails(QWidget):
         self.selection_widget.setLayout(self.type_selection_vlayout)
 
         # Second widget: data display
-        self.smart_tree_widget = SmartTreeWidget(self)
+        self.object_display_widget = ObjectDisplayWidget(self)
 
         # Integrate all the widgets and the top layer widget into the main layout
         self.main_vlayout = QVBoxLayout(self)
         self.main_vlayout.addWidget(self.selection_widget)
-        self.main_vlayout.addWidget(self.smart_tree_widget)
+        self.main_vlayout.addWidget(self.object_display_widget)
         self.setLayout(self.main_vlayout)
 
         ## GUI ELEMENT SETUP
@@ -72,8 +72,8 @@ class MetadataDetails(QWidget):
         # Enable type selector widget
         self.annotation_type_selection_widget.setEnabled(True)
 
-        # Add message to the editable tree
-        self.smart_tree_widget.message = qidata_object
+        # Add data to the editable tree
+        self.object_display_widget.data = qidata_object
 
         # Set the selector to the type we just received (this will raise an event...)
         index = self.annotation_type_selection_widget.findText(type(qidata_object).__name__)
@@ -86,13 +86,13 @@ class MetadataDetails(QWidget):
         # Disable type selector widget
         self.annotation_type_selection_widget.setEnabled(False)
 
-        # Remove message in the editable tree
-        self.smart_tree_widget.message = None
+        # Remove data in the editable tree
+        self.object_display_widget.data = None
 
     # ─────
     # Slots
 
     def _handle_message_selected(self, message_name):
-        if message_name != '' and message_name != type(self.smart_tree_widget.message).__name__:
-            # If the message name received is the same as the message type, do nothing
+        if message_name != '' and message_name != type(self.object_display_widget.data).__name__:
+            # If the message name received is the same as the data type, do nothing
             self.objectTypeChangeRequested.emit(message_name)
