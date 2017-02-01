@@ -11,11 +11,13 @@ from PySide.QtGui import QApplication, QInputDialog
 # qidata
 from qidata import qidatafile, qidataset
 
-# local
+# qidata_gui
 import qidata_gui
+
+# local
 from .view import QiDataMainWindow
-from .controller.datacontroller import SelectionChangeCanceledByUser
 from .controller import controllerfactory
+from . import exceptions
 
 class QiDataApp(QApplication):
 	def __init__(self, path = None, current_item = None):
@@ -93,7 +95,7 @@ class QiDataApp(QApplication):
 				self.main_window.copy_all_msg.setEnabled(True)
 			except TypeError, e:
 				print "TypeError:%s"%e
-			except SelectionChangeCanceledByUser:
+			except exceptions.SelectionChangeCanceledByUser:
 				self.data_explorer._cancelSelectionChange()
 
 	def copy(self):

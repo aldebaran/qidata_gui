@@ -6,13 +6,11 @@ from PySide.QtGui import QMessageBox
 
 # qidata
 from qidata import qidatafile
-from qidata.metadata_objects import *
 from qidata import MetadataType, makeMetadataObject
 
 # local
+from .. import exceptions
 from ..view import CentralWidget
-
-class SelectionChangeCanceledByUser(Exception): pass
 
 class DataController(QObject):
 
@@ -176,4 +174,4 @@ class DataController(QObject):
             with qidatafile.open(self.source_path, "w") as _file:
                 _file.metadata = self.metadata
         if savingRequest == QMessageBox.Cancel:
-            raise SelectionChangeCanceledByUser()
+            raise exceptions.SelectionChangeCanceledByUser()
