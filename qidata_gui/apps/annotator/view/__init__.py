@@ -1,4 +1,4 @@
 
-from window import QiDataMainWindow
-from data_explorer import DataExplorer
-from central_view import CentralWidget
+from main_window import AnnotationMakerMainWindow
+from file_system_explorer import FileSystemExplorer
+from annotation_interface import AnnotationInterface

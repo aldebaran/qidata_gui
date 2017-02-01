@@ -5,33 +5,41 @@ import sys
 
 # Qt
 from PySide import QtGui, QtCore
-from PySide.QtGui import QWidget
-from PySide.QtCore import Signal
 
 # local
-from .data_explorer import DataExplorer
+from .file_system_explorer import FileSystemExplorer
 
-class QiDataMainWindow(QtGui.QMainWindow):
+class AnnotationMakerMainWindow(QtGui.QMainWindow):
+	"""
+	Global annotation window.
+	Contains:
+		- A filesystem explorer on the left, displaying all accessible files
+		  (``file_system_explorer.FileSystemExplorer``)
+		- A generic widget containing many subwidgets for annotations on the center/right
+		  (``annotation_interface.AnnotationInterface``)
+	"""
 
-	copyRequested = Signal()
-	pasteRequested = Signal()
+	copyRequested = QtCore.Signal()
+	pasteRequested = QtCore.Signal()
 
 	def __init__(self, user_name="anonymous", desktop_geometry = None):
-		super(QiDataMainWindow, self).__init__()
+		QtGui.QMainWindow.__init__(self)
 		self.setWindowTitle("qidata annotate by %s"%user_name)
 		self.printer = QtGui.QPrinter()
 
 		# ───────
 		# Widgets
 
-		self.data_explorer = DataExplorer()
+		self.fs_explorer = FileSystemExplorer()
 		self.explorer_dock = QtGui.QDockWidget("Data Explorer", parent=self)
 		self.explorer_dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-		self.explorer_dock.setWidget(self.data_explorer)
+		self.explorer_dock.setWidget(self.fs_explorer)
 		self.explorer_dock.setObjectName(self.explorer_dock.windowTitle())
 		self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.explorer_dock)
 
-		self.visualization_widget = QWidget()
+		# Put an empty widget at the center (it will be replaced by the proper widget once
+		# a file will have been selected)
+		self.visualization_widget = QtGui.QWidget()
 
 		# ───────
 		# Actions
@@ -88,6 +96,10 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 	@visualization_widget.setter
 	def visualization_widget(self, new_visualization_widget):
+		"""
+		This is typically set by ``AnnotationMakerApp`` when
+		a new file is selected
+		"""
 		self._visualization_widget = new_visualization_widget
 		self.setCentralWidget(self._visualization_widget)
 

@@ -10,9 +10,9 @@ from PySide.QtGui import QFileSystemModel, QTreeView, QSortFilterProxyModel, QIt
 # qidata
 from qidata import qidatafile, qidataset
 
-class DataFSModel(QSortFilterProxyModel):
+class _DataFSModel(QSortFilterProxyModel):
 	def __init__(self):
-		super(DataFSModel, self).__init__()
+		super(_DataFSModel, self).__init__()
 
 	# ───────────────────────────────
 	# QSortFilterProxyModel overrides
@@ -22,7 +22,7 @@ class DataFSModel(QSortFilterProxyModel):
 		path = self.sourceModel().filePath(index)
 		return os.path.isdir(path) or qidatafile.isSupported(path) or qidataset.isDataset(path)
 
-class DataExplorer(QTreeView):
+class FileSystemExplorer(QTreeView):
 	# ───────
 	# Signals
 
@@ -32,7 +32,7 @@ class DataExplorer(QTreeView):
 	# Constructor
 
 	def __init__(self, root = "."):
-		super(DataExplorer, self).__init__()
+		QTreeView.__init__(self)
 
 		self.setRoot(root)
 		self.__setParameters()
@@ -45,7 +45,7 @@ class DataExplorer(QTreeView):
 	def setRoot(self, new_root):
 		self.__fs_model = QFileSystemModel()
 		self.__fs_model.setRootPath(new_root)
-		self.data_fs_model = DataFSModel()
+		self.data_fs_model = _DataFSModel()
 		self.data_fs_model.setSourceModel(self.__fs_model)
 		self.setModel(self.data_fs_model)
 		self.setRootIndex(self.data_fs_model.mapFromSource(self.__fs_model.index(new_root)))
@@ -59,7 +59,7 @@ class DataExplorer(QTreeView):
 	# QTreeView overrides
 
 	def selectionChanged(self, selected, deselected):
-		super(DataExplorer, self).selectionChanged(selected, deselected)
+		super(FileSystemExplorer, self).selectionChanged(selected, deselected)
 		if self._ignore_events:
 			return
 		indexes = selected.indexes()

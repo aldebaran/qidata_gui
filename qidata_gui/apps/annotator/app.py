@@ -15,13 +15,24 @@ from qidata import qidatafile, qidataset
 import qidata_gui
 
 # local
-from .view import QiDataMainWindow
-from .controller import controllerfactory
+from .view import AnnotationMakerMainWindow
 from . import exceptions
+from .controller import makeAnnotationController
 
-class QiDataApp(QApplication):
+class AnnotationMakerApp(QApplication):
+	"""
+	Annotation application's main entry point.
+
+	This tool follows the rule of the MVC organization.  ``AnnotationMakerApp``
+	is the top level controller, contains a view (``AnnotationMakerMainWindow``).
+	It has no model.
+
+	Within the view is nested another MVC pattern. A new MVC "instance" is spawned
+	each time a file is opened. The model is the file, the controller is the ``DataController``
+	instance, and the view is a ``QiDataWidget`` instance.
+	"""
 	def __init__(self, path = None, current_item = None):
-		super(QiDataApp, self).__init__([])
+		QApplication.__init__(self, [])
 		self.__setMetaInfo()
 
 		self.fs_root         = path
@@ -37,7 +48,7 @@ class QiDataApp(QApplication):
 		# ───
 		# GUI
 
-		self.main_window = QiDataMainWindow(self.user_name, self.desktop_geometry)
+		self.main_window = AnnotationMakerMainWindow(self.user_name, self.desktop_geometry)
 		self.main_window.copyRequested.connect(self.copy)
 		self.main_window.pasteRequested.connect(self.paste)
 
@@ -49,7 +60,7 @@ class QiDataApp(QApplication):
 		# ───────────────
 		# Connect signals
 
-		self.data_explorer.path_selected.connect(self.setSelected)
+		self.fs_explorer.path_selected.connect(self.setSelected)
 
 		# ──────────
 		# Initialize
@@ -62,7 +73,7 @@ class QiDataApp(QApplication):
 
 	def setRoot(self, new_root):
 		self.fs_root = new_root
-		self.data_explorer.setRoot(new_root)
+		self.fs_explorer.setRoot(new_root)
 
 	def setSelected(self, path):
 		# ───────────────────────────
@@ -89,14 +100,14 @@ class QiDataApp(QApplication):
 				if self.data_controller is not None:
 					# There is already a controller, leave properly before switching
 					self.data_controller.onExit(self.main_window.auto_save)
-				self.data_controller = controllerfactory.makeDataController(path, self.user_name)
-				self.main_window.visualization_widget = self.data_controller.widget
+				self.data_controller = makeAnnotationController(path, self.user_name)
+				self.main_window.visualization_widget = self.data_controller.view
 				self.main_window.visualization_widget.showMaximized()
 				self.main_window.copy_all_msg.setEnabled(True)
 			except TypeError, e:
 				print "TypeError:%s"%e
 			except exceptions.SelectionChangeCanceledByUser:
-				self.data_explorer._cancelSelectionChange()
+				self.fs_explorer._cancelSelectionChange()
 
 	def copy(self):
 		if self.data_controller is not None:
@@ -112,8 +123,8 @@ class QiDataApp(QApplication):
 	# Properties
 
 	@property
-	def data_explorer(self):
-		return self.main_window.data_explorer
+	def fs_explorer(self):
+		return self.main_window.fs_explorer
 
 	@property
 	def dataitem_editor(self):
