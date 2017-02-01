@@ -15,7 +15,7 @@ DESCRIPTION = "Annotate data-sets"
 
 def make_command_parser(parent_parser=argparse.ArgumentParser(description=DESCRIPTION)):
 
-    dataset_argument = parent_parser.add_argument("path", nargs="?", help="what to annotate")
+    dataset_argument = parent_parser.add_argument("path", nargs="?", help="what to annotate", default=".")
 
     if has_argcomplete:
         dataset_argument.completer = argcomplete.completers.DirectoriesCompleter()
