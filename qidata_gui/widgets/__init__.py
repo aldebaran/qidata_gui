@@ -30,7 +30,7 @@
 # Standard Library
 import re
 
-from main_widget import MainWidget
+from qidata_widget import QiDataWidget
 
 
 def makeWidget(widget_type, main_data=None):
@@ -38,12 +38,12 @@ def makeWidget(widget_type, main_data=None):
     Create relevant widget for required data type.
     :param widget_type:  Name of the data type to display with the widget (str)
     :param main_data:  Data to display
-    :return:  Widget containing the given data (MainWidget)
+    :return:  Widget containing the given data (QiDataWidget)
     :raise:  TypeError if given type name is unknown
     """
     for qidata_file_type in LOOKUP_WIDGET_MODEL:
         if widget_type == qidata_file_type:
-            return MainWidget(LOOKUP_WIDGET_MODEL[qidata_file_type](main_data))
+            return QiDataWidget(LOOKUP_WIDGET_MODEL[qidata_file_type](main_data))
     raise TypeError("No available widget for %s, available types are %s"
                         %(widget_type, LOOKUP_WIDGET_MODEL.keys())
                     )

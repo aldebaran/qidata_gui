@@ -11,13 +11,14 @@ from qidata import MetadataType
 from metadata_items.list_item import MetadataListItem
 import data_widgets
 
-class MainWidget(QWidget):
+class QiDataWidget(QWidget):
     """
-    General widget for QiData GUI applications.
+    General widget to display QiDataObject.
 
-    Contains three subwidgets, one to display MetadataObjects information,
-    a second to show metadata that is not localized on data, and a third
-    specialized in the data displayed (image, audio, ...).
+    Contains three subwidgets:
+        - one specialized in the data displayed, which also shows metadata locations
+        - one showing the list of unlocalized metadata
+        - one displaying the selected metadata content and allowing to update it
     """
 
     # ────────────
@@ -32,22 +33,22 @@ class MainWidget(QWidget):
     # Signals
 
     # User asked for a metadata object to be added at location given in parameter
-    objectAdditionRequired = Signal(list)
+    newMetadataAdditionRequested = Signal(list)
 
     # User requested to change the type of the selected metadata object
-    objectTypeChangeRequested = Signal([MetadataType])
+    metadataTypeChangeRequested = Signal([MetadataType])
 
     # ───────────
     # Constructor
 
     def __init__(self, data_object, parent=None):
         """
-        MainWidget constructor
+        QiDataWidget constructor
 
-        :param data_object:  QiDataObject to display (qidata.qidataobject.QiDataObject)
-        :param parent:  Parent of this widget
+        :param data_object:  QiDataObject to display (``qidata.QiDataObject``)
+        :param parent:  Parent of this widget (``PySide.QtGui.QWidget``)
         """
-        super(MainWidget, self).__init__(parent)
+        QWidget.__init__(self, parent)
 
         ## VIEW DEFINITION
 
@@ -59,18 +60,18 @@ class MainWidget(QWidget):
         self.main_widget.setParent(self)
 
         # Bind main widget's signals
-        self.main_widget.objectAdditionRequired.connect(self.objectAdditionRequired.emit)
+        self.main_widget.objectAdditionRequired.connect(self.newMetadataAdditionRequested.emit)
 
         # Right panel widget
         self.right_panel_widget = QWidget(self)
 
         # Widget displaying annotations concerning the whole file / image / sound / ...
         self.overall_annotations_displayer_widget = GeneralMetadataList(self.right_panel_widget)
-        self.overall_annotations_displayer_widget.objectAdditionRequired.connect(self.objectAdditionRequired)
+        self.overall_annotations_displayer_widget.objectAdditionRequired.connect(self.newMetadataAdditionRequested)
 
         # Object displaying widget
         self.object_displaying_widget = MetadataDetails(list(MetadataType), self)
-        self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.objectTypeChangeRequested.emit(MetadataType[type_name]))
+        self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.metadataTypeChangeRequested.emit(MetadataType[type_name]))
 
         # Right layout
         self.right_panel_layout = QVBoxLayout(self)
@@ -87,15 +88,19 @@ class MainWidget(QWidget):
     # ───────
     # Methods
 
-    def addMetadataObjectToView(self, coordinates):
+    def addMetadataToView(self, coordinates):
         """
-        Add an object to display on the view.
+        Add a metadata item on the view.
 
-        This method only adds the object on the specialized widget but
+        This method adds an item representing the metadata location but
         does not display the object details.
 
         :param coordinates:  Coordinates of the object to show (format depends on data type)
-        :return:  Reference to the widget representing the object
+        :return:  Reference to the widget representing the metadata
+
+        .. note::
+            ``coordinates`` can be ``None`` in which case the metadata is considered
+            as `unlocalized`.
 
         .. note::
             The returned reference is handy to connect callbacks on the
@@ -106,7 +111,7 @@ class MainWidget(QWidget):
         else:
             return self.main_widget.addObject(coordinates)
 
-    def displayMetadataObjectDetails(self, metadata_object):
+    def displayMetadataDetails(self, metadata_object):
         """
         Display the object details
 
@@ -117,12 +122,12 @@ class MainWidget(QWidget):
         """
         self.object_displaying_widget.displayObject(metadata_object)
 
-    def removeMetadataObject(self, item):
+    def removeMetadataFromView(self, item):
         """
-        Remove an object from the widget
+        Remove a metadata item from the widget
 
-        This method removes the object from the specialized view and clears the
-        object viewing panel.
+        This method removes the item representing the metadata and clears the
+        widget showing metadata details.
 
         :param item:  Reference to the widget
         """
