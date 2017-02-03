@@ -17,7 +17,7 @@ import qidata_gui
 # local
 from .view import AnnotationMakerMainWindow
 from . import exceptions
-from .controller import makeAnnotationController
+import controller
 
 class AnnotationMakerApp(QApplication):
 	"""
@@ -68,8 +68,12 @@ class AnnotationMakerApp(QApplication):
 		if path:      self.setRoot(path)
 		if current_item: self.setSelected(current_item)
 
-	# ────────
-	# Main API
+	# ──────────
+	# Public API
+
+	def run(self):
+		self.main_window.show()
+		self.exec_()
 
 	def setRoot(self, new_root):
 		self.fs_root = new_root
@@ -94,13 +98,13 @@ class AnnotationMakerApp(QApplication):
 		# ───────────
 		# ?
 
-		if qidatafile.isSupported(path):
-			# Show the item in an visualization widget
+		# Create the controller for that path and display the corresponding qidata widget
+		if controller.isSupported(path):
 			try:
 				if self.data_controller is not None:
 					# There is already a controller, leave properly before switching
 					self.data_controller.onExit(self.main_window.auto_save)
-				self.data_controller = makeAnnotationController(path, self.user_name)
+				self.data_controller = controller.makeAnnotationController(path, self.user_name)
 				self.main_window.visualization_widget = self.data_controller.view
 				self.main_window.visualization_widget.showMaximized()
 				self.main_window.copy_all_msg.setEnabled(True)
@@ -127,19 +131,8 @@ class AnnotationMakerApp(QApplication):
 		return self.main_window.fs_explorer
 
 	@property
-	def dataitem_editor(self):
-		return self.main_window.message_creation
-
-	@property
 	def desktop_geometry(self):
 		return self.desktop().availableGeometry()
-
-	# ────────
-	# Main API
-
-	def run(self):
-		self.main_window.show()
-		self.exec_()
 
 	# ───────
 	# Helpers

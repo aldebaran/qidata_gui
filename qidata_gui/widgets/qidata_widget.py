@@ -56,7 +56,7 @@ class QiDataWidget(QWidget):
         try:
             self.main_widget = self.LOOKUP_WIDGET_MODEL[str(data_object.type)](data_object.raw_data)
         except KeyError:
-            raise TypeError("%s is not supported"%data_object)
+            raise TypeError("No existing widget for the following type of QiDataObject: %s"%str(data_object.type))
         self.main_widget.setParent(self)
 
         # Bind main widget's signals

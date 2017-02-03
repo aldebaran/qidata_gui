@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Standard library
+import copy
+
 # Qt
 from PySide.QtCore import QObject, Signal
 from PySide.QtGui import QMessageBox
@@ -26,15 +29,13 @@ class AnnotationController(QObject):
     def __init__(self, source_path, user_name):
         QObject.__init__(self)
 
-        # Retrieve information from the source object
+        # Load information from the given file
         self.source_path = source_path
-        with qidatafile.open(self.source_path, "r") as _file:
-            self.annotators = _file.annotators
-            self.metadata = _file.metadata
-            self.view = AnnotationInterface(_file)
-            self.view.annotation_selector_widget.addItems(_file.annotators)
+        self._loadFileInformation()
 
-        # If user is not already in the list of annotators, add it
+        # Add annotators to the corresponding list
+        # If user is not already in it, add it
+        self.view.annotation_selector_widget.addItems(self.annotators)
         if not user_name in self.annotators:
             self.view.annotation_selector_widget.addItem(user_name)
 
@@ -67,11 +68,31 @@ class AnnotationController(QObject):
             # Add to general model
             self.metadata[self.user_name][type(annotationsToAdd[annotationIndex][0]).__name__].append(annotationsToAdd[annotationIndex])
 
-            # Add them on the view
+            # Add to the view
             self._addAnnotationItemOnView(annotationsToAdd[annotationIndex])
 
     # ───────────────
     # Private methods
+
+    def _loadFileInformation(self):
+        # Retrieve information from the source object
+        with qidatafile.open(self.source_path, "r") as _file:
+            self.annotators = _file.annotators
+            self.metadata = _file.metadata
+            self.view = AnnotationInterface(_file)
+
+    def _cleanEmptyElements(self, metadata):
+        out = copy.deepcopy(metadata)
+        for supported_metadata_type in list(MetadataType):
+            if out[self.user_name][str(supported_metadata_type)] == []:
+                out[self.user_name].pop(str(supported_metadata_type))
+        if out[self.user_name] == dict():
+            out.pop(self.user_name)
+        return out
+
+    def _saveFileInformation(self):
+        with qidatafile.open(self.source_path, "w") as _file:
+                _file.metadata = self._cleanEmptyElements(self.metadata)
 
     def _loadUserAnnotations(self, user_name):
         self.user_name = user_name
@@ -100,6 +121,9 @@ class AnnotationController(QObject):
         return r
 
     def _makeLocation(self, coordinates):
+        """
+        Must be overriden by child classes
+        """
         raise NotImplementedError
 
     # ─────
@@ -157,7 +181,6 @@ class AnnotationController(QObject):
     def onExit(self, auto_save):
         savingRequest = (QMessageBox.Yes if auto_save else self.view.askForDataSave())
         if savingRequest == QMessageBox.Yes:
-            with qidatafile.open(self.source_path, "w") as _file:
-                _file.metadata = self.metadata
+            self._saveFileInformation()
         if savingRequest == QMessageBox.Cancel:
             raise exceptions.SelectionChangeCanceledByUser()

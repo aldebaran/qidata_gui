@@ -38,7 +38,7 @@ class AnnotationInterface(QWidget):
         Constructor for AnnotationInterface. This will instanciate a QWidget
         containing all necessary interactive commands for annotation.
 
-        :param qidata_object: object to display
+        :param qidata_object: QiDataObject to display
         """
         QWidget.__init__(self, parent)
 

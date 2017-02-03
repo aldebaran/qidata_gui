@@ -2,7 +2,7 @@
 
 # Qt
 from PySide.QtGui import QWidget
-from PySide.QtCore import Signal, QObject
+from PySide.QtCore import Signal
 
 from ..metadata_items import MetadataBaseItem
 
@@ -23,7 +23,7 @@ class AudioWidget(QWidget):
         """
         AudioWidget constructor
 
-        :param audio_raw_data:  Image raw data
+        :param audio_raw_data:  Audio raw data
         :param parent:  Parent of this widget
         """
         super(AudioWidget, self).__init__(parent)
