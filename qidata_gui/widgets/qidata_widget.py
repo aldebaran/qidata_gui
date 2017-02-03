@@ -50,41 +50,58 @@ class QiDataWidget(QWidget):
         :param parent:  Parent of this widget (``PySide.QtGui.QWidget``)
         """
         QWidget.__init__(self, parent)
+        self.displayed_object = data_object
 
-        ## VIEW DEFINITION
+    # ───────────────
+    # Private methods
 
-        # Main widget
+    def _show(self):
+
+        # ───────────────
+        # VIEW DEFINITION
+
+        # ──────────
+        # Left panel
+
+        # Raw data viewer creation
         try:
-            self.main_widget = self.LOOKUP_WIDGET_MODEL[str(data_object.type)](data_object.raw_data)
+            self.raw_data_viewer = self.LOOKUP_WIDGET_MODEL[str(self.displayed_object.type)](self.displayed_object.raw_data)
+            self.raw_data_viewer.setParent(self)
         except KeyError:
-            raise TypeError("No existing widget for the following type of QiDataObject: %s"%str(data_object.type))
-        self.main_widget.setParent(self)
+            raise TypeError("No existing widget for the following type of QiDataObject: %s"%str(self.displayed_object.type))
 
-        # Bind main widget's signals
-        self.main_widget.objectAdditionRequired.connect(self.newMetadataAdditionRequested.emit)
+        # ───────────
+        # Right panel
 
-        # Right panel widget
+        # Containing widget
         self.right_panel_widget = QWidget(self)
 
-        # Widget displaying annotations concerning the whole file / image / sound / ...
+        # Widget displaying annotations concerning the whole object
         self.overall_annotations_displayer_widget = GeneralMetadataList(self.right_panel_widget)
-        self.overall_annotations_displayer_widget.objectAdditionRequired.connect(self.newMetadataAdditionRequested)
 
-        # Object displaying widget
+        # Metadata displaying widget
         self.object_displaying_widget = MetadataDetails(list(MetadataType), self)
-        self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.metadataTypeChangeRequested.emit(MetadataType[type_name]))
 
-        # Right layout
+        # Insert all widgets in their layouts
         self.right_panel_layout = QVBoxLayout(self)
         self.right_panel_layout.addWidget(self.overall_annotations_displayer_widget)
         self.right_panel_layout.addWidget(self.object_displaying_widget)
         self.right_panel_widget.setLayout(self.right_panel_layout)
 
-        # Main layout
+        # ─────────────────────────────────
+        # Insert both panels in main widget
+
         self.main_hlayout = QHBoxLayout(self)
-        self.main_hlayout.addWidget(self.main_widget)
+        self.main_hlayout.addWidget(self.raw_data_viewer)
         self.main_hlayout.addWidget(self.right_panel_widget)
         self.setLayout(self.main_hlayout)
+
+        # ────────────
+        # Bind signals
+
+        self.raw_data_viewer.objectAdditionRequired.connect(self.newMetadataAdditionRequested.emit)
+        self.overall_annotations_displayer_widget.objectAdditionRequired.connect(self.newMetadataAdditionRequested)
+        self.object_displaying_widget.objectTypeChangeRequested.connect(lambda type_name: self.metadataTypeChangeRequested.emit(MetadataType[type_name]))
 
     # ───────
     # Methods
@@ -110,7 +127,7 @@ class QiDataWidget(QWidget):
         if coordinates is None:
             return self.overall_annotations_displayer_widget.addObject()
         else:
-            return self.main_widget.addObject(coordinates)
+            return self.raw_data_viewer.addObject(coordinates)
 
     def displayMetadataDetails(self, metadata_object):
         """
@@ -135,6 +152,17 @@ class QiDataWidget(QWidget):
         if type(item) == MetadataListItem:
             self.overall_annotations_displayer_widget.removeItem(item)
         else:
-            self.main_widget.removeItem(item)
+            self.raw_data_viewer.removeItem(item)
         self.object_displaying_widget.clearObject()
 
+    # ──────────
+    # Properties
+
+    @property
+    def displayed_object(self):
+        return self._displayed_object
+
+    @displayed_object.setter
+    def displayed_object(self, new_object):
+        self._displayed_object = new_object
+        self._show()
