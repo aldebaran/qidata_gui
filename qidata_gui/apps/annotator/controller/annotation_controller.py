@@ -105,7 +105,7 @@ class AnnotationController(QObject):
     def _showAnnotations(self):
         # Clear
         for existing_item in self.item_reference_to_metadata_map:
-            self.view.main_widget.removeMetadataObject(existing_item)
+            self.view.qidata_widget.removeMetadataFromView(existing_item)
         self.item_reference_to_metadata_map = dict()
         # Display
         for m in [j for v in list(MetadataType) for j in self.metadata[self.user_name][str(v)]]:
