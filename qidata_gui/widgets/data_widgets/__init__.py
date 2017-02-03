@@ -1,2 +1,3 @@
 from image_widget import ImageWidget
 from audio_widget import AudioWidget
+from dataset_widget import DataSetWidget

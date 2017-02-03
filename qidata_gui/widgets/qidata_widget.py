@@ -27,6 +27,7 @@ class QiDataWidget(QWidget):
     LOOKUP_WIDGET_MODEL = {
         "IMAGE": data_widgets.ImageWidget,
         "AUDIO": data_widgets.AudioWidget,
+        "DATASET": data_widgets.DataSetWidget,
     }
 
     # ───────
