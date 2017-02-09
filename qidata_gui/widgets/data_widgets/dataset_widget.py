@@ -125,3 +125,6 @@ class DataSetWidget(QtGui.QWidget, RawDataWidgetInterface):
 		self.parent().displayed_object.examineContent()
 		self.dataset_raw_data = self.parent().displayed_object.raw_data
 		self._refresh_gui()
+
+	def _locationToCoordinates(self, location):
+		return None

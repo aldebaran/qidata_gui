@@ -6,7 +6,7 @@ import abc
 # Qt
 from PySide import QtCore, QtGui
 
-class QtAbstractMetaClass(type(QtGui.QWidget), abc.ABCMeta): pass
+class QtAbstractMetaClass(abc.ABCMeta, type(QtGui.QWidget)): pass
 
 class RawDataWidgetInterface(object):
 	"""
@@ -14,6 +14,22 @@ class RawDataWidgetInterface(object):
 	as the localized metadata.
 	"""
 	__metaclass__ = QtAbstractMetaClass
+
+	def __new__(cls, *args, **kwargs):
+		"""
+		Make sure class has no abstract attributes
+		"""
+		new_to_use = super(RawDataWidgetInterface, cls).__new__
+		if new_to_use.__self__ is not object:
+			# next new is not object.__new__
+			# test for abstract methods
+			if getattr(cls, '__abstractmethods__', None):
+				raise TypeError(
+				    "Can't instantiate abstract class %s "
+				    "with abstract methods %s" % (
+				        cls.__name__,
+				        ', '.join(sorted(cls.__abstractmethods__))))
+		return new_to_use(cls, *args, **kwargs)
 
 	# ───────
 	# Signals

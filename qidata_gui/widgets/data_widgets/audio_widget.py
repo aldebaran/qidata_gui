@@ -7,7 +7,7 @@ from PySide import QtGui
 from raw_data_widget import RawDataWidgetInterface
 from ..metadata_items import MetadataBaseItem
 
-class AudioWidget(QtGui.QWidget, RawDataWidgetInterface):
+class AudioWidget(RawDataWidgetInterface, QtGui.QWidget):
     """
     Widget specialized in displaying audio with Metadata Objects
     """
@@ -48,3 +48,13 @@ class AudioWidget(QtGui.QWidget, RawDataWidgetInterface):
         :param item:  Reference to the widget
         """
         return
+
+    # ───────────────
+    # Private methods
+
+    def _locationToCoordinates(self, location):
+        if coordinates is not None:
+            # TODO: create a metadata object suited for audio
+            return
+        else:
+            return None
