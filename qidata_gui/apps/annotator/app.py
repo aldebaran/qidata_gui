@@ -13,11 +13,10 @@ from qidata import qidatafile, qidataset
 
 # qidata_gui
 import qidata_gui
-from qidata_gui.widgets import exceptions
+from qidata_gui.widgets import exceptions, QiDataSetWidget, QiDataWidget
 
 # local
 from .view import AnnotationMakerMainWindow
-import controller
 
 class AnnotationMakerApp(QApplication):
 	"""
@@ -99,12 +98,12 @@ class AnnotationMakerApp(QApplication):
 		# ?
 
 		# Create the controller for that path and display the corresponding qidata widget
-		if controller.isSupported(path):
+		if qidatafile.isSupported(path) or qidataset.isDataset(path):
 			try:
 				if self.data_controller is not None:
 					# There is already a controller, leave properly before switching
 					self.data_controller.onExit(self.main_window.auto_save)
-				self.data_controller = controller.makeAnnotationController(path, self.user_name)
+				self.data_controller = QiDataSetWidget(path, self.user_name) if qidataset.isDataset(path) else QiDataWidget(path, self.user_name)
 				self.main_window.visualization_widget = self.data_controller
 				self.main_window.visualization_widget.showMaximized()
 				self.main_window.copy_all_msg.setEnabled(True)

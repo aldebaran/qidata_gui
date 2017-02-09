@@ -1,4 +1,3 @@
 
 from main_window import AnnotationMakerMainWindow
 from file_system_explorer import FileSystemExplorer
-from annotation_interface import AnnotationInterface
