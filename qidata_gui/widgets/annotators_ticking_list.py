@@ -18,27 +18,28 @@ class AnnotatorsTickingList(QtGui.QListWidget):
 	# ───────────
 	# Constructor
 
-	def __init__(self, current_user, annotators, parent=None):
+	def __init__(self, has_writer, annotators, parent=None):
 		"""
 		GeneralMetadataList constructor
 
-		:param current_user: Name of the person using the application
+		:param has_writer: True if someone is the writer (if True, writer is the first annotator)
 		:param parent:  Parent of this widget
 		"""
 		QtGui.QListWidget.__init__(self, parent)
 		self.annotators = annotators
-		if current_user is not None:
-			self.writer = self.annotators.pop(0)
-			item = QtGui.QListWidgetItem(self.writer, parent=self)
+
+		## VIEW DEFINITION
+		if has_writer:
+			offset = 1
+			item = QtGui.QListWidgetItem(self.annotators[0], parent=self)
 			item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsUserCheckable)
 			item.setCheckState(QtCore.Qt.Checked)
 			self.addItem(item)
 		else:
-			self.writer = None
+			offset = 0
 
-		## VIEW DEFINITION
-		for annotator in self.annotators:
-			item = QtGui.QListWidgetItem(annotator, parent=self)
+		for annotator_index in range(offset, len(self.annotators)):
+			item = QtGui.QListWidgetItem(self.annotators[annotator_index], parent=self)
 			item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
 			item.setCheckState(QtCore.Qt.Checked)
 			self.addItem(item)
@@ -50,14 +51,8 @@ class AnnotatorsTickingList(QtGui.QListWidget):
 
 	def _emitCheckedAnnotators(self):
 		out = list()
-		if self.writer is not None:
-			offset = 1
-			out.append(self.writer)
-		else:
-			offset = 0
-
 		for row in range(len(self.annotators)):
-			it = self.item(row + offset)
+			it = self.item(row)
 			if it.checkState() == QtCore.Qt.Checked:
 				out.append(it.text())
 		self.annotatorsTickedChanged.emit(out)

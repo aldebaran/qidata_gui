@@ -85,7 +85,6 @@ class QiDataWidget(QtGui.QWidget):
 
         # Load information from the given file
         self.source_path = source_path
-        # self.user_name = writer
         self.writer = writer
         self._read_only = (writer in [None, ""])
         self._loadFileInformation()
@@ -96,7 +95,6 @@ class QiDataWidget(QtGui.QWidget):
         # Keep track of user's action
         self.last_selected_item_index = None
         self.last_selected_item_type = list(MetadataType)[0]
-
         self._showAnnotations(self.annotators)
 
     # ──────────
@@ -302,7 +300,7 @@ class QiDataWidget(QtGui.QWidget):
         self.right_panel_widget.setLayout(self.right_panel_layout)
 
         # New panel
-        self.annotators_panel = AnnotatorsTickingList(self.writer, self.annotators)
+        self.annotators_panel = AnnotatorsTickingList(not self.read_only, self.annotators)
 
         # ─────────────────────────────────
         # Insert both panels in main widget
