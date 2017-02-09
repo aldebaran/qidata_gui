@@ -6,6 +6,8 @@ import re
 # qidata
 from qidata import qidataset
 
+from qidata_gui.widgets import QiDataWidget, QiDataSetWidget
+
 # local
 from .controllers import *
 
@@ -25,9 +27,6 @@ def isSupported(dataPath):
     return qidataset.isDataset(dataPath)
 
 def makeAnnotationController(path, user_name):
-    for pattern in _LOOKUP_CONTROLLER_MODEL:
-        if pattern.match(path):
-            return _LOOKUP_CONTROLLER_MODEL[pattern](path, user_name)
     if qidataset.isDataset(path):
-        return dataset_controller.DataSetController(path, user_name)
-    raise TypeError("No controller exists for this type of file")
+        return QiDataSetWidget(path, user_name)
+    return QiDataWidget(path, user_name)

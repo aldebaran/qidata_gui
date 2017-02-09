@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 
 # Qt
-from PySide.QtGui import QWidget
-from PySide.QtCore import Signal
+from PySide import QtGui
 
+# local
+from raw_data_widget import RawDataWidgetInterface
 from ..metadata_items import MetadataBaseItem
 
-class AudioWidget(QWidget):
+class AudioWidget(QtGui.QWidget, RawDataWidgetInterface):
     """
     Widget specialized in displaying audio with Metadata Objects
     """
-
-    # ───────
-    # Signals
-
-    objectAdditionRequired = Signal(list)
 
     # ───────────
     # Constructor
@@ -26,7 +22,7 @@ class AudioWidget(QWidget):
         :param audio_raw_data:  Audio raw data
         :param parent:  Parent of this widget
         """
-        super(AudioWidget, self).__init__(parent)
+        QtGui.QWidget.__init__(self, parent)
 
     # ───────
     # Methods

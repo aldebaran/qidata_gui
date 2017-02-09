@@ -13,10 +13,10 @@ from qidata import qidatafile, qidataset
 
 # qidata_gui
 import qidata_gui
+from qidata_gui.widgets import exceptions
 
 # local
 from .view import AnnotationMakerMainWindow
-from . import exceptions
 import controller
 
 class AnnotationMakerApp(QApplication):
@@ -105,12 +105,12 @@ class AnnotationMakerApp(QApplication):
 					# There is already a controller, leave properly before switching
 					self.data_controller.onExit(self.main_window.auto_save)
 				self.data_controller = controller.makeAnnotationController(path, self.user_name)
-				self.main_window.visualization_widget = self.data_controller.view
+				self.main_window.visualization_widget = self.data_controller
 				self.main_window.visualization_widget.showMaximized()
 				self.main_window.copy_all_msg.setEnabled(True)
 			except TypeError, e:
 				print "TypeError:%s"%e
-			except exceptions.SelectionChangeCanceledByUser:
+			except exceptions.UserCancelation:
 				self.fs_explorer._cancelSelectionChange()
 
 	def copy(self):

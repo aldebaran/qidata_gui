@@ -13,6 +13,7 @@ class GeneralMetadataList(QWidget):
     # ───────
     # Signals
 
+    #: User asked for a metadata object to be added
     objectAdditionRequired = Signal(list)
 
     # ───────────

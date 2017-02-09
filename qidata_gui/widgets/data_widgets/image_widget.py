@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
 # Qt
-from PySide.QtGui import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QPixmap
-from PySide.QtCore import Signal, QObject
+from PySide import QtGui, QtCore
 
-# qidata
+# local
 from ..metadata_items.rect_item import MetadataRectItem
+from raw_data_widget import RawDataWidgetInterface
 
-
-class PixmapWidget(QGraphicsPixmapItem, QObject):
+class PixmapWidget(QtGui.QGraphicsPixmapItem, QtCore.QObject):
 
 	# ───────
 	# Signals
 
-	isClicked = Signal(list)
+	isClicked = QtCore.Signal(list)
 
 	# ──────────
 	# Contructor
@@ -25,8 +24,8 @@ class PixmapWidget(QGraphicsPixmapItem, QObject):
 		:param pixmap: The image to display
 		:param parent: This widget's parent
 		"""
-		QGraphicsPixmapItem.__init__(self, pixmap)
-		QObject.__init__(self, parent)
+		QtGui.QGraphicsPixmapItem.__init__(self, pixmap)
+		QtCore.QObject.__init__(self, parent)
 
 	# ─────
 	# Slots
@@ -34,17 +33,10 @@ class PixmapWidget(QGraphicsPixmapItem, QObject):
 	def mousePressEvent(self, event):
 		self.isClicked.emit([event.scenePos().x(), event.scenePos().y()])
 
-
-
-class ImageWidget(QGraphicsView):
+class ImageWidget(QtGui.QGraphicsView, RawDataWidgetInterface):
 	"""
     Widget specialized in displaying image with Metadata Objects
     """
-
-	# ───────
-	# Signals
-
-	objectAdditionRequired = Signal(list)
 
 	# ───────────
 	# Constructor
@@ -56,13 +48,13 @@ class ImageWidget(QGraphicsView):
 		:param image_raw_data:  Image raw data
 		:param parent:  Parent of this widget
 		"""
-		super(ImageWidget, self).__init__(parent)
+		QtGui.QGraphicsView.__init__(self, parent)
 
 		# Create scene
-		scene = QGraphicsScene()
+		scene = QtGui.QGraphicsScene()
 
 		# Create pixmap
-		pix = QPixmap()
+		pix = QtGui.QPixmap()
 		pix.loadFromData(image_raw_data)
 		p = PixmapWidget(pix, self)
 
@@ -98,3 +90,11 @@ class ImageWidget(QGraphicsView):
 		:param item:  Reference to the widget
 		"""
 		self.scene().removeItem(item)
+
+	def _locationToCoordinates(self, location):
+		if location is not None:
+			x=location[0]
+			y=location[1]
+			return [[x-30,y-30],[x+30,y+30]]
+		else:
+			return None

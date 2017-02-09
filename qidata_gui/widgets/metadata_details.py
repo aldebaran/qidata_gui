@@ -16,6 +16,7 @@ class MetadataDetails(QWidget):
     # ───────
     # Signals
 
+    #: User requested to change the type of the selected metadata object
     objectTypeChangeRequested = Signal(str)
 
     # ───────────

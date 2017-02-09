@@ -3,15 +3,13 @@
 # Qt
 from PySide import QtCore, QtGui
 
-class DataSetWidget(QtGui.QWidget):
+# local
+from raw_data_widget import RawDataWidgetInterface
+
+class DataSetWidget(QtGui.QWidget, RawDataWidgetInterface):
 	"""
 	Widget specialized in displaying audio with Metadata Objects
 	"""
-
-	# ───────
-	# Signals
-
-	objectAdditionRequired = QtCore.Signal(list)
 
 	# ───────────
 	# Constructor
@@ -114,26 +112,10 @@ class DataSetWidget(QtGui.QWidget):
 	# Methods
 
 	def addObject(self, coordinates):
-		"""
-		Add a metadata object to display on the view.
-
-		:param coordinates:  Coordinates of the object to show (format depends on data type)
-		:return:  Reference to the widget representing the object
-
-		.. note::
-			The returned reference is handy to connect callbacks on the
-			widget signals. This reference is also needed to remove the object.
-		"""
 		# This won't be called for now, as it deals with localized metadata
-		r = MetadataBaseItem()
-		return r
+		return MetadataBaseItem()
 
 	def removeItem(self, item):
-		"""
-		Remove an object from the widget
-
-		:param item:  Reference to the widget
-		"""
 		return
 
 	# ───────────────
