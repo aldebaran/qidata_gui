@@ -109,7 +109,7 @@ class AnnotationMakerApp(QApplication):
 				self.data_controller = QiDataSetWidget(path, self.user_name) if qidataset.isDataset(path) else QiDataWidget(path, self.user_name)
 				self.main_window.visualization_widget = self.data_controller
 				self.main_window.visualization_widget.showMaximized()
-				self.main_window.copy_all_msg.setEnabled(True)
+				# self.main_window.copy_all_msg.setEnabled(True)
 			except TypeError, e:
 				print "TypeError:%s"%e
 			except exceptions.UserCancelation:
