@@ -37,6 +37,7 @@ class MetadataListItem(QListWidgetItem, MetadataBaseItem):
         Select this item
         """
         self.setSelected(True)
+        self.isSelected.emit()
 
     # ─────────
     # Operators
