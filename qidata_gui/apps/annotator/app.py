@@ -5,8 +5,8 @@ import os.path
 import sys
 
 # Qt
-from PySide.QtCore import Signal, Slot
-from PySide.QtGui import QApplication, QInputDialog
+from PySide import QtGui
+from PySide.QtGui import QApplication, QInputDialog, QMessageBox
 
 # qidata
 from qidata import qidatafile, qidataset
@@ -72,7 +72,10 @@ class AnnotationMakerApp(QApplication):
 
 	def run(self):
 		self.main_window.show()
-		self.exec_()
+		try:
+			self.exec_()
+		except KeyboardInterrupt:
+			pass
 
 	def setRoot(self, new_root):
 		self.fs_root = new_root
@@ -111,6 +114,15 @@ class AnnotationMakerApp(QApplication):
 				print "TypeError:%s"%e
 			except exceptions.UserCancelation:
 				self.fs_explorer._cancelSelectionChange()
+		elif os.path.isdir(path):
+			answer = QtGui.QMessageBox.question(self.main_window,
+			                                    "Not a data set yet",
+			                                    "The folder you selected is not a QiDataSet yet. Do you want to turn it into one ?",
+			                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+			if answer == QMessageBox.Yes:
+				with qidataset.QiDataSet(path, "w"):
+					pass
+				self.setSelected(path)
 
 	def copy(self):
 		if self.data_controller is not None:
