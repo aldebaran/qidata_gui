@@ -51,6 +51,8 @@ class AnnotationMakerMainWindow(QtGui.QMainWindow):
 
 		self.activate_auto_save = QtGui.QAction("Toggle automatic save", self,
 												triggered=self.toggleAutoSave)
+		self.activate_auto_save.setCheckable(True)
+		self.activate_auto_save.setChecked(False)
 
 		# self.copy_all_msg = QtGui.QAction("Copy all annotations", self,
 		# 										shortcut="Ctrl+C",
