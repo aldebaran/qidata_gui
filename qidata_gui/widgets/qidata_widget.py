@@ -181,6 +181,13 @@ class QiDataWidget(QtGui.QWidget):
     def onItemSelected(self, item):
         self.last_selected_item = item
         self.last_selected_item_type = MetadataType[type(self.item_reference_to_metadata_map[item][0]).__name__]
+        annotation = self.item_reference_to_metadata_map[item]
+        try:
+            self.metadata[self.writer][type(annotation[0]).__name__].index(annotation)
+        except ValueError:
+            self.object_displaying_widget.object_display_widget.read_only = True
+        else:
+            self.object_displaying_widget.object_display_widget.read_only = False
         self._displayMetadataDetails(self.item_reference_to_metadata_map[item][0])
 
     @ignoreIfWrongAnnotator
