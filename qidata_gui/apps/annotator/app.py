@@ -153,3 +153,17 @@ class AnnotationMakerApp(QApplication):
 		self.setOrganizationDomain("aldebaran.com")
 		self.setApplicationName("qidata annotator")
 		self.setApplicationVersion(qidata_gui.VERSION)
+
+
+def main(args):
+	qidata_app = AnnotationMakerApp(args[0])
+	try:
+		qidata_app.run()
+	except KeyboardInterrupt:
+		pass
+
+if __name__ == '__main__':
+	if len(sys.argv)>1:
+		main(sys.argv[1:])
+	else:
+		main(["."])
