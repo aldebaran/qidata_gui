@@ -1,3 +1,0 @@
-from rect_item import MetadataRectItem
-from list_item import MetadataListItem
-from base_item import MetadataBaseItem
