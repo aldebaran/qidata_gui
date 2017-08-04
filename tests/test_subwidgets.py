@@ -1,5 +1,6 @@
 
 # Third-party libraries
+import cv2
 from PySide import QtCore, QtGui
 
 # Local modules
@@ -7,6 +8,7 @@ from qidata_gui._subwidgets import (
                                     SelectableListWidget,
                                     TickableListWidget,
                                    )
+from qidata_gui._subwidgets.raw_data_display_widgets import RawDataDisplayWidget
 
 def test_ticking_list_widget(qtbot):
 	widget = TickableListWidget(["jdoe", "jsmith"])
@@ -69,3 +71,59 @@ def test_selectable_list_widget(qtbot):
 		                 0,
 		                 rect2.center())
 
+def test_raw_data_display_widget(qtbot, jpg_file_path):
+
+	# Create widget
+	widget = RawDataDisplayWidget(None, "IMAGE", cv2.imread(jpg_file_path))
+
+	# Add two items on the view
+	i1=widget.addItem([[-10,-10],[20,20]], dict(key="value"))
+	i2=widget.addItem([[100,100],[200,200]], dict(name="definition"))
+
+	qtbot.addWidget(widget)
+	widget.show()
+
+	# Variable for convenience
+	_view = widget._widget.view
+
+	# Click on the view to select an object
+	with qtbot.waitSignal(widget.itemSelected, timeout=500) as _s:
+		qtbot.mouseClick(_view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 _view.mapFromScene(
+		                     QtCore.QPointF(110,180)
+		                 ))
+	assert(dict(name="definition") == _s.args[0])
+
+	## Test the resizing of the scene
+	# Click on the "fit window" button
+	qtbot.mouseClick(widget._widget.fit_button, QtCore.Qt.LeftButton)
+
+	# Make sure all the scene is visible
+	scene_visible_part = _view.mapToScene(
+	                         _view.viewport().geometry()
+	                     ).boundingRect()
+	assert(scene_visible_part.width() >= _view.scene().sceneRect().width())
+	assert(scene_visible_part.height() >= _view.scene().sceneRect().height())
+
+	# Click on the view to select a different object
+	with qtbot.waitSignal(widget.itemSelected, timeout=500) as _s:
+		qtbot.mouseClick(_view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 _view.mapFromScene(QtCore.QPointF(-8,-8)))
+	assert(dict(key="value") == _s.args[0])
+
+	with qtbot.waitSignal(widget.itemSelected, timeout=500) as _s:
+		widget.selectItem(i2)
+	assert(dict(name="definition") == _s.args[0])
+
+	# Click on the "full size" button
+	qtbot.mouseClick(widget._widget.full_button, QtCore.Qt.LeftButton)
+
+	# Make sure now any visible section has the same size on the widget and in
+	# the scene
+	some_rect = _view.mapToScene(QtCore.QRect(0,0,150,100)).boundingRect()
+	assert(150 == some_rect.width())
+	assert(100 == some_rect.height())

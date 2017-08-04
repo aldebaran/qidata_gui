@@ -38,6 +38,6 @@ setup(
         "qidata == 1.0.0a3",
         "argcomplete >= 1.1.0",
     ],
-    package_data={"qidata_gui":["VERSION"]},
+    package_data={"qidata_gui":["VERSION", "_resources/*.png"]},
 )
 

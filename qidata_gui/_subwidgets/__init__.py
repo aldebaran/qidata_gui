@@ -2,4 +2,5 @@
 # Local modules
 
 from selectable_list_widget import SelectableListWidget
+from raw_data_display_widgets import RawDataDisplayWidget
 from tickable_list_widget import TickableListWidget

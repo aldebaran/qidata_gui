@@ -18,5 +18,8 @@ VERSION = open(_os.path.join(_os.path.dirname(_os.path.realpath(__file__)),
                              "VERSION")
               ).read().split()[0]
 
+RESOURCES_DIR = _os.path.join(_os.path.dirname(_os.path.realpath(__file__)),
+                              "_resources")
+
 
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––#
