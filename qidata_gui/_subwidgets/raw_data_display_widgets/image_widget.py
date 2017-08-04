@@ -5,7 +5,6 @@ import os
 
 # Third-party libraries
 from PySide import QtGui, QtCore
-import numpy
 
 # Local modules
 from qidata_gui import RESOURCES_DIR
@@ -80,8 +79,9 @@ class ImageWidget(QtGui.QWidget):
 		"""
 		ImageWidget constructor
 
-		:param image_raw_data:  Image raw data
-		:param parent:  Parent of this widget
+		:param image_raw_data: Image raw data
+		:param parent: Parent of this widget
+		:type parent: PySide.QtGui.QWidget
 		"""
 		QtGui.QWidget.__init__(self, parent)
 
