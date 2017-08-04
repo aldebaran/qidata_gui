@@ -2,6 +2,7 @@
 
 # Third-party libraries
 from PySide import QtGui, QtCore
+from qidata import DataType
 
 # Local modules
 from .image_widget import ImageWidget
@@ -41,13 +42,35 @@ class RawDataDisplayWidget(QtGui.QWidget):
 	def __init__(self, parent_widget, data_type, raw_data):
 		super(RawDataDisplayWidget, self).__init__(parent_widget)
 
+		## Header
+		self.top_widget = QtGui.QWidget(self)
+
+		# Image type selector
+		self.type_selector = QtGui.QComboBox()
+		self.type_selector.setEnabled(False)
+		self.type_selector.addItems(
+		    map(str, list(DataType))
+		)
+		self.type_selector.setCurrentIndex(
+		    self.type_selector.findText(str(data_type))
+		)
+
+		# Aggregation
+		self.top_layout = QtGui.QHBoxLayout(self)
+		self.top_layout.addWidget(self.type_selector)
+		self.top_widget.setLayout(self.top_layout)
+
 		# Create widget, assign it the parent and the object
 		self._widget = makeRawDataWidget(self, data_type, raw_data)
 		self._widget.itemSelected.connect(self.itemSelected)
 
-		self.main_hlayout = QtGui.QHBoxLayout(self)
+		self.main_hlayout = QtGui.QVBoxLayout(self)
+		self.main_hlayout.addWidget(self.top_widget)
 		self.main_hlayout.addWidget(self._widget)
 		self.setLayout(self.main_hlayout)
+
+	# ──────────
+	# Public API
 
 	def addItem(self, location, info):
 		"""

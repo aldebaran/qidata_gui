@@ -104,6 +104,8 @@ def test_raw_data_display_widget(qtbot, jpg_file_path):
 	# Create widget
 	widget = RawDataDisplayWidget(None, "IMAGE", cv2.imread(jpg_file_path))
 
+	assert("IMAGE" == widget.type_selector.currentText())
+
 	# Add two items on the view
 	i1=widget.addItem([[-10,-10],[20,20]], dict(key="value"))
 	i2=widget.addItem([[100,100],[200,200]], dict(name="definition"))
