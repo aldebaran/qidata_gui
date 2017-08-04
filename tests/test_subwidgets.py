@@ -62,9 +62,31 @@ def test_selectable_list_widget(qtbot):
 		                 rect1.center())
 	assert("Hello" == _s.args[0])
 
+	# Clicking a second time on the same item does not emit a signal
+	with qtbot.assertNotEmitted(widget.itemSelected):
+		rect1 = widget.visualItemRect(i1)
+		qtbot.mouseClick(widget.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 rect1.center())
+
+	# But if item was deselected
+	widget.deselectAll()
+	with qtbot.waitSignal(widget.itemSelected, timeout=500) as _s:
+		rect1 = widget.visualItemRect(i1)
+		qtbot.mouseClick(widget.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 rect1.center())
+	assert("Hello" == _s.args[0])
+
+	# Clear all items and make sure none is left
+	widget.clearAllItems()
+	assert(None == widget.currentItem())
+	assert(0 == widget.count())
+
 	# Once an object is removed, clicking on it does not
 	# trigger any signal
-	widget.removeItem(i2)
 	with qtbot.assertNotEmitted(widget.itemSelected):
 		qtbot.mouseClick(widget.viewport(),
 		                 QtCore.Qt.LeftButton,

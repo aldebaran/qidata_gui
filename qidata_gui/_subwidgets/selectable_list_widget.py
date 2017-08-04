@@ -42,8 +42,14 @@ class SelectableListWidget(QListWidget):
 		"""
 		super(SelectableListWidget, self).__init__(parent)
 		self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-		self.itemClicked.connect(
-		    lambda item: self.itemSelected.emit(item.value)
+
+		# Emit newly selected item info
+		# If new item is None, emit nothing (it happens when item is set to
+		# None to deselect all)
+		self.currentItemChanged.connect(
+		    lambda current, previous:
+		        None if current is None\
+		        else self.itemSelected.emit(current.value)
 		)
 
 	# ───────
@@ -65,11 +71,15 @@ class SelectableListWidget(QListWidget):
 		"""
 		return SelectableListItem(name, value if value else name, self)
 
-	def removeItem(self, item):
+	def deselectAll(self):
 		"""
-		Remove item from the list
+		De-focus any focused item
+		"""
+		self.setCurrentItem(None)
 
-		:param item: Item to remove
-		:type item: PySide.QtGui.QListWidgetItem
+
+	def clearAllItems(self):
 		"""
-		self.takeItem(self.row(item))
+		Remove all items from the list
+		"""
+		self.clear()
