@@ -21,5 +21,6 @@ VERSION = open(_os.path.join(_os.path.dirname(_os.path.realpath(__file__)),
 RESOURCES_DIR = _os.path.join(_os.path.dirname(_os.path.realpath(__file__)),
                               "_resources")
 
+from qidatasensor_widget import QiDataSensorWidget
 
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––#
