@@ -39,5 +39,10 @@ setup(
         "argcomplete >= 1.1.0",
     ],
     package_data={"qidata_gui":["VERSION", "_resources/*.png"]},
+    entry_points={
+        'qidata.commands': [
+            'open = qidata_apps.viewer.app',
+        ],
+    },
 )
 
