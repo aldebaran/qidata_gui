@@ -57,10 +57,12 @@ class ImageROI(QtGui.QGraphicsRectItem):
 		Deselects this specific item.
 		"""
 		self.setPen(QtGui.QPen(QtGui.QColor(255,0,0))) # Color in red
+		self.clearFocus()
 
 	# ─────
 	# Slots
 
+	# Automatically called by Qt when a user clicks on the item
 	def focusInEvent(self, event):
 		self.parent.selectItem(self)
 
@@ -155,12 +157,20 @@ class ImageWidget(QtGui.QWidget):
 	def selectItem(self, item):
 		if item is self._selected:
 			return
-		if self._selected is not None:
-			self._selected.deselect()
-			self._selected = None
+		self.focusOutSelectedItem()
 		self._selected = item
 		item.select()
 		self.itemSelected.emit(item.info)
+
+	def focusOutSelectedItem(self):
+		if self._selected is not None:
+			self._selected.deselect()
+			self._selected = None
+
+	def clearAllItems(self):
+		item_list = self.view.scene().items()
+		for item_index in range(len(item_list)-1):
+			self.view.scene().removeItem(item_list[item_index])
 
 	# ───────────
 	# Private API

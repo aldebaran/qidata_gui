@@ -2,6 +2,7 @@
 # Third-party libraries
 import cv2
 from PySide import QtCore, QtGui
+import pytest
 
 # Local modules
 from qidata_gui._subwidgets import (
@@ -95,6 +96,11 @@ def test_selectable_list_widget(qtbot):
 
 def test_raw_data_display_widget(qtbot, jpg_file_path):
 
+	# Test raw data widget with wrong given type
+	with pytest.raises(TypeError) as e:
+		widget = RawDataDisplayWidget(None, "TYPE", cv2.imread(jpg_file_path))
+	assert("No widget available for type TYPE" == e.value.message)
+
 	# Create widget
 	widget = RawDataDisplayWidget(None, "IMAGE", cv2.imread(jpg_file_path))
 
@@ -109,6 +115,26 @@ def test_raw_data_display_widget(qtbot, jpg_file_path):
 	_view = widget._widget.view
 
 	# Click on the view to select an object
+	with qtbot.waitSignal(widget.itemSelected, timeout=500) as _s:
+		qtbot.mouseClick(_view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 _view.mapFromScene(
+		                     QtCore.QPointF(110,180)
+		                 ))
+	assert(dict(name="definition") == _s.args[0])
+
+	# Clicking a second time on the same item does not emit a signal
+	with qtbot.assertNotEmitted(widget.itemSelected):
+		qtbot.mouseClick(_view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 _view.mapFromScene(
+		                     QtCore.QPointF(110,180)
+		                 ))
+
+	# But if item was deselected
+	widget.deselectAll()
 	with qtbot.waitSignal(widget.itemSelected, timeout=500) as _s:
 		qtbot.mouseClick(_view.viewport(),
 		                 QtCore.Qt.LeftButton,
@@ -149,3 +175,6 @@ def test_raw_data_display_widget(qtbot, jpg_file_path):
 	some_rect = _view.mapToScene(QtCore.QRect(0,0,150,100)).boundingRect()
 	assert(150 == some_rect.width())
 	assert(100 == some_rect.height())
+
+	widget.clearAllItems()
+	assert(1 == len(_view.scene().items()))

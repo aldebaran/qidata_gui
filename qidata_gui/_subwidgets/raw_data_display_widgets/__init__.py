@@ -65,7 +65,18 @@ class RawDataDisplayWidget(QtGui.QWidget):
 
 	def selectItem(self, item):
 		"""
-		Mark an item as selected, and deselect any previously
-		selected item
+		Give the focus to an item, and de-focus any previously selected item
 		"""
 		self._widget.selectItem(item)
+
+	def deselectAll(self):
+		"""
+		De-focus any focused item
+		"""
+		self._widget.focusOutSelectedItem()
+
+	def clearAllItems(self):
+		"""
+		Remove all items from the widget
+		"""
+		self._widget.clearAllItems()
