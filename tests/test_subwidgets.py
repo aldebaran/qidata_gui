@@ -361,6 +361,17 @@ def test_raw_data_display_widget(qtbot, jpg_file_path):
 		                 _view.mapFromScene(QtCore.QPointF(1000,1000))
 		                )
 
+	# The type of the object can be changed
+	with qtbot.waitSignal(widget.objectTypeChanged, timeout=500) as _s:
+		widget.type_selector.setCurrentIndex(
+		    widget.type_selector.findText("AUDIO")
+		)
+	assert("AUDIO" == _s.args[0])
+
+	# It can also be changed by a call
+	with pytest.raises(KeyError):
+		widget.setType("IMAGE_TOTO")
+	widget.setType("IMAGE")
 
 
 	# Back to read-only

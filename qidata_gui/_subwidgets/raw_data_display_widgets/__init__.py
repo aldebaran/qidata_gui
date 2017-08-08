@@ -40,6 +40,7 @@ class RawDataDisplayWidget(QtGui.QWidget):
 	itemAdditionRequested = QtCore.Signal(list)
 	itemDeletionRequested = QtCore.Signal(list)
 	itemSelected = QtCore.Signal(list)
+	objectTypeChanged = QtCore.Signal(list)
 
 	def __init__(self, parent_widget, data_type, raw_data):
 		super(RawDataDisplayWidget, self).__init__(parent_widget)
@@ -49,13 +50,14 @@ class RawDataDisplayWidget(QtGui.QWidget):
 
 		# Image type selector
 		self.type_selector = QtGui.QComboBox()
-		self.type_selector.setEnabled(False)
 		self.type_selector.addItems(
 		    map(str, list(DataType))
 		)
 		self.type_selector.setCurrentIndex(
 		    self.type_selector.findText(str(data_type))
 		)
+		self.type_selector.currentIndexChanged["QString"]\
+		                      .connect(self.objectTypeChanged.emit)
 
 		# Aggregation
 		self.top_layout = QtGui.QHBoxLayout(self)
@@ -111,6 +113,19 @@ class RawDataDisplayWidget(QtGui.QWidget):
 		Give the focus to an item, and de-focus any previously selected item
 		"""
 		self._widget.selectItem(item)
+
+	def setType(self, type_name):
+		"""
+		Change the displayed type
+
+		:param type_name: New type to display (which must be previously in the
+		                  list)
+		:type type_name: str or qidata.DataType
+		"""
+		given_type_index = self.type_selector.findText(str(type_name))
+		if given_type_index == -1:
+			raise KeyError("%s is not a known type"%str(type_name))
+		self.type_selector.setCurrentIndex(given_type_index)
 
 	def deselectAll(self):
 		"""
