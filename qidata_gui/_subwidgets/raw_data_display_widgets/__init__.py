@@ -37,6 +37,8 @@ def makeRawDataWidget(parent_widget, data_type, raw_data):
 
 class RawDataDisplayWidget(QtGui.QWidget):
 
+	itemAdditionRequested = QtCore.Signal(list)
+	itemDeletionRequested = QtCore.Signal(list)
 	itemSelected = QtCore.Signal(list)
 
 	def __init__(self, parent_widget, data_type, raw_data):
@@ -63,11 +65,29 @@ class RawDataDisplayWidget(QtGui.QWidget):
 		# Create widget, assign it the parent and the object
 		self._widget = makeRawDataWidget(self, data_type, raw_data)
 		self._widget.itemSelected.connect(self.itemSelected)
+		self._widget.itemAdditionRequested.connect(self.itemAdditionRequested)
+		self._widget.itemDeletionRequested.connect(self.itemDeletionRequested)
 
 		self.main_hlayout = QtGui.QVBoxLayout(self)
 		self.main_hlayout.addWidget(self.top_widget)
 		self.main_hlayout.addWidget(self._widget)
 		self.setLayout(self.main_hlayout)
+
+		# By default, the widget does not allow any modifications
+		self.read_only = True
+
+	# ──────────
+	# Properties
+
+	@property
+	def read_only(self):
+		return self._read_only
+
+	@read_only.setter
+	def read_only(self, new_value):
+		self._read_only = new_value
+		self.type_selector.setEnabled(not self.read_only)
+		self._widget.read_only = new_value
 
 	# ──────────
 	# Public API
@@ -97,6 +117,15 @@ class RawDataDisplayWidget(QtGui.QWidget):
 		De-focus any focused item
 		"""
 		self._widget.focusOutSelectedItem()
+
+	def removeItem(self, item):
+		"""
+		Removes an item from the view
+
+		:param item: The item to remove
+		:type item: QtGui.QGraphicsItem
+		"""
+		self._widget.removeItem(item)
 
 	def clearAllItems(self):
 		"""
