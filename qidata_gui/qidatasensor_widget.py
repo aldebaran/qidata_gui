@@ -34,6 +34,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 
 		# Store given inputs
 		self.displayed_object = qidata_sensor_object
+		self._read_only = qidata_sensor_object.read_only
 
 		# ──────────
 		# Create GUI
@@ -58,7 +59,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self.left_most_widget.addWidget(
 		    self.timestamp_displayer
 		)
-		self.timestamp_displayer.read_only = True
+		self.timestamp_displayer.read_only = self._read_only
 		self.timestamp_displayer.data = self.displayed_object.timestamp
 
 			# A widget to display the object transform
@@ -66,7 +67,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self.left_most_widget.addWidget(
 		    self.transform_displayer
 		)
-		self.transform_displayer.read_only = True
+		self.transform_displayer.read_only = self._read_only
 		self.transform_displayer.data = self.displayed_object.transform
 		self.addWidget(self.left_most_widget)
 
@@ -77,6 +78,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		                           self.displayed_object.type,
 		                           self.displayed_object.raw_data
 		                       )
+		self.raw_data_viewer.read_only = self._read_only
 
 		self.addWidget(self.raw_data_viewer)
 
@@ -85,14 +87,14 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self.right_most_layout = QtGui.QVBoxLayout(self)
 
 		self.type_selector = QtGui.QComboBox(self.right_most_widget)
-		self.type_selector.setEnabled(False)
+		self.type_selector.setEnabled(not self._read_only)
 		self.type_selector.addItems(
 		    map(str, list(MetadataType))
 		)
 		self.right_most_layout.addWidget(self.type_selector)
 
 		self.annotation_displayer = ObjectDisplayWidget(self)
-		self.annotation_displayer.read_only = True
+		self.annotation_displayer.read_only = self._read_only
 		self.right_most_layout.addWidget(self.annotation_displayer)
 
 		self.right_most_widget.setLayout(self.right_most_layout)
@@ -111,6 +113,13 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		    .itemSelected.connect(self._displayGlobalInfo)
 		self.annotators_list\
 		    .tickedSelectionChanged.connect(self._showAnnotationsFrom)
+
+	# ──────────
+	# Properties
+
+	@property
+	def read_only(self):
+		return self._read_only
 
 	# ───────────
 	# Private API

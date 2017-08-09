@@ -12,21 +12,28 @@ from qidata_gui._subwidgets import (
                                    )
 from qidata_gui import QiDataSensorWidget
 
-def test_qidatasensor_widget(qtbot, jpg_file_path):
+def test_qidatasensor_widget_read_only(qtbot, jpg_file_path):
 
-	# Create widget
+	# Create widget in read-only
 	_f = qidata.open(jpg_file_path)
 	widget = QiDataSensorWidget(_f)
 	widget.show()
 	qtbot.addWidget(widget)
 
+	assert(widget.read_only)
+	assert(not widget.type_selector.isEnabled())
+	assert(widget.timestamp_displayer.read_only)
+	assert(widget.transform_displayer.read_only)
+	assert(widget.raw_data_viewer.read_only)
+	assert(widget.annotation_displayer.read_only)
+
 	# Click on localized annotation
 	qtbot.mouseClick(widget.raw_data_viewer._widget.view.viewport(),
-		             QtCore.Qt.LeftButton,
-		             0,
-		             widget.raw_data_viewer._widget.view.mapFromScene(
-		                 QtCore.QPointF(110,180)
-		             ))
+	                 QtCore.Qt.LeftButton,
+	                 0,
+	                 widget.raw_data_viewer._widget.view.mapFromScene(
+	                     QtCore.QPointF(110,180)
+	                 ))
 	qtbot.wait(100)
 	assert(
 	    Property(key="key", value="value") == widget.annotation_displayer.data
@@ -35,10 +42,10 @@ def test_qidatasensor_widget(qtbot, jpg_file_path):
 
 	# Click on global annotation
 	qtbot.mouseClick(widget.global_annotation_displayer.viewport(),
-		             QtCore.Qt.LeftButton,
-		             0,
-		             QtCore.QPoint(10,10)
-		            )
+	                 QtCore.Qt.LeftButton,
+	                 0,
+	                 QtCore.QPoint(10,10)
+	                )
 	qtbot.wait(100)
 	assert(
 	    Property(
@@ -52,5 +59,5 @@ def test_qidatasensor_widget(qtbot, jpg_file_path):
 
 	widget.annotators_list.item(0).setCheckState(QtCore.Qt.Unchecked)
 	assert(0 == widget.global_annotation_displayer.count())
-
 	_f.close()
+
