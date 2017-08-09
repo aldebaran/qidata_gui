@@ -52,8 +52,12 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self.left_most_widget = QtGui.QSplitter(QtCore.Qt.Vertical, self)
 
 			# A tickable list to select the annotators to display
+		annotators = self.displayed_object.annotators
+		if self._has_writer and self.writer in annotators:
+		    annotators.remove(self.writer)
 		self.annotators_list = TickableListWidget(
-		                           self.displayed_object.annotators,
+		                           annotators,
+		                           [self.writer] if self._has_writer else [],
 		                           parent=self
 		                       )
 		self.left_most_widget.addWidget(self.annotators_list)
