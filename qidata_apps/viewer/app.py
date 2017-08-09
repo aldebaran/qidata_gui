@@ -11,20 +11,21 @@ from PySide.QtGui import QApplication, QInputDialog, QMessageBox
 import qidata
 
 # Local modules
+from qidata_apps import QiDataApp
 from qidata_gui import QiDataSensorWidget
 
-class App(QApplication):
+class App(QiDataApp):
 
 	# ───────────
 	# Constructor
 
 	def __init__(self, filename):
-		QApplication.__init__(self, [])
+		QiDataApp.__init__(self, "QiData Viewer")
 		self.filename = filename
 		self.qidata_object = qidata.open(self.filename)
 		try:
-			self.main_widget = QiDataSensorWidget(self.qidata_object)
-			self.main_widget.setWindowTitle(filename)
+			self.main_window.main_widget = QiDataSensorWidget(self.qidata_object)
+			self.main_window.setWindowTitle(filename)
 		except Exception:
 			self.qidata_object.close()
 			raise
@@ -34,10 +35,7 @@ class App(QApplication):
 
 	def run(self):
 		try:
-			self.main_widget.show()
-			self.exec_()
-		except KeyboardInterrupt:
-			pass
+			super(App, self).run()
 		finally:
 			self.qidata_object.close()
 
