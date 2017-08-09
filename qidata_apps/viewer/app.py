@@ -24,9 +24,9 @@ class App(QApplication):
 		self.qidata_object = qidata.open(self.filename)
 		try:
 			self.main_widget = QiDataSensorWidget(self.qidata_object)
-		except Exception, exception:
+		except Exception:
 			self.qidata_object.close()
-			raise exception
+			raise
 
 	# ──────────
 	# Public API
