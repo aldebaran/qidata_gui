@@ -182,6 +182,13 @@ class QiDataSensorWidget(QtGui.QSplitter):
 			self._annotationTypeChanged
 		)
 
+		# Restore saved geometry
+		settings = QtCore.QSettings("Softbank Robotics", "QiDataSensorWidget")
+		self.restoreGeometry(settings.value("geometry"))
+		self.restoreState(settings.value("windowState"))
+		self.left_most_widget.restoreGeometry(settings.value("geometry/left"))
+		self.left_most_widget.restoreState(settings.value("windowState/left"))
+
 	# ──────────
 	# Properties
 
@@ -347,3 +354,14 @@ class QiDataSensorWidget(QtGui.QSplitter):
 					self._addAnnotationItemOnView(
 					    annotation[1], (annotator, annotation[0])
 					)
+
+	# ─────
+	# Slots
+
+	def closeEvent(self, event):
+		settings = QtCore.QSettings("Softbank Robotics", "QiDataSensorWidget")
+		settings.setValue("geometry", self.saveGeometry())
+		settings.setValue("windowState", self.saveState())
+		settings.setValue("geometry/left", self.left_most_widget.saveGeometry())
+		settings.setValue("windowState/left", self.left_most_widget.saveState())
+		QtGui.QSplitter.closeEvent(self, event)
