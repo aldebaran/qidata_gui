@@ -77,6 +77,15 @@ class SelectableListWidget(QListWidget):
 		"""
 		self.setCurrentItem(None)
 
+	def removeSelectedItem(self):
+		"""
+		Removes the item which is selected. Does not do anything if no item is
+		selected
+		"""
+		row_to_remove = self.currentRow()
+		self.deselectAll()
+		if row_to_remove != -1:
+			self.takeItem(row_to_remove)
 
 	def clearAllItems(self):
 		"""

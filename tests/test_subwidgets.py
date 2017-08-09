@@ -121,6 +121,12 @@ def test_selectable_list_widget(qtbot):
 		                 rect1.center())
 	assert("Hello" == _s.args[0])
 
+	# Selected item can be removed
+	with qtbot.assertNotEmitted(widget.itemSelected):
+		widget.removeSelectedItem()
+	assert(None == widget.currentItem())
+	assert(1 == widget.count())
+
 	# Clear all items and make sure none is left
 	widget.clearAllItems()
 	assert(None == widget.currentItem())
