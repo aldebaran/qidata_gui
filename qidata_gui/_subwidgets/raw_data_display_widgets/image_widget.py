@@ -186,11 +186,8 @@ class Scene(QtGui.QGraphicsScene):
 		   and not self._parent_view.read_only\
 		   and event.button() == QtCore.Qt.LeftButton:
 			self._parent_view.itemAdditionRequested.emit(
-			                                             [
-			                                              event.scenePos().x(),
-			                                              event.scenePos().y()
-			                                             ]
-			                                            )
+			    self._parent_view._locationToCoordinates(event.scenePos())
+			)
 
 		elif len(clicked_items)>0 and event.button() == QtCore.Qt.LeftButton:
 			i = len(clicked_items)-1
@@ -356,3 +353,12 @@ class ImageWidget(QtGui.QWidget):
 		    visible_scene_rect.width()/view_rect.width(),
 		    visible_scene_rect.height()/view_rect.height()
 		)
+
+	def _locationToCoordinates(self, location):
+		"""
+		Create a proper set of coordinates to appropriately represent
+		the given location on the data type.
+		"""
+		x=int(location.x())
+		y=int(location.y())
+		return [[x-30,y-30],[x+30,y+30]]
