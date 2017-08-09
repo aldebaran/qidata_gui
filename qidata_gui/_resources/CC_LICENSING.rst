@@ -1,5 +1,7 @@
 Farm fresh icons by fatcow
 	http://www.iconarchive.com/show/farm-fresh-icons-by-fatcow.html
 	CC Attribution 4.0 [CC BY 4.0] (https://creativecommons.org/licenses/by/4.0/)
+	add.png
+	delete.png
 	zoom_actual.png
 	zoom_fit.png

@@ -35,7 +35,7 @@ setup(
     packages=package_list,
     install_requires=[
         "PySide >= 1.2.2",
-        "qidata == 1.0.0a3",
+        "qidata == 1.0.0a5",
         "argcomplete >= 1.1.0",
     ],
     package_data={"qidata_gui":["VERSION", "_resources/*.png"]},

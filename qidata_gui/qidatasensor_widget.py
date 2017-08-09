@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Standard libraries
+import os
+
 # Third-party libraries
 from PySide import QtCore, QtGui
 import qidata
@@ -7,6 +10,7 @@ from qidata import MetadataType, makeMetadataObject, ReadOnlyException
 from strong_typing import ObjectDisplayWidget
 
 # Local modules
+from qidata_gui import RESOURCES_DIR
 from _subwidgets import TickableListWidget
 from _subwidgets import SelectableListWidget
 from _subwidgets import RawDataDisplayWidget
@@ -21,12 +25,14 @@ class QiDataSensorWidget(QtGui.QSplitter):
 	# ───────────
 	# Constructor
 
-	def __init__(self, qidata_sensor_object, parent=None):
+	def __init__(self, qidata_sensor_object, writer="", parent=None):
 		"""
 		QiDataSensorWidget constructor
 
 		:param qidata_sensor_object: Object to display
 		:type qidata_sensor_object: qidata.qidatasensorobject.QiDataSensorObject
+		:param writer: Person modifying the object (necessary to add annotations)
+		:type writer: str
 		:param parent:  Parent of this widget
 		:type parent: PySide.QtGui.QWidget
 		"""
@@ -35,6 +41,8 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		# Store given inputs
 		self.displayed_object = qidata_sensor_object
 		self._read_only = qidata_sensor_object.read_only
+		self._has_writer = (writer != "")
+		self.writer = writer
 
 		# ──────────
 		# Create GUI
@@ -50,9 +58,53 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		                       )
 		self.left_most_widget.addWidget(self.annotators_list)
 
-			# A list of un-localized annotations
+			# A list of un-localized annotations with add/remove buttons
+		self.global_annotations_widget = QtGui.QWidget(self)
+		self.global_annotations_layout = QtGui.QVBoxLayout(self)
 		self.global_annotation_displayer = SelectableListWidget(self)
-		self.left_most_widget.addWidget(self.global_annotation_displayer)
+
+			# Two buttons to add/remove an annotation from the list
+		self.buttons_widget = QtGui.QWidget(self)
+
+				# "Plus" button
+		self.plus_button = QtGui.QPushButton("", self.buttons_widget)
+		plus_ic_path = os.path.join(RESOURCES_DIR, "add.png")
+		plus_ic = QtGui.QIcon(plus_ic_path)
+		self.plus_button.setFixedSize(
+		    plus_ic.actualSize(
+		        plus_ic.availableSizes()[0]
+		    )
+		)
+		self.plus_button.setText("")
+		self.plus_button.setToolTip("Add an unlocalized annotation")
+		self.plus_button.setIcon(plus_ic)
+		self.plus_button.setIconSize(plus_ic.availableSizes()[0])
+		self.plus_button.setEnabled(self._has_writer)
+
+				# "Minus" button
+		self.minus_button = QtGui.QPushButton("", self.buttons_widget)
+		minus_ic_path = os.path.join(RESOURCES_DIR, "delete.png")
+		minus_ic = QtGui.QIcon(minus_ic_path)
+		self.minus_button.setFixedSize(
+		    minus_ic.actualSize(
+		        minus_ic.availableSizes()[0]
+		    )
+		)
+		self.minus_button.setText("")
+		self.minus_button.setToolTip("Remove an unlocalized annotation")
+		self.minus_button.setIcon(minus_ic)
+		self.minus_button.setIconSize(minus_ic.availableSizes()[0])
+		self.minus_button.setEnabled(False)
+
+		# Aggregation
+		self.buttons_layout = QtGui.QHBoxLayout(self)
+		self.buttons_layout.addWidget(self.plus_button)
+		self.buttons_layout.addWidget(self.minus_button)
+		self.buttons_widget.setLayout(self.buttons_layout)
+		self.global_annotations_layout.addWidget(self.global_annotation_displayer)
+		self.global_annotations_layout.addWidget(self.buttons_widget)
+		self.global_annotations_widget.setLayout(self.global_annotations_layout)
+		self.left_most_widget.addWidget(self.global_annotations_widget)
 
 			# A widget to display the object timestamp
 		self.timestamp_displayer = ObjectDisplayWidget(self)
@@ -79,7 +131,6 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		                           self.displayed_object.raw_data
 		                       )
 		self.raw_data_viewer.read_only = self._read_only
-
 		self.addWidget(self.raw_data_viewer)
 
 		# Right-most widget: A displayer for selected annotation
@@ -108,11 +159,28 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self._showAnnotationsFrom(self.displayed_object.annotators)
 
 		# Bind signals
+		self.raw_data_viewer.objectTypeChanged.connect(self._objectTypeChanged)
 		self.raw_data_viewer.itemSelected.connect(self._displayLocalizedInfo)
+		self.raw_data_viewer.itemAdditionRequested.connect(self._addAnnotation)
+		self.raw_data_viewer.itemDeletionRequested.connect(
+		    self._deleteLocalizedAnnotation
+		)
+
+		self.plus_button.clicked.connect(lambda: self._addAnnotation(None))
+		self.minus_button.clicked.connect(
+		    lambda: self._deleteGlobalAnnotation(
+		        self.global_annotation_displayer.currentItem()
+		    )
+		)
+
 		self.global_annotation_displayer\
 		    .itemSelected.connect(self._displayGlobalInfo)
 		self.annotators_list\
 		    .tickedSelectionChanged.connect(self._showAnnotationsFrom)
+
+		self.type_selector.currentIndexChanged["QString"].connect(
+			self._annotationTypeChanged
+		)
 
 	# ──────────
 	# Properties
@@ -124,35 +192,134 @@ class QiDataSensorWidget(QtGui.QSplitter):
 	# ───────────
 	# Private API
 
-	def _addAnnotationItemOnView(self, annotation_item):
+	def _addAnnotation(self, location):
+		annot = makeMetadataObject(self.type_selector.currentText())
+		self.displayed_object.addAnnotation(self.writer, annot, location)
+		self._addAnnotationItemOnView(location, (self.writer, annot))
+
+	def _addAnnotationItemOnView(self, location, annotation_details):
 		"""
 		Add a metadata item on the view.
 
 		This method adds an item representing the metadata location but
 		does not display the object details.
 
-		:param annotation_item:  The item to be shown
+		:param location: The position where to display the item
+		:type location: list or None
+		:param annotation_details: Contents of the annotation
+		:type annotation_details: list
 		:return:  Reference to the widget representing the metadata
 
 		.. note::
 		The returned reference is handy to connect callbacks on the
 		widget signals. This reference is also needed to remove the object.
 		"""
-		if annotation_item[1] is None:
+		if location is None:
 			r = self.global_annotation_displayer\
-			        .addItem("annotation", annotation_item[0])
+			        .addItem("annotation", annotation_details)
 		else:
 			r = self.raw_data_viewer\
-			        .addItem(annotation_item[1], annotation_item[0])
+			        .addItem(location, annotation_details)
 		return r
+
+	def _annotationTypeChanged(self, new_type):
+		if new_type == type(self.annotation_displayer.data).__name__:
+			# Type did not really changed, maybe user cancelled a change
+			# Ignore the event
+			return
+		response = QtGui.QMessageBox.warning(
+		               self,
+		               "Change annotation type",
+		               "Changing an annotation type deletes the information \
+		               previsouly entered. Are you sure you want to change \
+		               this annotation's type ?",
+		               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+		           )
+		if QtGui.QMessageBox.Yes == response:
+			if self.global_annotation_displayer.currentItem():
+				item = self.global_annotation_displayer.currentItem()
+				annotator, annotation = item.value
+				self.displayed_object.removeAnnotation(annotator, annotation)
+
+				annotation = makeMetadataObject(new_type)
+				self.displayed_object.addAnnotation(annotator, annotation)
+				item.value = (annotator, annotation)
+				self.annotation_displayer.data = annotation
+
+			else:
+				item = self.raw_data_viewer._widget.scene._selectedItem
+				annotator, annotation = item.info
+				location = item.coordinates
+				self.displayed_object.removeAnnotation(annotator,
+				                                       annotation,
+				                                       location)
+
+				annotation = makeMetadataObject(new_type)
+				self.displayed_object.addAnnotation(annotator,
+				                                    annotation,
+				                                    location)
+
+				item.info = (annotator, annotation)
+				self.annotation_displayer.data = annotation
+
+		else:
+			self.type_selector.setCurrentIndex(
+			    self.type_selector.findText(
+			        type(self.annotation_displayer.data).__name__
+			    )
+			)
+
+	def _deleteGlobalAnnotation(self, global_item):
+		if self._askForDeletionConfirmation():
+			self.displayed_object.removeAnnotation(*(global_item.value))
+			self.global_annotation_displayer.removeSelectedItem()
+
+	def _deleteLocalizedAnnotation(self, localized_item):
+		if self._askForDeletionConfirmation():
+			self.displayed_object.removeAnnotation(localized_item.info[0],
+			                                       localized_item.info[1],
+			                                       localized_item.coordinates)
+			self.raw_data_viewer.removeItem(localized_item)
+
+	def _objectTypeChanged(self, new_type):
+		if new_type == self.displayed_object.type:
+			# Type did not really changed, maybe user cancelled a change
+			# Ignore the event
+			return
+		try:
+			self.displayed_object.type = new_type
+		except TypeError:
+			response = QtGui.QMessageBox.critical(
+			               self,
+			               "Wrong type",
+			               "The selected type cannot be selected",
+			               QtGui.QMessageBox.Ok
+			           )
+			self.type_selector.setCurrentIndex(
+			    self.type_selector.findText(
+			        type(self.annotation_displayer.data).__name__
+			    )
+			)
+
+	def _askForDeletionConfirmation(self):
+		response = QtGui.QMessageBox.warning(
+		               self,
+		               "Suppression",
+		               "Are you sure you want to remove this annotation ?",
+		               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+		           )
+		return(QtGui.QMessageBox.Yes == response)
 
 	def _displayLocalizedInfo(self, info):
 		self.global_annotation_displayer.deselectAll()
-		self._displayInfo(info)
+		self.minus_button.setEnabled(False)
+		self._displayInfo(info[1]) # info[0] is the annotator
 
 	def _displayGlobalInfo(self, info):
 		self.raw_data_viewer.deselectAll()
-		self._displayInfo(info)
+		if not self.read_only:
+			self.minus_button.setEnabled(True)
+		self._displayInfo(info[1])
 
 	def _displayInfo(self, info):
 		self.type_selector.setCurrentIndex(
@@ -171,11 +338,12 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		                            set(self.displayed_object.annotators)
 		                        )
 		annotations = self.displayed_object.annotations
-		annotations_list = [
-		    annotation\
-		    for annotator in annotators_to_display\
-		    for annotation_list in annotations[annotator].values()\
-		    for annotation in annotation_list
-		]
-		for m in annotations_list:
-			self._addAnnotationItemOnView(m)
+		for annotator in annotators_to_display:
+			for annotation_type in annotations[annotator].keys():
+				for annotation in self.displayed_object.getAnnotations(
+				        annotator,
+				        annotation_type
+				    ):
+					self._addAnnotationItemOnView(
+					    annotation[1], (annotator, annotation[0])
+					)
