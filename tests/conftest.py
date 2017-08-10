@@ -29,6 +29,7 @@ SANDBOX_FOLDER = "/tmp/qidata_gui/"
 
 JPG_PHOTO = "SpringNebula.jpg"
 JPG_PHOTO_ANNOTATIONS = "SpringNebula.jpg.xmp"
+DATASET = "dataset_with_two_images"
 
 #[MODULE CONTENT]--------------------------------------------------------------
 
@@ -69,6 +70,10 @@ def begin(request):
 def jpg_file_path():
 	sandboxed(JPG_PHOTO_ANNOTATIONS)
 	return sandboxed(JPG_PHOTO)
+
+@pytest.fixture(scope="function")
+def dataset_path():
+	return sandboxed(DATASET)
 
 @pytest.fixture(scope="session")
 def open_command_parser():

@@ -14,3 +14,9 @@ def test_qidata_open_app(jpg_file_path):
 	subprocess.check_call(["qidata",
 	                       "open",
 	                       jpg_file_path])
+
+def test_qidata_annotate_app(dataset_path):
+	subprocess.check_call(["qidata",
+	                       "annotate",
+	                       "sambrose",
+	                       dataset_path])

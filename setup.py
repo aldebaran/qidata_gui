@@ -41,6 +41,7 @@ setup(
     package_data={"qidata_gui":["VERSION", "_resources/*.png"]},
     entry_points={
         'qidata.commands': [
+            'annotate = qidata_apps.annotator.app',
             'open = qidata_apps.viewer.app',
         ],
     },

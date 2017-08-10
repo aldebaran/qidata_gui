@@ -23,7 +23,7 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 	@property
 	def main_widget(self):
-		return self._main_widget
+		return getattr(self,"_main_widget",None)
 
 	@main_widget.setter
 	def main_widget(self, main_widget):
@@ -42,7 +42,7 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	def closeEvent(self, event):
 		self._save_settings()
 		# Let the possibility to a widget to save its geometry
-		if self.main_widget.closeEvent(event):
+		if not self.main_widget or self.main_widget.closeEvent(event):
 			event.accept()
 			QtGui.QMainWindow.closeEvent(self, event)
 		else:
