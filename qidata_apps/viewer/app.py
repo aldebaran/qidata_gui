@@ -25,10 +25,6 @@ class App(QiDataApp):
 			self.qidata_object = qidata.open(self.filename, "w")
 
 		QiDataApp.__init__(self, "QiData Viewer")
-		# Add a reference to the qidata object in main window so that it can
-		# be saved properly or not upon closure
-		self.main_window.qidata_object = self.qidata_object
-
 		try:
 			self.main_window.main_widget = QiDataSensorWidget(
 			                                   self.qidata_object,

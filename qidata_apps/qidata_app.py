@@ -21,6 +21,11 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	# ──────────
 	# Properties
 
+	@property
+	def main_widget(self):
+		return self._main_widget
+
+	@main_widget.setter
 	def main_widget(self, main_widget):
 		"""
 		This is typically set by ``AnnotationMakerApp`` when
@@ -29,17 +34,15 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		self._main_widget = main_widget
 		self.setCentralWidget(main_widget)
 		self.setDefaultGeometry(self.desktop_geometry)
-		self.__restore_settings()
-
-	main_widget=property(fset=main_widget)
+		self._restore_settings()
 
 	# ─────
 	# Slots
 
 	def closeEvent(self, event):
-		self.__save_settings()
+		self._save_settings()
 		# Let the possibility to a widget to save its geometry
-		if self._main_widget.closeEvent(event):
+		if self.main_widget.closeEvent(event):
 			event.accept()
 			QtGui.QMainWindow.closeEvent(self, event)
 		else:
@@ -65,11 +68,11 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	# ───────────
 	# Private API
 
-	def __save_settings(self):
+	def _save_settings(self):
 		QtCore.QSettings().setValue("geometry", self.saveGeometry())
 		QtCore.QSettings().setValue("windowState", self.saveState())
 
-	def __restore_settings(self):
+	def _restore_settings(self):
 		self.restoreGeometry(QtCore.QSettings().value("geometry"))
 		self.restoreState(QtCore.QSettings().value("windowState"))
 
