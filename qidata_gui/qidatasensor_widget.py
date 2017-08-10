@@ -293,7 +293,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 			self.raw_data_viewer.removeItem(localized_item)
 
 	def _objectTypeChanged(self, new_type):
-		if new_type == self.displayed_object.type:
+		if new_type == str(self.displayed_object.type):
 			# Type did not really changed, maybe user cancelled a change
 			# Ignore the event
 			return
@@ -306,10 +306,8 @@ class QiDataSensorWidget(QtGui.QSplitter):
 			               "The selected type cannot be selected",
 			               QtGui.QMessageBox.Ok
 			           )
-			self.type_selector.setCurrentIndex(
-			    self.type_selector.findText(
-			        type(self.annotation_displayer.data).__name__
-			    )
+			self.raw_data_viewer.setType(
+			    str(self.displayed_object.type)
 			)
 
 	def _askForDeletionConfirmation(self):

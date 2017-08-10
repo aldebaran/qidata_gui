@@ -144,6 +144,7 @@ def test_qidatasensor_widget_read_write_modify(qtbot, mock, jpg_file_path):
 		widget.raw_data_viewer.type_selector.setCurrentIndex(
 		    widget.raw_data_viewer.type_selector.findText("AUDIO")
 		)
+		assert("IMAGE" == widget.raw_data_viewer.type_selector.currentText())
 		assert("IMAGE" == str(_f.type))
 		widget.raw_data_viewer.type_selector.setCurrentIndex(
 		    widget.raw_data_viewer.type_selector.findText("IMAGE_2D")
@@ -181,7 +182,6 @@ def test_qidatasensor_widget_read_write_deletion(qtbot, mock, jpg_file_path):
 		                     QtCore.QPointF(110,180)
 		                 ))
 		qtbot.wait(100)
-		# qtbot.stop()
 
 		# And ask for deletion but close
 		mock.patch.object(QtGui.QMessageBox,
