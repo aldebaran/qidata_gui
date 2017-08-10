@@ -365,7 +365,18 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		saved or not. This is only possible if the object is a
 		:class:`qidata.qidatasensorfile.QiDataSensorFile` otherwise the pop-up
 		only asks confirmation before closing.
+
+		.. note::
+			There are a few conditions under which the pop-up does not appear
+			- If the file is closed
+			- If the object is read-only
 		"""
+		if hasattr(self.displayed_object, "closed") and self.displayed_object.closed:
+			return True
+
+		if self.displayed_object.read_only:
+			return True
+
 		if hasattr(self.displayed_object, "cancelChanges"):
 			a = QtGui.QMessageBox.question(self,
 			    "Leaving..",

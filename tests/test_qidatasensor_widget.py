@@ -12,57 +12,63 @@ from qidata_gui._subwidgets import (
                                    )
 from qidata_gui import QiDataSensorWidget
 
-def test_qidatasensor_widget_read_only(qtbot, jpg_file_path):
+def test_qidatasensor_widget_read_only(qapp, qtbot, mock, jpg_file_path):
 
 	# Create widget in read-only
-	_f = qidata.open(jpg_file_path)
-	widget = QiDataSensorWidget(_f)
-	widget.show()
-	qtbot.addWidget(widget)
+	with qidata.open(jpg_file_path) as _f:
+		widget = QiDataSensorWidget(_f)
+		widget.show()
+		qtbot.addWidget(widget)
 
-	assert(widget.read_only)
-	assert(not widget.minus_button.isEnabled())
-	assert(not widget.plus_button.isEnabled())
-	assert(not widget.type_selector.isEnabled())
-	assert(widget.timestamp_displayer.read_only)
-	assert(widget.transform_displayer.read_only)
-	assert(widget.raw_data_viewer.read_only)
-	assert(widget.annotation_displayer.read_only)
+		assert(widget.read_only)
+		assert(not widget.minus_button.isEnabled())
+		assert(not widget.plus_button.isEnabled())
+		assert(not widget.type_selector.isEnabled())
+		assert(widget.timestamp_displayer.read_only)
+		assert(widget.transform_displayer.read_only)
+		assert(widget.raw_data_viewer.read_only)
+		assert(widget.annotation_displayer.read_only)
 
-	# Click on localized annotation
-	qtbot.mouseClick(widget.raw_data_viewer._widget.view.viewport(),
-	                 QtCore.Qt.LeftButton,
-	                 0,
-	                 widget.raw_data_viewer._widget.view.mapFromScene(
-	                     QtCore.QPointF(110,180)
-	                 ))
-	qtbot.wait(100)
-	assert(
-	    Property(key="key", value="value") == widget.annotation_displayer.data
-	)
-	assert("Property" == widget.type_selector.currentText())
+		# Click on localized annotation
+		qtbot.mouseClick(widget.raw_data_viewer._widget.view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 widget.raw_data_viewer._widget.view.mapFromScene(
+		                     QtCore.QPointF(110,180)
+		                 ))
+		qtbot.wait(100)
+		assert(
+		    Property(key="key", value="value")==widget.annotation_displayer.data
+		)
+		assert("Property" == widget.type_selector.currentText())
 
-	# Click on global annotation
-	qtbot.mouseClick(widget.global_annotation_displayer.viewport(),
-	                 QtCore.Qt.LeftButton,
-	                 0,
-	                 QtCore.QPoint(10,10)
-	                )
-	qtbot.wait(100)
-	assert(
-	    Property(
-	        key="name",
-	        value="definition"
-	    ) == widget.annotation_displayer.data
-	)
-	assert(not widget.minus_button.isEnabled())
+		# Click on global annotation
+		qtbot.mouseClick(widget.global_annotation_displayer.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 QtCore.QPoint(10,10)
+		                )
+		qtbot.wait(100)
+		assert(
+		    Property(
+		        key="name",
+		        value="definition"
+		    ) == widget.annotation_displayer.data
+		)
+		assert(not widget.minus_button.isEnabled())
 
-	widget.annotators_list.item(1).setCheckState(QtCore.Qt.Unchecked)
-	assert(1 == len(widget.raw_data_viewer._widget.view.scene().items()))
+		widget.annotators_list.item(1).setCheckState(QtCore.Qt.Unchecked)
+		assert(1 == len(widget.raw_data_viewer._widget.view.scene().items()))
 
-	widget.annotators_list.item(0).setCheckState(QtCore.Qt.Unchecked)
-	assert(0 == widget.global_annotation_displayer.count())
-	_f.close()
+		widget.annotators_list.item(0).setCheckState(QtCore.Qt.Unchecked)
+		assert(0 == widget.global_annotation_displayer.count())
+
+		# Make sure the "do you want to save box" does not show, as it is read
+		# only
+		mock.patch.object(QtGui.QMessageBox,
+		                  'question',
+		                  side_effect=Exception())
+		widget.close()
 
 def test_qidatasensor_widget_read_write_modify(qtbot, mock, jpg_file_path):
 
@@ -144,6 +150,11 @@ def test_qidatasensor_widget_read_write_modify(qtbot, mock, jpg_file_path):
 		)
 		assert("IMAGE_2D" == str(_f.type))
 
+		mock.patch.object(QtGui.QMessageBox,
+		                  'question',
+		                  return_value=QtGui.QMessageBox.Yes)
+		widget.close()
+
 	with qidata.open(jpg_file_path) as _f:
 		assert(
 		    [
@@ -220,6 +231,11 @@ def test_qidatasensor_widget_read_write_deletion(qtbot, mock, jpg_file_path):
 		                 ))
 		qtbot.wait(100)
 
+		mock.patch.object(QtGui.QMessageBox,
+		                  'question',
+		                  return_value=QtGui.QMessageBox.Yes)
+		widget.close()
+
 	with qidata.open(jpg_file_path) as _f:
 		assert(
 		    [
@@ -229,7 +245,7 @@ def test_qidatasensor_widget_read_write_deletion(qtbot, mock, jpg_file_path):
 		)
 		assert(not _f.annotations.has_key("jsmith"))
 
-def test_qidatasensor_widget_read_write_addition(qtbot, jpg_file_path):
+def test_qidatasensor_widget_read_write_addition(qtbot, mock, jpg_file_path):
 
 	# Create widget in "w" mode
 	with qidata.open(jpg_file_path, "w") as _f:
@@ -259,6 +275,11 @@ def test_qidatasensor_widget_read_write_addition(qtbot, jpg_file_path):
 		qtbot.mouseClick(widget.plus_button, QtCore.Qt.LeftButton)
 		qtbot.wait(100)
 
+		mock.patch.object(QtGui.QMessageBox,
+		                  'question',
+		                  return_value=QtGui.QMessageBox.Yes)
+		widget.close()
+
 	with qidata.open(jpg_file_path) as _f:
 		assert(
 		    [
@@ -272,3 +293,86 @@ def test_qidatasensor_widget_read_write_addition(qtbot, jpg_file_path):
 		        None
 		    ] == _f.annotations["sambrose"]["Property"][1]
 		)
+
+def test_qidatasensor_widget_do_not_save(qtbot, mock, jpg_file_path):
+
+	# Create widget in "w" mode
+	with qidata.open(jpg_file_path, "w") as _f:
+		widget = QiDataSensorWidget(_f, "sambrose")
+		widget.show()
+		qtbot.addWidget(widget)
+
+		# Select localized annotation
+		qtbot.mouseClick(widget.raw_data_viewer._widget.view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 widget.raw_data_viewer._widget.view.mapFromScene(
+		                     QtCore.QPointF(110,180)
+		                 ))
+		qtbot.wait(100)
+
+		# Change its type and validate
+		mock.patch.object(QtGui.QMessageBox,
+		                  'warning',
+		                  return_value=QtGui.QMessageBox.Yes)
+		widget.type_selector.setCurrentIndex(
+		    widget.type_selector.findText("Object")
+		)
+		assert("Object" == widget.type_selector.currentText())
+		assert("Object" == type(widget.annotation_displayer.data).__name__)
+
+		# And modify it
+		item = widget.annotation_displayer.topLevelItem(0)
+		w = widget.annotation_displayer.itemWidget(item,1)
+		w.setText("qrcode")
+		w.editingFinished.emit()
+
+		# Select unlocalized annotation
+		qtbot.mouseClick(widget.global_annotation_displayer.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 QtCore.QPoint(10,10)
+		                )
+		qtbot.wait(100)
+		assert(widget.minus_button.isEnabled())
+
+		# And delete it
+		mock.patch.object(QtGui.QMessageBox,
+		                  'warning',
+		                  return_value=QtGui.QMessageBox.Yes)
+		qtbot.mouseClick(widget.minus_button, QtCore.Qt.LeftButton)
+		qtbot.wait(100)
+
+		# Then create a new localized annotation
+		qtbot.mouseClick(widget.raw_data_viewer._widget.view.viewport(),
+		                 QtCore.Qt.LeftButton,
+		                 0,
+		                 QtCore.QPoint(1000,180)
+		                 )
+		qtbot.wait(100)
+
+		# And a new global annotation
+		qtbot.mouseClick(widget.plus_button, QtCore.Qt.LeftButton)
+		qtbot.wait(100)
+
+		# Close and do not save
+		mock.patch.object(QtGui.QMessageBox,
+		                  'question',
+		                  return_value=QtGui.QMessageBox.No)
+		widget.close()
+
+	with qidata.open(jpg_file_path) as _f:
+		assert(
+		    [
+		        Property(key="name", value="definition"),
+		        None
+		    ] == _f.annotations["jdoe"]["Property"][0]
+		)
+		assert(
+		    [
+		        Property(key="key", value="value"),
+		        [[50,50],[650,590]]
+		    ] == _f.annotations["jsmith"]["Property"][0]
+		)
+		assert(not _f.annotations.has_key("sambrose"))
+		assert("IMAGE" == str(_f.type))
