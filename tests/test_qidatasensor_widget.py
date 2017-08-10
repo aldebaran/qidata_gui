@@ -41,6 +41,7 @@ def test_qidatasensor_widget_read_only(qapp, qtbot, mock, jpg_file_path):
 		    Property(key="key", value="value")==widget.annotation_displayer.data
 		)
 		assert("Property" == widget.type_selector.currentText())
+		assert(not widget.type_selector.isEnabled())
 
 		# Click on global annotation
 		qtbot.mouseClick(widget.global_annotation_displayer.viewport(),
@@ -81,7 +82,7 @@ def test_qidatasensor_widget_read_write_modify(qtbot, mock, jpg_file_path):
 		assert(not widget.read_only)
 		assert(not widget.minus_button.isEnabled())
 		assert(not widget.plus_button.isEnabled())
-		assert(widget.type_selector.isEnabled())
+		assert(not widget.type_selector.isEnabled())
 		assert(not widget.timestamp_displayer.read_only)
 		assert(not widget.transform_displayer.read_only)
 		assert(not widget.raw_data_viewer.read_only)
@@ -95,6 +96,8 @@ def test_qidatasensor_widget_read_write_modify(qtbot, mock, jpg_file_path):
 		                     QtCore.QPointF(110,180)
 		                 ))
 		qtbot.wait(100)
+
+		assert(widget.type_selector.isEnabled())
 
 		# Change its type and cancel
 		mock.patch.object(QtGui.QMessageBox,
@@ -230,6 +233,10 @@ def test_qidatasensor_widget_read_write_deletion(qtbot, mock, jpg_file_path):
 		                     QtCore.QPointF(110,180)
 		                 ))
 		qtbot.wait(100)
+		assert(
+		    widget.annotation_displayer.data is None
+		)
+		assert(not widget.type_selector.isEnabled())
 
 		mock.patch.object(QtGui.QMessageBox,
 		                  'question',
@@ -257,7 +264,7 @@ def test_qidatasensor_widget_read_write_addition(qtbot, mock, jpg_file_path):
 		assert(not widget.read_only)
 		assert(not widget.minus_button.isEnabled())
 		assert(widget.plus_button.isEnabled())
-		assert(widget.type_selector.isEnabled())
+		assert(not widget.type_selector.isEnabled())
 		assert(not widget.timestamp_displayer.read_only)
 		assert(not widget.transform_displayer.read_only)
 		assert(not widget.raw_data_viewer.read_only)

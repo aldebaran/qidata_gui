@@ -142,7 +142,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self.right_most_layout = QtGui.QVBoxLayout(self)
 
 		self.type_selector = QtGui.QComboBox(self.right_most_widget)
-		self.type_selector.setEnabled(not self._read_only)
+		self.type_selector.setEnabled(False)
 		self.type_selector.addItems(
 		    map(str, list(MetadataType))
 		)
@@ -280,10 +280,15 @@ class QiDataSensorWidget(QtGui.QSplitter):
 			    )
 			)
 
+	def _clearDisplayer(self):
+		self.type_selector.setEnabled(False)
+		self.annotation_displayer.data = None
+
 	def _deleteGlobalAnnotation(self, global_item):
 		if self._askForDeletionConfirmation():
 			self.displayed_object.removeAnnotation(*(global_item.value))
 			self.global_annotation_displayer.removeSelectedItem()
+			self._clearDisplayer()
 
 	def _deleteLocalizedAnnotation(self, localized_item):
 		if self._askForDeletionConfirmation():
@@ -291,6 +296,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 			                                       localized_item.info[1],
 			                                       localized_item.coordinates)
 			self.raw_data_viewer.removeItem(localized_item)
+			self._clearDisplayer()
 
 	def _objectTypeChanged(self, new_type):
 		if new_type == str(self.displayed_object.type):
@@ -335,12 +341,13 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		    self.type_selector.findText(type(info).__name__)
 		)
 		self.annotation_displayer.data = info
+		self.type_selector.setEnabled(not self.read_only)
 
 	def _showAnnotationsFrom(self, requested_annotators):
 		# Clear
 		self.global_annotation_displayer.clearAllItems()
 		self.raw_data_viewer.clearAllItems()
-		self.annotation_displayer.data = None
+		self._clearDisplayer()
 
 		# Display
 		annotators_to_display = set(requested_annotators).intersection(
