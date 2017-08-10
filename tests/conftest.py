@@ -19,6 +19,9 @@ import shutil
 # Third-party libraries
 import pytest
 
+# Local modules
+from qidata_apps.viewer import app as open_command
+
 #[MODULE GLOBALS]--------------------------------------------------------------
 
 DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/")
@@ -66,3 +69,7 @@ def begin(request):
 def jpg_file_path():
 	sandboxed(JPG_PHOTO_ANNOTATIONS)
 	return sandboxed(JPG_PHOTO)
+
+@pytest.fixture(scope="session")
+def open_command_parser():
+	return open_command.make_command_parser()

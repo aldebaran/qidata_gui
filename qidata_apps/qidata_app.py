@@ -39,8 +39,11 @@ class QiDataMainWindow(QtGui.QMainWindow):
 	def closeEvent(self, event):
 		self.__save_settings()
 		# Let the possibility to a widget to save its geometry
-		self._main_widget.closeEvent(event)
-		QtGui.QMainWindow.closeEvent(self, event)
+		if self._main_widget.closeEvent(event):
+			event.accept()
+			QtGui.QMainWindow.closeEvent(self, event)
+		else:
+			event.ignore()
 
 	# ──────────
 	# Public API

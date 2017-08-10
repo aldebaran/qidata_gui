@@ -2,12 +2,9 @@
 
 # Standard libraries
 import argparse
-import os.path
 import sys
 
 # Third-party libraries
-from PySide import QtGui
-from PySide.QtGui import QApplication, QInputDialog, QMessageBox
 import qidata
 
 # Local modules
@@ -19,16 +16,29 @@ class App(QiDataApp):
 	# ───────────
 	# Constructor
 
-	def __init__(self, filename):
-		QiDataApp.__init__(self, "QiData Viewer")
+	def __init__(self, filename, writer):
 		self.filename = filename
-		self.qidata_object = qidata.open(self.filename)
+		if writer is None:
+			self.qidata_object = qidata.open(self.filename)
+			writer = ""
+		else:
+			self.qidata_object = qidata.open(self.filename, "w")
+
+		QiDataApp.__init__(self, "QiData Viewer")
+		# Add a reference to the qidata object in main window so that it can
+		# be saved properly or not upon closure
+		self.main_window.qidata_object = self.qidata_object
+
 		try:
-			self.main_window.main_widget = QiDataSensorWidget(self.qidata_object)
-			self.main_window.setWindowTitle(filename)
+			self.main_window.main_widget = QiDataSensorWidget(
+			                                   self.qidata_object,
+			                                   writer
+			                               )
 		except Exception:
 			self.qidata_object.close()
 			raise
+
+		self.main_window.setWindowTitle("QiData Viewer: "+filename)
 
 	# ──────────
 	# Public API
@@ -40,7 +50,7 @@ class App(QiDataApp):
 			self.qidata_object.close()
 
 def main(args):
-	qidata_app = App(args.path)
+	qidata_app = App(args.path, args.writer)
 	try:
 		qidata_app.run()
 	except KeyboardInterrupt:
@@ -53,6 +63,13 @@ DESCRIPTION = "Opens a viewer to display a QiDataSensorFile"
 
 def make_command_parser(parser=argparse.ArgumentParser(description=DESCRIPTION)):
 	file_arg = parser.add_argument("path", help="Path of the file to open")
+	writer_arg = parser.add_argument("-w",
+	                                 "--writer",
+	                                 nargs="?",
+	                                 const="",
+	                                 help="Open the file in 'w' mode. Specify \
+	                                 a writer to be able to add new annotations"
+	                                )
 	parser.set_defaults(func=main)
 	return parser
 

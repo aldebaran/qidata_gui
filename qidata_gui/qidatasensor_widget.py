@@ -359,13 +359,37 @@ class QiDataSensorWidget(QtGui.QSplitter):
 					    annotation[1], (annotator, annotation[0])
 					)
 
+	def _checkIfFileMustBeSavedAndClosed(self):
+		"""
+		Asks user through a pop-up if the modifications on the object must be
+		saved or not. This is only possible if the object is a
+		:class:`qidata.qidatasensorfile.QiDataSensorFile` otherwise the pop-up
+		only asks confirmation before closing.
+		"""
+		if hasattr(self.displayed_object, "cancelChanges"):
+			a = QtGui.QMessageBox.question(self,
+			    "Leaving..",
+			    "You are about to leave this file. Do you want to save your modifications ?",
+			    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+
+			if a==QtGui.QMessageBox.Cancel:
+				return False
+
+			if a == QtGui.QMessageBox.No:
+				self.displayed_object.cancelChanges()
+		return True
+
 	# ─────
 	# Slots
 
 	def closeEvent(self, event):
+		if not self._checkIfFileMustBeSavedAndClosed():
+			event.ignore()
+			return False
 		settings = QtCore.QSettings("Softbank Robotics", "QiDataSensorWidget")
 		settings.setValue("geometry", self.saveGeometry())
 		settings.setValue("windowState", self.saveState())
 		settings.setValue("geometry/left", self.left_most_widget.saveGeometry())
 		settings.setValue("windowState/left", self.left_most_widget.saveState())
 		QtGui.QSplitter.closeEvent(self, event)
+		return True
