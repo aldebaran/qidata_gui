@@ -12,7 +12,7 @@ from qidata_gui._subwidgets import (
                                    )
 from qidata_gui import QiDataSensorWidget
 
-def test_qidatasensor_widget_read_only(qapp, qtbot, mock, jpg_file_path):
+def test_qidatasensor_widget_read_only(qtbot, mock, jpg_file_path):
 
 	# Create widget in read-only
 	with qidata.open(jpg_file_path) as _f:
