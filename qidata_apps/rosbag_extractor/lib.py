@@ -8,7 +8,7 @@ try:
 	from cv_bridge.core import CvBridge
 	from geometry_msgs.msg import TransformStamped
 	from rosbag import Bag as RosBag
-	from tf2_py import _tf2, TransformException
+	from tf2_py import _tf2, TransformException, ExtrapolationException
 	_rosbag_conversion_enabled = True
 except ImportError:
 	_rosbag_conversion_enabled = False
@@ -135,6 +135,25 @@ if _rosbag_conversion_enabled:
 					continue
 
 				if topics_info[topic_name][0] == "sensor_msgs/Image":
+
+					try:
+						# odom is the target_frame because we want the transform
+						# to pass object in the camera frame into the world
+						# frame. Or simply now the camera position ((0,0,0) in
+						# its own frame) in the world frame.
+						ros_tf = tf_buffer.lookup_transform_core(
+						           "odom",
+						           msg.header.frame_id,
+						           msg.header.stamp
+						         )
+					except ExtrapolationException, e:
+						# If we could not obtain a transfer function for the
+						# data, skip it.
+						print "Transform could not be extrapolated for:"
+						print topic_name, msg, timestamp
+						print e
+						continue
+
 					# Message is an image, so retrieve it with CvBridge
 					cv_image = bridge.imgmsg_to_cv2(
 					             msg,
@@ -163,16 +182,6 @@ if _rosbag_conversion_enabled:
 					  ),
 					  cv_converted_image
 					)
-
-					# odom is the target_frame because we want the transform to
-					# pass object in the camera frame into the world frame. Or
-					# simply now the camera position ((0,0,0) in its own frame)
-					# in the world frame.
-					ros_tf = tf_buffer.lookup_transform_core(
-					           "odom",
-					           msg.header.frame_id,
-					           msg.header.stamp
-					         )
 
 					# Set the file timestamp, transform and type
 					with qidata.open(os.path.join(
