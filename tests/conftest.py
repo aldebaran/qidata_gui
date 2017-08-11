@@ -30,6 +30,7 @@ SANDBOX_FOLDER = "/tmp/qidata_gui/"
 JPG_PHOTO = "SpringNebula.jpg"
 JPG_PHOTO_ANNOTATIONS = "SpringNebula.jpg.xmp"
 DATASET = "dataset_with_two_images"
+ROSBAG_ASUS = "Michal_Asus_2016-02-19-15-25-46.bag"
 
 #[MODULE CONTENT]--------------------------------------------------------------
 
@@ -74,6 +75,10 @@ def jpg_file_path():
 @pytest.fixture(scope="function")
 def dataset_path():
 	return sandboxed(DATASET)
+
+@pytest.fixture(scope="function")
+def rosbag_asus_path():
+	return sandboxed(ROSBAG_ASUS)
 
 @pytest.fixture(scope="session")
 def open_command_parser():

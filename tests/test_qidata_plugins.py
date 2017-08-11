@@ -30,3 +30,9 @@ def test_annotate_app(dataset_path):
 	                       "sambrose",
 	                       dataset_path])
 
+def test_rosbag_extract_app(rosbag_asus_path):
+	subprocess.check_call(["python",
+	                       "-m",
+	                       "qidata_apps.rosbag_extractor.app",
+	                       rosbag_asus_path])
+
