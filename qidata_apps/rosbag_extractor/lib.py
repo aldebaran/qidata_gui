@@ -150,7 +150,7 @@ if _rosbag_conversion_enabled:
 						# If we could not obtain a transfer function for the
 						# data, skip it.
 						print "Transform could not be extrapolated for:"
-						print topic_name, msg, timestamp
+						print topic_name, timestamp
 						print e
 						continue
 

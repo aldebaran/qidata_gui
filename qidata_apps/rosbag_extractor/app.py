@@ -3,6 +3,7 @@
 # Standard libraries
 import argparse
 import sys
+import time
 
 # Third-party libraries
 from qidata import DataType
@@ -50,7 +51,8 @@ if _has_ros:
 			self.main_hlayout.addWidget(self.left_widget)
 
 			self.right_widget = ObjectDisplayWidget(self)
-			self.right_widget.data = Context()
+			self.context = Context()
+			self.right_widget.data = self.context
 			self.main_hlayout.addWidget(self.right_widget)
 
 			# Topic listing widget
@@ -83,39 +85,56 @@ if _has_ros:
 			settings = QtCore.QSettings("Softbank Robotics", "ROSbagConverter")
 			self.restoreGeometry(settings.value("geometry"))
 
+			# Keep track of previously given topics
+			self._topic_list = []
+
 
 		# ──────────
 		# Public API
 
-		def populate(self, topic_list):
+		def populate(self, topic_list, start_time, length):
 			"""
 			Fill the main widget with the topics retrieved from the ROSbag
 
 			:param topic_list: List of topics to display
 			:param topic_list: list
 			"""
-			self.content_tree.clear()
-			type_list = map(str, list(DataType))
-			type_list.sort()
+			# Reset topic information if the list changed
+			if self._topic_list != topic_list:
+				self.content_tree.clear()
+				type_list = map(str, list(DataType))
+				type_list.sort()
 
-			for topic in topic_list:
-				item = QtGui.QTreeWidgetItem()
-				self.content_tree.addTopLevelItem(item)
-				item.setText(0, str(topic))
+				for topic in topic_list:
+					item = QtGui.QTreeWidgetItem()
+					self.content_tree.addTopLevelItem(item)
+					item.setText(0, str(topic))
 
-				nameWidget = QtGui.QLineEdit(self)
-				nameWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,
-				                         QtGui.QSizePolicy.Fixed)
-				self.content_tree.setItemWidget(item, 1, nameWidget)
+					nameWidget = QtGui.QLineEdit(self)
+					nameWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,
+					                         QtGui.QSizePolicy.Fixed)
+					self.content_tree.setItemWidget(item, 1, nameWidget)
 
-				typeWidget = QtGui.QComboBox(self)
-				typeWidget.setSizePolicy(QtGui.QSizePolicy.Fixed,
-				                         QtGui.QSizePolicy.Fixed)
-				typeWidget.addItems(type_list)
-				self.content_tree.setItemWidget(item, 2, typeWidget)
+					typeWidget = QtGui.QComboBox(self)
+					typeWidget.setSizePolicy(QtGui.QSizePolicy.Fixed,
+					                         QtGui.QSizePolicy.Fixed)
+					typeWidget.addItems(type_list)
+					self.content_tree.setItemWidget(item, 2, typeWidget)
 
-			self.content_tree.resizeColumnToContents(0)
-			self.content_tree.update()
+				self.content_tree.resizeColumnToContents(0)
+				self.content_tree.update()
+
+				self._topic_list = topic_list
+
+			# Set the new time values
+			self.context.recording_datetime.starting_timestamp = start_time
+			self.context.recording_datetime.length = length
+			time_struct = time.localtime(start_time)
+			self.context.recording_datetime.year = time_struct.tm_year
+			self.context.recording_datetime.month = time_struct.tm_mon
+			self.context.recording_datetime.day = time_struct.tm_mday
+			self.context.recording_datetime.hour = time_struct.tm_hour
+			self.right_widget.data = self.context
 
 		def getInputs(self):
 			"""
@@ -184,7 +203,11 @@ if _has_ros:
 					tl = bag.get_type_and_topic_info()[1]
 					if tl.has_key("/tf"):
 						tl.pop("/tf")
-				self.main_window.main_widget.populate(tl.keys())
+					start_time = bag.get_start_time()
+					length = bag.get_end_time() - start_time
+				self.main_window.main_widget.populate(tl.keys(),
+				                                      start_time,
+				                                      length)
 
 	def main(args):
 		qidata_app = App(args.rosbag_path)
