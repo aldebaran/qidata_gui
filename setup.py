@@ -34,8 +34,8 @@ setup(
     keywords='metadata annotation tagging',
     packages=package_list,
     install_requires=[
-        "PySide >= 1.2.2",
-        "qidata == 1.0.0a6",
+        "PySide >= 1.2.4",
+        "qidata >= 1.0.0a8",
         "argcomplete >= 1.1.0",
         "opencv-python >= 3.3",
         "image.py >= 0.1.0"
