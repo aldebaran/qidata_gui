@@ -235,8 +235,7 @@ def test_raw_data_display_widget(qtbot, jpg_file_path):
 
 	# Clear all items and make sure only the image is left
 	widget.clearAllItems()
-	assert(1 == len(_view.scene().items()))
-	assert(isinstance(_view.scene().items()[0], QtGui.QGraphicsPixmapItem))
+	assert(0 == len(_view.scene().items()))
 
 	# Re-add several items on the view
 	i1=widget.addItem([[-10,-10],[20,20]], "item1")

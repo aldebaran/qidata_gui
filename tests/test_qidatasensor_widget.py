@@ -59,7 +59,7 @@ def test_qidatasensor_widget_read_only(qtbot, mock, jpg_file_path):
 		assert(not widget.minus_button.isEnabled())
 
 		widget.annotators_list.item(1).setCheckState(QtCore.Qt.Unchecked)
-		assert(1 == len(widget.raw_data_viewer._widget.view.scene().items()))
+		assert(0 == len(widget.raw_data_viewer._widget.view.scene().items()))
 
 		widget.annotators_list.item(0).setCheckState(QtCore.Qt.Unchecked)
 		assert(0 == widget.global_annotation_displayer.count())
@@ -256,7 +256,7 @@ def test_qidatasensor_widget_read_write_addition(qtbot, mock, jpg_file_path):
 
 	# Create widget in "w" mode
 	with qidata.open(jpg_file_path, "w") as _f:
-		widget = QiDataSensorWidget(_f, "sambrose")
+		widget = QiDataSensorWidget(_f, "jwayne")
 
 		widget.show()
 		qtbot.addWidget(widget)
@@ -274,8 +274,10 @@ def test_qidatasensor_widget_read_write_addition(qtbot, mock, jpg_file_path):
 		qtbot.mouseClick(widget.raw_data_viewer._widget.view.viewport(),
 		                 QtCore.Qt.LeftButton,
 		                 0,
-		                 QtCore.QPoint(1000,180)
+		                 widget.raw_data_viewer._widget.view.mapFromScene(
+		                     QtCore.QPointF(1000,180)
 		                 )
+		                )
 		qtbot.wait(100)
 
 		# And a new global annotation
@@ -292,13 +294,13 @@ def test_qidatasensor_widget_read_write_addition(qtbot, mock, jpg_file_path):
 		    [
 		        Property(key="", value=""),
 		        [[970,150],[1030,210]]
-		    ] == _f.annotations["sambrose"]["Property"][0]
+		    ] == _f.annotations["jwayne"]["Property"][0]
 		)
 		assert(
 		    [
 		        Property(key="", value=""),
 		        None
-		    ] == _f.annotations["sambrose"]["Property"][1]
+		    ] == _f.annotations["jwayne"]["Property"][1]
 		)
 
 def test_qidatasensor_widget_do_not_save(qtbot, mock, jpg_file_path):

@@ -10,8 +10,9 @@ from PySide import QtGui, QtCore
 # Local modules
 from qidata_gui import RESOURCES_DIR
 from image import Image, Colorspace
+from .graphics_elements import AnnotationItem, Scene
 
-class ImageROI(QtGui.QGraphicsRectItem):
+class ImageROI(QtGui.QGraphicsRectItem, AnnotationItem):
 	"""
 	Item to show the position of an object on an image.
 	"""
@@ -45,21 +46,6 @@ class ImageROI(QtGui.QGraphicsRectItem):
 	# ──────────
 	# Public API
 
-	def select(self):
-		"""
-		Selects this specific item.
-		"""
-		pen = QtGui.QPen(QtGui.QColor(255,255,255)) # Color in white
-		pen.setWidth(3) # Increase rectangle width
-		self.setPen(pen) # Apply changes
-
-	def deselect(self):
-		"""
-		Deselects this specific item.
-		"""
-		self.setPen(QtGui.QPen(QtGui.QColor(255,0,0))) # Color in red
-		self.clearFocus()
-
 	def move(self, d):
 		"""
 		Move this item
@@ -87,13 +73,6 @@ class ImageROI(QtGui.QGraphicsRectItem):
 		self.coordinates[1][1] = self.coordinates[1][1] + vertical
 		self.setRect(r)
 
-	# ─────
-	# Slots
-
-	# This is mandatory to send all events to the scene
-	def mousePressEvent(self, event):
-		event.ignore()
-
 class BackgroundPixmap(QtGui.QGraphicsPixmapItem):
 
 	def __init__(self, image):
@@ -103,123 +82,6 @@ class BackgroundPixmap(QtGui.QGraphicsPixmapItem):
 	# This is mandatory to send all events to the scene
 	def mousePressEvent(self, event):
 		event.ignore()
-
-class Scene(QtGui.QGraphicsScene):
-
-	# ──────────
-	# Contructor
-
-	def __init__(self, parent_view):
-		QtGui.QGraphicsScene.__init__(self)
-		self._selectedItem = None
-		self._parent_view = parent_view
-
-	# ──────────
-	# Public API
-
-	def removeItem(self, item):
-		if item is self._selectedItem:
-			self.focusOutSelectedItem()
-		super(Scene, self).removeItem(item)
-
-	def selectItem(self, item):
-		if item is self._selectedItem:
-			return
-		self.focusOutSelectedItem()
-		self._selectedItem = item
-		item.select()
-		self._parent_view.itemSelected.emit(item.info)
-
-	def focusOutSelectedItem(self):
-		if self._selectedItem is not None:
-			self._selectedItem.deselect()
-			self._selectedItem = None
-
-	def clearAllItems(self):
-		self.focusOutSelectedItem()
-		item_list = self.items()
-		for item_index in range(len(item_list)-1):
-			self.removeItem(item_list[item_index])
-
-	# ─────
-	# Slots
-
-	def keyPressEvent(self, event):
-		event.accept()
-		if self._parent_view.read_only:
-			return
-
-		if self._selectedItem is not None:
-			if event.key() == QtCore.Qt.Key_Up: # UP
-				self._selectedItem.increaseSize(0, 5)
-			elif event.key() == QtCore.Qt.Key_Down: # DOWN
-				self._selectedItem.increaseSize(0, -5)
-			elif event.key() == QtCore.Qt.Key_Right: # RIGHT
-				self._selectedItem.increaseSize(5, 0)
-			elif event.key() == QtCore.Qt.Key_Left: # LEFT
-				self._selectedItem.increaseSize(-5, 0)
-			elif event.key() == QtCore.Qt.Key_Delete: # DEL
-				if not self._parent_view.read_only\
-				   and self._selectedItem is not None:
-					self._parent_view.itemDeletionRequested.emit(
-					    self._selectedItem
-					)
-
-	def mouseMoveEvent(self, event):
-		event.accept()
-		if self._parent_view.read_only:
-			return
-		clicked_items = self.items(event.lastScenePos())
-		if self._selectedItem in clicked_items:
-			self._selectedItem.move(event.scenePos() - event.lastScenePos())
-
-	def mouseReleaseEvent(self, event):
-		event.accept()
-
-		# Retrieve all items concerned by the click except the base pixmap
-		clicked_items = self.items(event.scenePos())
-		if len(clicked_items)>0\
-		   and isinstance(clicked_items[-1], QtGui.QGraphicsPixmapItem):
-			clicked_items.pop(-1)
-
-		if len(clicked_items)==0\
-		   and not self._parent_view.read_only\
-		   and event.button() == QtCore.Qt.LeftButton:
-			self._parent_view.itemAdditionRequested.emit(
-			    self._parent_view._locationToCoordinates(event.scenePos())
-			)
-
-		elif len(clicked_items)>0 and event.button() == QtCore.Qt.LeftButton:
-			i = len(clicked_items)-1
-			while i>-1:
-				if clicked_items[i] == self._selectedItem:
-					break
-				i=i-1
-			self.selectItem(clicked_items[(i+1)%len(clicked_items)])
-		elif len(clicked_items)>0\
-		     and event.button() == QtCore.Qt.RightButton\
-		     and not self._parent_view.read_only\
-		     and self._selectedItem in clicked_items:
-			self._parent_view.itemDeletionRequested.emit(self._selectedItem)
-
-	def wheelEvent(self, event):
-		event.accept()
-		# Resize the box depending on wheel direction
-		if self._parent_view.read_only:
-			return
-		if self._selectedItem is not None:
-			# delta encodes the angle rotated in a certain amount of units.
-			# 120 units represents 15 degrees, which is a classical basic step
-			# on most mice.
-			# Here we decided arbitrarily that a 5 degree rotation (40 units)
-			# would increase the size of an item by 1 pixel (on each side).
-			# This means a classical mouse step will increase the size of an
-			# item by 3 pixels on each side, leading to a global 6-pixel increase
-			# on width and height. Finer mice might have a smaller resolution
-			# but cannot go under 2-pixel increase on height and width
-			r = self._selectedItem.rect()
-			increase = event.delta() / 40
-			self._selectedItem.increaseSize(increase, increase)
 
 class ImageWidget(QtGui.QWidget):
 	"""
@@ -289,6 +151,13 @@ class ImageWidget(QtGui.QWidget):
 		## Center Graphic scene
 		self.view = QtGui.QGraphicsView(self)
 		self.scene = Scene(self)
+		self.scene.itemAdditionRequested.connect(
+			    lambda x: self.itemAdditionRequested.emit(
+			        self._locationToCoordinates(x)
+			    )
+			)
+		self.scene.itemDeletionRequested.connect(self.itemDeletionRequested)
+		self.scene.itemSelected.connect(self.itemSelected)
 		self.view.setScene(self.scene)
 
 		# Add pixmap to scene and scene to widget
