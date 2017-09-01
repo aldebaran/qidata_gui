@@ -23,5 +23,6 @@ RESOURCES_DIR = _os.path.join(_os.path.dirname(_os.path.realpath(__file__)),
 
 from qidataframe_widget import QiDataFrameWidget
 from qidatasensor_widget import QiDataSensorWidget
+from qidataset_widget import QiDataSetWidget
 
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––#
