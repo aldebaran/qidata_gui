@@ -37,6 +37,7 @@ setup(
         "PySide >= 1.2.2",
         "qidata == 1.0.0a6",
         "argcomplete >= 1.1.0",
+        "image.py >= 0.1.0"
     ],
     package_data={"qidata_gui":["VERSION", "_resources/*.png"]},
     entry_points={

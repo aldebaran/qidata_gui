@@ -9,7 +9,7 @@ from PySide import QtGui, QtCore
 
 # Local modules
 from qidata_gui import RESOURCES_DIR
-from .image import Image, Colorspace
+from image import Image, Colorspace
 
 class ImageROI(QtGui.QGraphicsRectItem):
 	"""
