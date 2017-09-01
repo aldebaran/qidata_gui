@@ -2,6 +2,7 @@
 
 # Standard libraries
 import argparse
+import os
 import sys
 
 # Third-party libraries
@@ -39,20 +40,20 @@ class App(QiDataApp):
 	# Public API
 
 	def setSelected(self, path):
+		if self.opened_qidata_object is not None:
+			# Save the current disposition
+			self.main_window._save_settings()
+
+			# Request a file closure
+			event = QtGui.QCloseEvent()
+			if not self.main_window.main_widget.closeEvent(event):
+				self.fs_explorer._cancelSelectionChange()
+				return
+			else:
+				self.opened_qidata_object.close()
+				self.opened_qidata_object = None
+
 		if qidata.isSupportedDataFile(path):
-			if self.opened_qidata_object is not None:
-				# Save the current disposition
-				self.main_window._save_settings()
-
-				# Request a file closure
-				event = QtGui.QCloseEvent()
-				if not self.main_window.main_widget.closeEvent(event):
-					self.fs_explorer._cancelSelectionChange()
-					return
-				else:
-					self.opened_qidata_object.close()
-					self.opened_qidata_object = None
-
 			# Open a new file
 			self.opened_qidata_object = qidata.open(path, "w")
 			try:
@@ -64,6 +65,23 @@ class App(QiDataApp):
 				self.opened_qidata_object.close()
 				self.opened_qidata_object = None
 				raise
+
+		elif os.path.isdir(path):
+			if not qidata.isDataset(path):
+				answer = QtGui.QMessageBox.question(
+				    self.main_window,
+				    "Not a QiDataSet yet",
+				    "Do you want to turn this folder into a QiDataSet ?",
+				    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+				)
+				if answer != QMessageBox.Yes:
+					return
+
+			self.opened_qidata_object = qidataset.QiDataSet(path, "w")
+			self.main_window.main_widget = QiDataSetWidget(
+			                                   self.opened_qidata_object,
+			                                   self.writer
+			                               )
 
 	def run(self):
 		try:

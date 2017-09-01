@@ -23,12 +23,12 @@ def test_open_app(jpg_file_path):
 	                       "qidata_apps.viewer.app",
 	                       jpg_file_path])
 
-def test_annotate_app(dataset_path):
+def test_annotate_app(big_dataset_path):
 	subprocess.check_call(["python",
 	                       "-m",
 	                       "qidata_apps.annotator.app",
 	                       "sambrose",
-	                       dataset_path])
+	                       big_dataset_path])
 
 def test_rosbag_extract_app(rosbag_asus_path):
 	subprocess.check_call(["python",

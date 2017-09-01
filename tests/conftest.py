@@ -30,9 +30,9 @@ SANDBOX_FOLDER = "/tmp/qidata_gui/"
 JPG_PHOTO = "SpringNebula.jpg"
 JPG_PHOTO_ANNOTATIONS = "SpringNebula.jpg.xmp"
 SMALL_DATASET = "small_dataset"
-DATASET = "dataset_with_two_images"
 FRAME_DATASET = "dataset_with_frame_and_no_tf"
 FRAME_TF_DATASET = "dataset_with_frame_and_tf"
+BIG_DATASET = "Michal_Asus_2016-02-19-15-25-46"
 ROSBAG_ASUS = "Michal_Asus_2016-02-19-15-25-46.bag"
 
 #[MODULE CONTENT]--------------------------------------------------------------
@@ -76,8 +76,9 @@ def jpg_file_path():
 	return sandboxed(JPG_PHOTO)
 
 @pytest.fixture(scope="function")
-def dataset_path():
-	return sandboxed(DATASET)
+def big_dataset_path():
+	return sandboxed(BIG_DATASET)
+
 @pytest.fixture(scope="function")
 def dataset_with_frame_path():
 	return sandboxed(FRAME_DATASET)
