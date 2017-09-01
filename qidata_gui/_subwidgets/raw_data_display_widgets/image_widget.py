@@ -22,7 +22,7 @@ class ImageROI(QtGui.QGraphicsRectItem, AnnotationItem):
 
 	def __init__(self, coordinates, info, parent=None):
 		"""
-		QiDataObjectRectItem constructor
+		ImageROI constructor
 
 		:param coordinates: Object position
 		:type coordinates: list

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+
 # Standard library
+import os
 import subprocess
 import time
 
@@ -24,11 +26,12 @@ def test_open_app(jpg_file_path):
 	                       jpg_file_path])
 
 def test_annotate_app(big_dataset_path):
+	path = os.path.dirname(big_dataset_path)
 	subprocess.check_call(["python",
 	                       "-m",
 	                       "qidata_apps.annotator.app",
 	                       "sambrose",
-	                       big_dataset_path])
+	                       path])
 
 def test_rosbag_extract_app(rosbag_asus_path):
 	subprocess.check_call(["python",

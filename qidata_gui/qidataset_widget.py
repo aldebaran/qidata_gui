@@ -33,11 +33,7 @@ class CentralWidget(QtGui.QSplitter):
 
 		self._frame_widget_location = 0
 
-		if len(self.qidataset.getAllStreams())>0:
-			# Mark the frame widget will be the second widget
-			self._frame_widget_location += 1
 
-			# Display stream widget !!!
 
 	def displayFrame(self, qidataframe):
 		# If a frame is displayed, remove it
@@ -311,3 +307,10 @@ class QiDataSetWidget(QtGui.QSplitter):
 		)
 		index = self.frames_list.indexOfTopLevelItem(item)
 		self.frames_list.takeTopLevelItem(index)
+
+	# ─────
+	# Slots
+
+	def closeEvent(self, event):
+		QtGui.QSplitter.closeEvent(self, event)
+		return True

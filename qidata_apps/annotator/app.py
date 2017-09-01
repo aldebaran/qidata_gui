@@ -11,7 +11,7 @@ import qidata
 
 # Local modules
 from qidata_apps import QiDataApp
-from qidata_gui import QiDataSensorWidget
+from qidata_gui import QiDataSensorWidget, QiDataSetWidget
 from .file_system_explorer import FileSystemExplorer
 
 class App(QiDataApp):
@@ -77,7 +77,7 @@ class App(QiDataApp):
 				if answer != QMessageBox.Yes:
 					return
 
-			self.opened_qidata_object = qidataset.QiDataSet(path, "w")
+			self.opened_qidata_object = qidata.QiDataSet(path, "w")
 			self.main_window.main_widget = QiDataSetWidget(
 			                                   self.opened_qidata_object,
 			                                   self.writer
