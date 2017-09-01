@@ -30,6 +30,8 @@ SANDBOX_FOLDER = "/tmp/qidata_gui/"
 JPG_PHOTO = "SpringNebula.jpg"
 JPG_PHOTO_ANNOTATIONS = "SpringNebula.jpg.xmp"
 DATASET = "dataset_with_two_images"
+FRAME_DATASET = "dataset_with_frame_and_no_tf"
+FRAME_TF_DATASET = "dataset_with_frame_and_tf"
 ROSBAG_ASUS = "Michal_Asus_2016-02-19-15-25-46.bag"
 
 #[MODULE CONTENT]--------------------------------------------------------------
@@ -75,6 +77,14 @@ def jpg_file_path():
 @pytest.fixture(scope="function")
 def dataset_path():
 	return sandboxed(DATASET)
+@pytest.fixture(scope="function")
+def dataset_with_frame_path():
+	return sandboxed(FRAME_DATASET)
+
+@pytest.fixture(scope="function")
+def dataset_with_frame_and_tf_path():
+	return sandboxed(FRAME_TF_DATASET)
+
 
 @pytest.fixture(scope="function")
 def rosbag_asus_path():

@@ -1,0 +1,92 @@
+<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Exempi + XMP Core 5.1.2">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:qidataset="http://softbank-robotics.com/qidataset/1">
+   <qidataset:files_type rdf:parseType="Resource">
+    <qidataset:IMAGE_2D>
+     <rdf:Seq>
+      <rdf:li>front_00.png</rdf:li>
+     </rdf:Seq>
+    </qidataset:IMAGE_2D>
+    <qidataset:IMAGE_3D>
+     <rdf:Seq>
+      <rdf:li>depth_00.png</rdf:li>
+     </rdf:Seq>
+    </qidataset:IMAGE_3D>
+    <qidataset:IMAGE_IR>
+     <rdf:Seq>
+      <rdf:li>ir_00.png</rdf:li>
+     </rdf:Seq>
+    </qidataset:IMAGE_IR>
+   </qidataset:files_type>
+   <qidataset:context rdf:parseType="Resource">
+    <qidataset:recording_location rdf:parseType="Resource">
+     <qidataset:country>EUROPE__FRANCE</qidataset:country>
+     <qidataset:city>Paris</qidataset:city>
+     <qidataset:latitude>48.828596</qidataset:latitude>
+     <qidataset:longitude>2.27403</qidataset:longitude>
+     <qidataset:tags>
+      <rdf:Seq/>
+     </qidataset:tags>
+    </qidataset:recording_location>
+    <qidataset:recording_datetime rdf:parseType="Resource">
+     <qidataset:year>2016</qidataset:year>
+     <qidataset:month>2</qidataset:month>
+     <qidataset:day>19</qidataset:day>
+     <qidataset:hour>15</qidataset:hour>
+     <qidataset:starting_timestamp/>
+     <qidataset:length/>
+    </qidataset:recording_datetime>
+    <qidataset:recording_device rdf:parseType="Resource">
+     <qidataset:device_model>SOFTBANK_ROBOTICS__PEPPER_V17</qidataset:device_model>
+     <qidataset:device_id/>
+     <qidataset:sw_version/>
+    </qidataset:recording_device>
+    <qidataset:recorder_names>
+     <rdf:Seq>
+      <rdf:li>mohamed.djabri</rdf:li>
+     </rdf:Seq>
+    </qidataset:recorder_names>
+    <qidataset:environmental_description rdf:parseType="Resource">
+     <qidataset:category>INDOOR_UNSPECIFIED</qidataset:category>
+     <qidataset:light_conditions rdf:parseType="Resource">
+      <qidataset:outdoor_light>UNSPECIFIED</qidataset:outdoor_light>
+      <qidataset:indoor_light>BRIGHT_LIGHT</qidataset:indoor_light>
+      <qidataset:ambient_luminosity/>
+     </qidataset:light_conditions>
+     <qidataset:sound_conditions rdf:parseType="Resource">
+      <qidataset:ambient_sound_reverberation/>
+      <qidataset:ambient_sound_level/>
+     </qidataset:sound_conditions>
+    </qidataset:environmental_description>
+    <qidataset:tags>
+     <rdf:Seq/>
+    </qidataset:tags>
+   </qidataset:context>
+   <qidataset:streams rdf:parseType="Resource"/>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                           
+<?xpacket end="w"?>
