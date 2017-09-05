@@ -86,11 +86,11 @@ def test_qidataset_widget(mock, qtbot, small_dataset_path):
 		assert(not _c.called)
 
 def test_qidataset_frame_no_tf(mock, qtbot, dataset_with_frame_path):
-	# Create widget in read-only
 	with qidata.QiDataSet(dataset_with_frame_path, "w") as _ds:
 		widget = QiDataSetWidget(_ds)
 		widget.show()
 		qtbot.addWidget(widget)
+		assert(not widget._has_streams)
 
 		top_item = widget.frames_list.topLevelItem(0)
 		rect = widget.frames_list.visualItemRect(top_item)
@@ -113,3 +113,10 @@ def test_qidataset_frame_no_tf(mock, qtbot, dataset_with_frame_path):
 		qtbot.mouseClick(widget.minus_button, QtCore.Qt.LeftButton)
 		qtbot.wait(100)
 		assert(0 == widget.frames_list.topLevelItemCount())
+
+def test_qidataset_stream(mock, qtbot, big_dataset_path):
+	with qidata.QiDataSet(big_dataset_path, "w") as _ds:
+		widget = QiDataSetWidget(_ds)
+		widget.show()
+		qtbot.addWidget(widget)
+		assert(widget._has_streams)
