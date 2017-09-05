@@ -4,5 +4,7 @@ Farm fresh icons by fatcow
 	add.png
 	arrow_refresh.png
 	delete.png
+	resultset_next.png
+	resultset_previous.png
 	zoom_actual.png
 	zoom_fit.png

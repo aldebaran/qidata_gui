@@ -3,5 +3,6 @@
 
 from frame_viewer_widget import FrameViewer
 from selectable_list_widget import SelectableListWidget
+from stream_viewer import StreamViewer
 from raw_data_display_widgets import RawDataDisplayWidget
 from tickable_list_widget import TickableListWidget
