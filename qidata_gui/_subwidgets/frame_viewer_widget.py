@@ -116,6 +116,7 @@ class Scene3D(object):
 			)
 			self.scenes[plane].itemDeletionRequested.connect(self.parent_widget.itemDeletionRequested)
 			self.scenes[plane].itemSelected.connect(self.parent_widget.itemSelected)
+			self.scenes[plane].setBackgroundBrush(QtCore.Qt.lightGray)
 
 	# ──────────
 	# Properties
