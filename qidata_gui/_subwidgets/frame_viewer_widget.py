@@ -197,7 +197,7 @@ class Scene3D(object):
 	def __getitem__(self, key):
 		return self.scenes[key]
 
-class FrameViewer(QtGui.QWidget):
+class FrameViewer(QtGui.QSplitter):
 
 	itemAdditionRequested = QtCore.Signal(list)
 	itemDeletionRequested = QtCore.Signal(list)
@@ -207,10 +207,11 @@ class FrameViewer(QtGui.QWidget):
 	# Constructor
 
 	def __init__(self, files, parent=None):
-		QtGui.QWidget.__init__(self, parent)
+		QtGui.QSplitter.__init__(self, QtCore.Qt.Vertical, parent)
 		self.transform_to_files_map = dict()
 		self.raw_data_to_files_map = dict()
 		self.type_to_files_map = dict()
+		self.files_to_type_map = dict()
 		self._data_has_tf = False
 		self._frame_has_3d = False
 
@@ -220,58 +221,36 @@ class FrameViewer(QtGui.QWidget):
 			with qidata.open(file_name) as qidata_file:
 				self.transform_to_files_map[file_name] = qidata_file.transform
 				self.raw_data_to_files_map[file_name] = qidata_file.raw_data
-				self.type_to_files_map[file_name] = qidata_file.type
+				self.files_to_type_map[file_name] = qidata_file.type
+				if not qidata_file.type in self.type_to_files_map.keys():
+					self.type_to_files_map[qidata_file.type] = []
+				self.type_to_files_map[qidata_file.type].append(file_name)
 				self._data_has_tf |= (_ref_tf != qidata_file.transform)
 				self._frame_has_3d |= (DataType.IMAGE_3D == qidata_file.type)
 
-		if not self._data_has_tf or not self._frame_has_3d:
-			self.main_layout = QtGui.QHBoxLayout(self)
-			self.main_widget = QtGui.QSplitter(QtCore.Qt.Vertical, self)
-			self.main_layout.addWidget(self.main_widget)
-			column_index = 0
-			row_index = 0
-			self.main_widget.addWidget(QtGui.QSplitter(QtCore.Qt.Horizontal, self.main_widget))
 
+		self._column_index = -1
+		self._row_index = -1
+
+		if not self._data_has_tf or not self._frame_has_3d:
 			for file_name in files:
-				current_row_widget = self.main_widget.widget(row_index)
-				current_row_widget.addWidget(
+				self._addWidget(
 				    makeRawDataWidget(
-				        self,
-				        self.type_to_files_map[file_name],
+				        None, # parenting will be set at addition
+				        self.files_to_type_map[file_name],
 				        self.raw_data_to_files_map[file_name]
 				    ),
 				)
-				# Fill cell by cell in a way that the total surface is always as
-				# small as possible (well it is actually not optimal, but it does
-				# a pretty good job without being too complex)
-				# Here is an array showing in which order cells are filled
-				# 0  2  6 12
-				# 1  3  7 13
-				# 4  5  8 14
-				# 9 10 11 15
-
-				if row_index == column_index:
-					column_index = 0
-					row_index += 1
-					if self.main_widget.count() == row_index:
-						self.main_widget.addWidget(QtGui.QSplitter(QtCore.Qt.Horizontal, self.main_widget))
-				elif row_index == column_index+1:
-					column_index += 1
-					row_index = 0
-				elif row_index > column_index:
-					column_index += 1
-				else:
-					row_index += 1
-					if self.main_widget.count() == row_index:
-						self.main_widget.addWidget(QtGui.QSplitter(QtCore.Qt.Horizontal, self.main_widget))
 
 		else:
-			self.main_layout = QtGui.QVBoxLayout(self)
-			self.setLayout(self.main_layout)
+			self.viewer_widget = QtGui.QWidget(self)
+			self._addWidget(self.viewer_widget)
+			self.viewer_layout = QtGui.QVBoxLayout(self)
+			self.viewer_widget.setLayout(self.viewer_layout)
 
 			## Buttons bar
 			self.buttons_widget = QtGui.QWidget(self)
-			self.main_layout.addWidget(self.buttons_widget)
+			self.viewer_layout.addWidget(self.buttons_widget)
 
 				# "Fit window" button
 			self.fit_button = QtGui.QPushButton("", self.buttons_widget)
@@ -325,7 +304,7 @@ class FrameViewer(QtGui.QWidget):
 
 			self.scene = Scene3D(self)
 			self.view = QtGui.QGraphicsView(self)
-			self.main_layout.addWidget(self.view)
+			self.viewer_layout.addWidget(self.view)
 			self.pts_3d = []
 			for file_name in self.type_to_files_map:
 				if DataType.IMAGE_3D == self.type_to_files_map[file_name]:
@@ -445,6 +424,34 @@ class FrameViewer(QtGui.QWidget):
 
 	# ───────────
 	# Private API
+
+	def _addWidget(self, widget):
+		# Fill cell by cell in a way that the total surface is always as
+		# small as possible (well it is actually not optimal, but it does
+		# a pretty good job without being too complex)
+		# Here is an array showing in which order cells are filled
+		# 0  2  6 12
+		# 1  3  7 13
+		# 4  5  8 14
+		# 9 10 11 15
+
+		if self._row_index == self._column_index:
+			self._column_index = 0
+			self._row_index += 1
+			if self.count() == self._row_index:
+				self.addWidget(QtGui.QSplitter(QtCore.Qt.Horizontal, self))
+		elif self._row_index == self._column_index+1:
+			self._column_index += 1
+			self._row_index = 0
+		elif self._row_index > self._column_index:
+			self._column_index += 1
+		else:
+			self._row_index += 1
+			if self.count() == self._row_index:
+				self.addWidget(QtGui.QSplitter(QtCore.Qt.Horizontal, self))
+
+		current_row_widget = self.widget(self._row_index)
+		current_row_widget.addWidget(widget)
 
 	def _fitContentToWindow(self):
 		self.view.fitInView(self.view.scene().sceneRect(),
