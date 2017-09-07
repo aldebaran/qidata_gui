@@ -65,10 +65,10 @@ class Projected3DROI(QtGui.QGraphicsRectItem, AnnotationItem):
 		h_axis = int(self.plane[0])
 		v_axis = int(self.plane[1])
 
-		self.coordinates[0][h_axis] = self.coordinates[0][h_axis] + dx
-		self.coordinates[0][v_axis] = self.coordinates[0][v_axis] - dy
-		self.coordinates[1][h_axis] = self.coordinates[1][h_axis] + dx
-		self.coordinates[1][v_axis] = self.coordinates[1][v_axis] - dy
+		self.coordinates[0][h_axis] = self.coordinates[0][h_axis] + dx / self.parent.factor
+		self.coordinates[0][v_axis] = self.coordinates[0][v_axis] - dy / self.parent.factor
+		self.coordinates[1][h_axis] = self.coordinates[1][h_axis] + dx / self.parent.factor
+		self.coordinates[1][v_axis] = self.coordinates[1][v_axis] - dy / self.parent.factor
 
 		self._refresh()
 
@@ -76,10 +76,10 @@ class Projected3DROI(QtGui.QGraphicsRectItem, AnnotationItem):
 		h_axis = int(self.plane[0])
 		v_axis = int(self.plane[1])
 
-		self.coordinates[0][h_axis] = self.coordinates[0][h_axis] - horizontal
-		self.coordinates[0][v_axis] = self.coordinates[0][v_axis] - vertical
-		self.coordinates[1][h_axis] = self.coordinates[1][h_axis] + horizontal
-		self.coordinates[1][v_axis] = self.coordinates[1][v_axis] + vertical
+		self.coordinates[0][h_axis] = self.coordinates[0][h_axis] - horizontal / self.parent.factor
+		self.coordinates[0][v_axis] = self.coordinates[0][v_axis] - vertical / self.parent.factor
+		self.coordinates[1][h_axis] = self.coordinates[1][h_axis] + horizontal / self.parent.factor
+		self.coordinates[1][v_axis] = self.coordinates[1][v_axis] + vertical / self.parent.factor
 
 		self._refresh()
 
@@ -89,10 +89,10 @@ class Projected3DROI(QtGui.QGraphicsRectItem, AnnotationItem):
 	def _refresh(self):
 		h_axis = int(self.plane[0])
 		v_axis = int(self.plane[1])
-		x_min = self.coordinates[0][h_axis]
-		y_min = -self.coordinates[1][v_axis]
-		x_max = self.coordinates[1][h_axis]
-		y_max = -self.coordinates[0][v_axis]
+		x_min = int(round(self.parent.factor*self.coordinates[0][h_axis]))
+		y_min = -int(round(self.parent.factor*self.coordinates[1][v_axis]))
+		x_max = int(round(self.parent.factor*self.coordinates[1][h_axis]))
+		y_max = -int(round(self.parent.factor*self.coordinates[0][v_axis]))
 
 		self.setRect(QtCore.QRect(x_min, y_min, x_max-x_min, y_max-y_min))
 
@@ -107,11 +107,16 @@ class Scene3D(object):
 		self.scenes = dict()
 		self._item2handle = dict()
 		self._handle2items = dict()
+
+		# Size factor between the scene and the real world.
+		# Basically, the current value transform 1 pixel in the scene in 1 cm
+		# in the real world
+		self.factor = 100.0
 		for plane in ["01", "12", "02"]:
 			self.scenes[plane] = Scene(self)
 			self.scenes[plane].itemAdditionRequested.connect(
 			    lambda x: self.parent_widget.itemAdditionRequested.emit(
-			        self.parent_widget._locationToCoordinates(x)
+			        self._locationToCoordinates(x)
 			    )
 			)
 			self.scenes[plane].itemDeletionRequested.connect(self.parent_widget.itemDeletionRequested)
@@ -133,8 +138,8 @@ class Scene3D(object):
 			h_axis = int(plane[0])
 			v_axis = int(plane[1])
 			self.scenes[plane].addRect(
-			    coordinates[h_axis]*100,
-			    -coordinates[v_axis]*100,
+			    int(round(self.factor*coordinates[h_axis])),
+			    -int(round(self.factor*coordinates[v_axis])),
 			    1,
 			    1,
 			    QtGui.QPen(),
@@ -162,6 +167,23 @@ class Scene3D(object):
 		for item in items:
 			item.scene().removeItem(item)
 			self._item2handle.pop(item)
+
+	# ───────────
+	# Private API
+
+	def _locationToCoordinates(self, location):
+		"""
+		Create a proper set of coordinates to appropriately represent
+		the given location on the data type.
+		"""
+		plane = self.parent_widget.plane
+		h_axis = int(plane[0])
+		v_axis = int(plane[1])
+		loc = [0,0,0]
+		loc[h_axis] = location.x()/self.factor
+		loc[v_axis] = -location.y()/self.factor
+
+		return [[loc[0]-0.3,loc[1]-0.3,loc[2]-0.3],[loc[0]+0.3,loc[1]+0.3,loc[2]+0.3]]
 
 	def __getitem__(self, key):
 		return self.scenes[key]
@@ -399,47 +421,34 @@ class FrameViewer(QtGui.QWidget):
 		self.view.setScene(self.scene[plane])
 		self.plane = plane
 
-	def _locationToCoordinates(self, location):
-		"""
-		Create a proper set of coordinates to appropriately represent
-		the given location on the data type.
-		"""
-		h_axis = int(self.plane[0])
-		v_axis = int(self.plane[1])
-		loc = [0,0,0]
-		loc[h_axis] = int(location.x())
-		loc[v_axis] = -int(location.y())
-
-		return [[loc[0]-30,loc[1]-30,loc[2]-30],[loc[0]+30,loc[1]+30,loc[2]+30]]
-
 _EPS = numpy.finfo(float).eps * 4.0
 
 def transform_matrix(transform_struct):
-    """Return homogeneous rotation matrix from quaternion.
+	"""Return homogeneous rotation matrix from quaternion.
 
-    >>> M = quaternion_matrix([0.99810947, 0.06146124, 0, 0])
-    >>> numpy.allclose(M, rotation_matrix(0.123, [1, 0, 0]))
-    True
-    >>> M = quaternion_matrix([1, 0, 0, 0])
-    >>> numpy.allclose(M, numpy.identity(4))
-    True
-    >>> M = quaternion_matrix([0, 1, 0, 0])
-    >>> numpy.allclose(M, numpy.diag([1, -1, -1, 1]))
-    True
+	>>> M = quaternion_matrix([0.99810947, 0.06146124, 0, 0])
+	>>> numpy.allclose(M, rotation_matrix(0.123, [1, 0, 0]))
+	True
+	>>> M = quaternion_matrix([1, 0, 0, 0])
+	>>> numpy.allclose(M, numpy.identity(4))
+	True
+	>>> M = quaternion_matrix([0, 1, 0, 0])
+	>>> numpy.allclose(M, numpy.diag([1, -1, -1, 1]))
+	True
 
-    """
-    quaternion = transform_struct.rotation
-    trans = transform_struct.translation
-    quat = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
-    q = numpy.array(quat, dtype=numpy.float64, copy=True)
-    n = numpy.dot(q, q)
-    if n < _EPS:
-        return numpy.identity(4)
-    q *= math.sqrt(2.0 / n)
-    q = numpy.outer(q, q)
-    return numpy.array([
-        [1.0-q[2, 2]-q[3, 3],     q[1, 2]-q[3, 0],     q[1, 3]+q[2, 0], trans.x],
-        [    q[1, 2]+q[3, 0], 1.0-q[1, 1]-q[3, 3],     q[2, 3]-q[1, 0], trans.y],
-        [    q[1, 3]-q[2, 0],     q[2, 3]+q[1, 0], 1.0-q[1, 1]-q[2, 2], trans.z],
-        [                0.0,                 0.0,                 0.0,     1.0]
-    ])
+	"""
+	quaternion = transform_struct.rotation
+	trans = transform_struct.translation
+	quat = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+	q = numpy.array(quat, dtype=numpy.float64, copy=True)
+	n = numpy.dot(q, q)
+	if n < _EPS:
+	    return numpy.identity(4)
+	q *= math.sqrt(2.0 / n)
+	q = numpy.outer(q, q)
+	return numpy.array([
+	    [1.0-q[2, 2]-q[3, 3],     q[1, 2]-q[3, 0],     q[1, 3]+q[2, 0], trans.x],
+	    [    q[1, 2]+q[3, 0], 1.0-q[1, 1]-q[3, 3],     q[2, 3]-q[1, 0], trans.y],
+	    [    q[1, 3]-q[2, 0],     q[2, 3]+q[1, 0], 1.0-q[1, 1]-q[2, 2], trans.z],
+	    [                0.0,                 0.0,                 0.0,     1.0]
+	])

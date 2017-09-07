@@ -211,14 +211,14 @@ def test_qidataframe_widget_addition(qtbot, mock, dataset_with_frame_path, datas
 		assert(
 		    [
 		        Object(type="qrcode", value="", id=0),
-		        [[80,-210,-30],[140,-150,30]]
+		        [[0.8,-2.1,-0.3],[1.4,-1.5,0.3]]
 		    ] == _f.annotations["jsmith"]["Object"][0]
 		)
 
 		assert(
 		    [
 		        Object(type="", value="", id=0),
-		        [[80,-30,-210],[140,30,-150]]
+		        [[0.8,-0.3,-2.1],[1.4,0.3,-1.5]]
 		    ] == _f.annotations["jsmith"]["Object"][1]
 		)
 
