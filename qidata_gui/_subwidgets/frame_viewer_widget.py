@@ -137,13 +137,22 @@ class Scene3D(object):
 		for plane in self.scenes:
 			h_axis = int(plane[0])
 			v_axis = int(plane[1])
+			if len(coordinates)>4:
+				# Color is BGR, but Qt wants RGB
+				color = QtGui.QColor(
+				                     coordinates[4][2],
+				                     coordinates[4][1],
+				                     coordinates[4][0]
+				                    )
+			else:
+				color = QtGui.QColor(0, 0, 0)
 			self.scenes[plane].addRect(
 			    int(round(self.factor*coordinates[h_axis])),
 			    -int(round(self.factor*coordinates[v_axis])),
 			    1,
 			    1,
-			    QtGui.QPen(),
-			    QtGui.QBrush(QtGui.QColor(0, 0, 0)))
+			    QtGui.QPen(color),
+			    QtGui.QBrush(color))
 
 	def addItem(self, location, info):
 		handle = str(uuid.uuid4())
@@ -352,7 +361,32 @@ class FrameViewer(QtGui.QWidget):
 						for j in range(w):
 							pt_3d_cam = tmp_3d[i][j]
 							pt_3d_world = numpy.dot(t, numpy.array(pt_3d_cam))
-							self.pts_3d.append(pt_3d_world)
+							self.pts_3d.append(pt_3d_world.tolist())
+
+			for file_name in self.type_to_files_map:
+				if DataType.IMAGE_2D == self.type_to_files_map[file_name]:
+					img = Image(file_name)
+					with qidata.open(file_name) as qidata_image:
+						t = transform_matrix(qidata_image.transform)
+						t_inv = numpy.linalg.inv(t)
+
+					img_rendered = img.render() # Make sure it is BGR
+					m1, m2 = cv2.initUndistortRectifyMap(
+					    numpy.array(img.camera_info.camera_matrix),
+					    numpy.array(img.camera_info.distortion_coeffs),
+					    None,
+					    numpy.array(img.camera_info.camera_matrix),
+					    (img.height, img.width),
+					    cv2.CV_32FC1
+					)
+
+					for pt_3d_world in self.pts_3d:
+						pt_3d_in_cam_frame = numpy.dot(t_inv, numpy.array(pt_3d_world))
+						pt_in_cam_plane = numpy.dot(numpy.array(img.camera_info.camera_matrix), pt_3d_in_cam_frame[0:3])
+						x = int(round(pt_in_cam_plane[0] / pt_in_cam_plane[2]))
+						y = int(round(pt_in_cam_plane[1] / pt_in_cam_plane[2]))
+						if x>=0 and x<img.width and y>=0 and y<img.height:
+							pt_3d_world.append(img_rendered.numpy_image[y][x])
 
 			for pt_3d_world in self.pts_3d:
 				self.scene.add3DPoint(pt_3d_world)
