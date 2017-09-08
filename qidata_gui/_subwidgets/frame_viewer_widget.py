@@ -118,11 +118,19 @@ class PointCloudItem(QtGui.QGraphicsItem):
 		self.h_axis = int(plane[1])
 		self.v_sign = -1 if "-" == plane[2] else 1
 		self.v_axis = int(plane[3])
+		self.z_sign = -1 if "-" == plane[4] else 1
+		self.z_axis = int(plane[5])
 
 		self.x_min = self.h_sign*int(round(self.factor*self.pts[0][0][self.h_axis]))
 		self.y_min = self.v_sign*int(round(self.factor*self.pts[0][0][self.v_axis]))
 		self.x_max = self.h_sign*int(round(self.factor*self.pts[0][0][self.h_axis]))
 		self.y_max = self.v_sign*int(round(self.factor*self.pts[0][0][self.v_axis]))
+		self.pts.sort(
+		    cmp=lambda x,y:cmp(
+		                       self.z_sign * x[0][self.z_axis],
+		                       self.z_sign * y[0][self.z_axis]
+		                      )
+		)
 
 		for pt in self.pts:
 			if self.x_min > self.h_sign*int(round(self.factor*pt[0][self.h_axis])):
@@ -343,7 +351,7 @@ class FrameViewer(QtGui.QSplitter):
 			        fit_ic.availableSizes()[0]
 			    )
 			)
-			self.xy_button.clicked.connect(lambda: self._switchAxis("+0-1"))
+			self.xy_button.clicked.connect(lambda: self._switchAxis("+0-1-2"))
 
 			# "XZ" button
 			self.xz_button = QtGui.QPushButton("xz", self.buttons_widget)
@@ -352,7 +360,7 @@ class FrameViewer(QtGui.QSplitter):
 			        fit_ic.availableSizes()[0]
 			    )
 			)
-			self.xz_button.clicked.connect(lambda: self._switchAxis("+0-2"))
+			self.xz_button.clicked.connect(lambda: self._switchAxis("+0-2-1"))
 
 			# "YZ" button
 			self.yz_button = QtGui.QPushButton("yz", self.buttons_widget)
@@ -361,7 +369,7 @@ class FrameViewer(QtGui.QSplitter):
 			        fit_ic.availableSizes()[0]
 			    )
 			)
-			self.yz_button.clicked.connect(lambda: self._switchAxis("-1-2"))
+			self.yz_button.clicked.connect(lambda: self._switchAxis("-1-2-0"))
 
 			# Aggregation
 			self.top_layout = QtGui.QHBoxLayout(self)
@@ -443,7 +451,7 @@ class FrameViewer(QtGui.QSplitter):
 			self.pts_3d = zip(self.pts_3d, color)
 			self.scene = Scene3D(self, self.pts_3d)
 
-			self._switchAxis("-1-2")
+			self._switchAxis("-1-2-0")
 
 	# ──────────
 	# Decorators
