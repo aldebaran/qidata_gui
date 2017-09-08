@@ -40,7 +40,10 @@ class Projected3DROI(QtGui.QGraphicsRectItem, AnnotationItem):
 		:param parent: Parent of this widget
 		:type parent: QtGui.QWidget
 		"""
-		self.plane = plane
+		self.h_sign = -1 if "-" == plane[0] else 1
+		self.h_axis = int(plane[1])
+		self.v_sign = -1 if "-" == plane[2] else 1
+		self.v_axis = int(plane[3])
 		QtGui.QGraphicsRectItem.__init__(self)
 		self.setFlags(QtGui.QGraphicsItem.ItemIsFocusable)
 		self.setPen(QtGui.QPen(QtGui.QColor(255,0,0)))
@@ -62,24 +65,22 @@ class Projected3DROI(QtGui.QGraphicsRectItem, AnnotationItem):
 		dx = int(math.floor(0.5+d.x()))
 		dy = int(math.floor(0.5+d.y()))
 
-		h_axis = int(self.plane[0])
-		v_axis = int(self.plane[1])
-
-		self.coordinates[0][h_axis] = self.coordinates[0][h_axis] + dx / self.parent.factor
-		self.coordinates[0][v_axis] = self.coordinates[0][v_axis] - dy / self.parent.factor
-		self.coordinates[1][h_axis] = self.coordinates[1][h_axis] + dx / self.parent.factor
-		self.coordinates[1][v_axis] = self.coordinates[1][v_axis] - dy / self.parent.factor
+		self.coordinates[0][self.h_axis] = self.coordinates[0][self.h_axis] + self.h_sign * dx / self.parent.factor
+		self.coordinates[0][self.v_axis] = self.coordinates[0][self.v_axis] + self.v_sign * dy / self.parent.factor
+		self.coordinates[1][self.h_axis] = self.coordinates[1][self.h_axis] + self.h_sign * dx / self.parent.factor
+		self.coordinates[1][self.v_axis] = self.coordinates[1][self.v_axis] + self.v_sign * dy / self.parent.factor
 
 		self._refresh()
 
 	def increaseSize(self, horizontal, vertical):
-		h_axis = int(self.plane[0])
-		v_axis = int(self.plane[1])
 
-		self.coordinates[0][h_axis] = self.coordinates[0][h_axis] - horizontal / self.parent.factor
-		self.coordinates[0][v_axis] = self.coordinates[0][v_axis] - vertical / self.parent.factor
-		self.coordinates[1][h_axis] = self.coordinates[1][h_axis] + horizontal / self.parent.factor
-		self.coordinates[1][v_axis] = self.coordinates[1][v_axis] + vertical / self.parent.factor
+		# Here the signs of the axis don't matter, as the increase happen
+		# symetrically
+
+		self.coordinates[0][self.h_axis] = self.coordinates[0][self.h_axis] - horizontal / self.parent.factor
+		self.coordinates[0][self.v_axis] = self.coordinates[0][self.v_axis] - vertical / self.parent.factor
+		self.coordinates[1][self.h_axis] = self.coordinates[1][self.h_axis] + horizontal / self.parent.factor
+		self.coordinates[1][self.v_axis] = self.coordinates[1][self.v_axis] + vertical / self.parent.factor
 
 		self._refresh()
 
@@ -87,14 +88,82 @@ class Projected3DROI(QtGui.QGraphicsRectItem, AnnotationItem):
 	# Private API
 
 	def _refresh(self):
-		h_axis = int(self.plane[0])
-		v_axis = int(self.plane[1])
-		x_min = int(round(self.parent.factor*self.coordinates[0][h_axis]))
-		y_min = -int(round(self.parent.factor*self.coordinates[1][v_axis]))
-		x_max = int(round(self.parent.factor*self.coordinates[1][h_axis]))
-		y_max = -int(round(self.parent.factor*self.coordinates[0][v_axis]))
+
+		x_min = min(
+		    self.h_sign * int(round(self.parent.factor*self.coordinates[0][self.h_axis])),
+		    self.h_sign * int(round(self.parent.factor*self.coordinates[1][self.h_axis]))
+		)
+		y_min = min(
+		    self.v_sign * int(round(self.parent.factor*self.coordinates[0][self.v_axis])),
+		    self.v_sign * int(round(self.parent.factor*self.coordinates[1][self.v_axis]))
+		)
+		x_max = max(
+		    self.h_sign * int(round(self.parent.factor*self.coordinates[0][self.h_axis])),
+		    self.h_sign * int(round(self.parent.factor*self.coordinates[1][self.h_axis]))
+		)
+		y_max = max(
+		    self.v_sign * int(round(self.parent.factor*self.coordinates[0][self.v_axis])),
+		    self.v_sign * int(round(self.parent.factor*self.coordinates[1][self.v_axis]))
+		)
 
 		self.setRect(QtCore.QRect(x_min, y_min, x_max-x_min, y_max-y_min))
+
+class PointCloudItem(QtGui.QGraphicsItem):
+	def __init__(self, plane, pts, factor):
+		QtGui.QGraphicsItem.__init__(self)
+		self.pts = pts
+		self.factor = factor
+
+		self.h_sign = -1 if "-" == plane[0] else 1
+		self.h_axis = int(plane[1])
+		self.v_sign = -1 if "-" == plane[2] else 1
+		self.v_axis = int(plane[3])
+
+		self.x_min = self.h_sign*int(round(self.factor*self.pts[0][0][self.h_axis]))
+		self.y_min = self.v_sign*int(round(self.factor*self.pts[0][0][self.v_axis]))
+		self.x_max = self.h_sign*int(round(self.factor*self.pts[0][0][self.h_axis]))
+		self.y_max = self.v_sign*int(round(self.factor*self.pts[0][0][self.v_axis]))
+
+		for pt in self.pts:
+			if self.x_min > self.h_sign*int(round(self.factor*pt[0][self.h_axis])):
+				self.x_min = self.h_sign*int(round(self.factor*pt[0][self.h_axis]))
+
+			if self.y_min > self.v_sign*int(round(self.factor*pt[0][self.v_axis])):
+				self.y_min = self.v_sign*int(round(self.factor*pt[0][self.v_axis]))
+
+			if self.x_max < self.h_sign*int(round(self.factor*pt[0][self.h_axis])):
+				self.x_max = self.h_sign*int(round(self.factor*pt[0][self.h_axis]))
+
+			if self.y_max < self.v_sign*int(round(self.factor*pt[0][self.v_axis])):
+				self.y_max = self.v_sign*int(round(self.factor*pt[0][self.v_axis]))
+
+	def paint(self, painter, option, widget):
+		for pt in self.pts:
+
+			if len(pt)>1:
+				# Color is BGR, but Qt wants RGB
+				color = QtGui.QColor(
+				                     pt[1][2],
+				                     pt[1][1],
+				                     pt[1][0]
+				                    )
+			else:
+				color = QtGui.QColor(0, 0, 0)
+
+			painter.setBrush(QtGui.QBrush(color))
+			painter.setPen(QtGui.QPen(color, 1))
+			painter.drawRect(
+			    self.h_sign*int(round(self.factor*pt[0][self.h_axis])),
+			    self.v_sign*int(round(self.factor*pt[0][self.v_axis])),
+			    1, 1
+			)
+
+	def boundingRect(self):
+		return QtCore.QRectF(
+		    self.x_min, self.y_min,
+		    self.x_max - self.x_min,
+		    self.y_max - self.y_min
+		)
 
 class Scene3D(object):
 	"""
@@ -102,9 +171,10 @@ class Scene3D(object):
 	3D scene (which cannot be directly represented in Qt4).
 	"""
 
-	def __init__(self, parent_widget):
+	def __init__(self, parent_widget, pt_cloud):
 		self.parent_widget = parent_widget
 		self.scenes = dict()
+		self.pt_cloud = pt_cloud
 		self._item2handle = dict()
 		self._handle2items = dict()
 
@@ -112,16 +182,6 @@ class Scene3D(object):
 		# Basically, the current value transform 1 pixel in the scene in 1 cm
 		# in the real world
 		self.factor = 100.0
-		for plane in ["01", "12", "02"]:
-			self.scenes[plane] = Scene(self)
-			self.scenes[plane].itemAdditionRequested.connect(
-			    lambda x: self.parent_widget.itemAdditionRequested.emit(
-			        self._locationToCoordinates(x)
-			    )
-			)
-			self.scenes[plane].itemDeletionRequested.connect(self.parent_widget.itemDeletionRequested)
-			self.scenes[plane].itemSelected.connect(self.parent_widget.itemSelected)
-			self.scenes[plane].setBackgroundBrush(QtCore.Qt.lightGray)
 
 	# ──────────
 	# Properties
@@ -132,27 +192,6 @@ class Scene3D(object):
 
 	# ──────────
 	# Public API
-
-	def add3DPoint(self, coordinates):
-		for plane in self.scenes:
-			h_axis = int(plane[0])
-			v_axis = int(plane[1])
-			if len(coordinates)>4:
-				# Color is BGR, but Qt wants RGB
-				color = QtGui.QColor(
-				                     coordinates[4][2],
-				                     coordinates[4][1],
-				                     coordinates[4][0]
-				                    )
-			else:
-				color = QtGui.QColor(0, 0, 0)
-			self.scenes[plane].addRect(
-			    int(round(self.factor*coordinates[h_axis])),
-			    -int(round(self.factor*coordinates[v_axis])),
-			    1,
-			    1,
-			    QtGui.QPen(color),
-			    QtGui.QBrush(color))
 
 	def addItem(self, location, info):
 		handle = str(uuid.uuid4())
@@ -170,6 +209,29 @@ class Scene3D(object):
 		self._item2handle = dict()
 		self._handle2items = dict()
 
+	def createProjection(self, plane):
+		# Create a new scene
+		self.scenes[plane] = Scene(self)
+		self.scenes[plane].itemAdditionRequested.connect(
+		    lambda x: self.parent_widget.itemAdditionRequested.emit(
+		        self._locationToCoordinates(x)
+		    )
+		)
+		self.scenes[plane].itemDeletionRequested.connect(self.parent_widget.itemDeletionRequested)
+		self.scenes[plane].itemSelected.connect(self.parent_widget.itemSelected)
+		self.scenes[plane].setBackgroundBrush(QtCore.Qt.lightGray)
+
+		# Add the 3D point cloud in it
+		self._add3DPointCloud(plane, self.pt_cloud)
+
+		# And add every already created items
+		for _h in self._handle2items:
+			_i = self._handle2items[_h][0]
+			item = Projected3DROI(_i.coordinates, plane, _i.info, self)
+			self._item2handle[item] = _h
+			self._handle2items[_h].append(item)
+			self.scenes[plane].addItem(item)
+
 	def removeItem(self, item):
 		handle = self._item2handle[item]
 		items = self._handle2items.pop(handle)
@@ -180,21 +242,28 @@ class Scene3D(object):
 	# ───────────
 	# Private API
 
+	def _add3DPointCloud(self, plane, pt_cloud):
+		self.scenes[plane].addItem(PointCloudItem(plane, pt_cloud, self.factor))
+
 	def _locationToCoordinates(self, location):
 		"""
 		Create a proper set of coordinates to appropriately represent
 		the given location on the data type.
 		"""
 		plane = self.parent_widget.plane
-		h_axis = int(plane[0])
-		v_axis = int(plane[1])
+		h_sign = -1 if "-" == plane[0] else 1
+		h_axis = int(plane[1])
+		v_sign = -1 if "-" == plane[2] else 1
+		v_axis = int(plane[3])
 		loc = [0,0,0]
-		loc[h_axis] = location.x()/self.factor
-		loc[v_axis] = -location.y()/self.factor
+		loc[h_axis] = h_sign*location.x()/self.factor
+		loc[v_axis] = v_sign*location.y()/self.factor
 
 		return [[loc[0]-0.3,loc[1]-0.3,loc[2]-0.3],[loc[0]+0.3,loc[1]+0.3,loc[2]+0.3]]
 
 	def __getitem__(self, key):
+		if not self.scenes.has_key(key):
+			self.createProjection(key)
 		return self.scenes[key]
 
 class FrameViewer(QtGui.QSplitter):
@@ -274,7 +343,7 @@ class FrameViewer(QtGui.QSplitter):
 			        fit_ic.availableSizes()[0]
 			    )
 			)
-			self.xy_button.clicked.connect(lambda: self._switchAxis("01"))
+			self.xy_button.clicked.connect(lambda: self._switchAxis("+0-1"))
 
 			# "XZ" button
 			self.xz_button = QtGui.QPushButton("xz", self.buttons_widget)
@@ -283,7 +352,7 @@ class FrameViewer(QtGui.QSplitter):
 			        fit_ic.availableSizes()[0]
 			    )
 			)
-			self.xz_button.clicked.connect(lambda: self._switchAxis("02"))
+			self.xz_button.clicked.connect(lambda: self._switchAxis("+0-2"))
 
 			# "YZ" button
 			self.yz_button = QtGui.QPushButton("yz", self.buttons_widget)
@@ -292,7 +361,7 @@ class FrameViewer(QtGui.QSplitter):
 			        fit_ic.availableSizes()[0]
 			    )
 			)
-			self.yz_button.clicked.connect(lambda: self._switchAxis("12"))
+			self.yz_button.clicked.connect(lambda: self._switchAxis("-1-2"))
 
 			# Aggregation
 			self.top_layout = QtGui.QHBoxLayout(self)
@@ -302,75 +371,79 @@ class FrameViewer(QtGui.QSplitter):
 			self.top_layout.addWidget(self.yz_button)
 			self.buttons_widget.setLayout(self.top_layout)
 
-			self.scene = Scene3D(self)
 			self.view = QtGui.QGraphicsView(self)
 			self.viewer_layout.addWidget(self.view)
+
 			self.pts_3d = []
-			for file_name in self.type_to_files_map:
-				if DataType.IMAGE_3D == self.type_to_files_map[file_name]:
-					img = Image(file_name)
-					pts = [[[a,b]] for b in range(0,img.height) for a in range(0,img.width)]
-					# pts = [
-					#          [[0,0]], [[1,0]], .., [[W-1,0]],
-					#          [[0,1]],     ....,    [[W-1,1]],
-					#                       ....,             ,
-					#          ...                 [[W-1,H-1]]
-					#       ]
+			for file_name in self.type_to_files_map[DataType.IMAGE_3D]:
+				img = Image(file_name)
+				pts = [[[a,b]] for b in range(0,img.height) for a in range(0,img.width)]
+				# pts = [
+				#          [[0,0]], [[1,0]], .., [[W-1,0]],
+				#          [[0,1]],     ....,    [[W-1,1]],
+				#                       ....,             ,
+				#          ...                 [[W-1,H-1]]
+				#       ]
 
-					tmp_3d = cv2.undistortPoints(
-					             numpy.array(pts,dtype=numpy.float32),
-					             numpy.array(img.camera_info.camera_matrix),
-					             numpy.array(img.camera_info.distortion_coeffs),
-					         )
+				tmp_3d = cv2.undistortPoints(
+				             numpy.array(pts,dtype=numpy.float32),
+				             numpy.array(img.camera_info.camera_matrix),
+				             numpy.array(img.camera_info.distortion_coeffs),
+				         )
 
-					h = img.height
-					w = img.width
-					tmp_3d = tmp_3d.reshape((h, w, 2)).tolist()
-					img_data = img.numpy_image
-					for u in range(h):
-						for v in range(w):
-							tmp_3d[u][v][0] *= float(img_data[u][v])/1000
-							tmp_3d[u][v][1] *= float(img_data[u][v])/1000
-							tmp_3d[u][v].append(float(img_data[u][v])/1000)
-							tmp_3d[u][v].append(1) # Put it in "homogeneous" mode
+				h = img.height
+				w = img.width
+				tmp_3d = tmp_3d.reshape((h, w, 2))
+				img_data = img.numpy_image
+				tmp_3d = numpy.multiply(tmp_3d,img_data)
+				tmp_3d = numpy.append(tmp_3d,img_data, axis=2)
+				tmp_3d /= 1000.0
+				tmp_3d = numpy.append(tmp_3d, numpy.ones((h,w,1)), axis=2)
 
-					with qidata.open(file_name) as qidata_image:
-						t = transform_matrix(qidata_image.transform)
-					for i in range(h):
-						for j in range(w):
-							pt_3d_cam = tmp_3d[i][j]
-							pt_3d_world = numpy.dot(t, numpy.array(pt_3d_cam))
-							self.pts_3d.append(pt_3d_world.tolist())
+				tmp_3d = numpy.transpose(tmp_3d, (2,1,0))
+				tmp_3d = numpy.reshape(tmp_3d, (4,h*w))
+				# Remove 0 distance points
+				tmp_3d = tmp_3d[:,numpy.where(tmp_3d[2,:])[0]]
 
-			for file_name in self.type_to_files_map:
-				if DataType.IMAGE_2D == self.type_to_files_map[file_name]:
-					img = Image(file_name)
-					with qidata.open(file_name) as qidata_image:
-						t = transform_matrix(qidata_image.transform)
-						t_inv = numpy.linalg.inv(t)
+				with qidata.open(file_name) as qidata_image:
+					t = transform_matrix(qidata_image.transform)
+				pts_3d_world = numpy.dot(t, tmp_3d)
 
-					img_rendered = img.render() # Make sure it is BGR
-					m1, m2 = cv2.initUndistortRectifyMap(
-					    numpy.array(img.camera_info.camera_matrix),
-					    numpy.array(img.camera_info.distortion_coeffs),
-					    None,
-					    numpy.array(img.camera_info.camera_matrix),
-					    (img.height, img.width),
-					    cv2.CV_32FC1
-					)
+			color = [[0,0,0]]*h*w
 
-					for pt_3d_world in self.pts_3d:
-						pt_3d_in_cam_frame = numpy.dot(t_inv, numpy.array(pt_3d_world))
-						pt_in_cam_plane = numpy.dot(numpy.array(img.camera_info.camera_matrix), pt_3d_in_cam_frame[0:3])
-						x = int(round(pt_in_cam_plane[0] / pt_in_cam_plane[2]))
-						y = int(round(pt_in_cam_plane[1] / pt_in_cam_plane[2]))
-						if x>=0 and x<img.width and y>=0 and y<img.height:
-							pt_3d_world.append(img_rendered.numpy_image[y][x])
+			for file_name in self.type_to_files_map[DataType.IMAGE_2D]:
+				img = Image(file_name)
+				with qidata.open(file_name) as qidata_image:
+					t = transform_matrix(qidata_image.transform)
+					t_inv = numpy.linalg.inv(t)
 
-			for pt_3d_world in self.pts_3d:
-				self.scene.add3DPoint(pt_3d_world)
+				img_rendered = img.render() # Make sure it is BGR
+				m1, m2 = cv2.initUndistortRectifyMap(
+				    numpy.array(img.camera_info.camera_matrix),
+				    numpy.array(img.camera_info.distortion_coeffs),
+				    None,
+				    numpy.array(img.camera_info.camera_matrix),
+				    (img.width, img.height),
+				    cv2.CV_32FC1
+				)
+				img_rendered_undistort = cv2.remap(img_rendered.numpy_image,m1,m2,cv2.INTER_LINEAR)
 
-			self._switchAxis("01")
+				pts_3d_in_cam_frame = numpy.dot(t_inv, pts_3d_world)
+				pts_3d_in_cam_plane = numpy.dot(numpy.array(img.camera_info.camera_matrix), pts_3d_in_cam_frame[0:3])
+				pts_2d_in_cam_plane = numpy.divide(pts_3d_in_cam_plane[0:2], pts_3d_in_cam_plane[2])
+				pts_2d_in_image = pts_2d_in_cam_plane.astype(int)
+
+				for i in range(pts_2d_in_image.shape[1]):
+					x = int(pts_2d_in_image[0][i])
+					y = int(pts_2d_in_image[1][i])
+					if x>=0 and x<img.width and y>=0 and y<img.height:
+						color[i] = img_rendered_undistort[y][x].tolist()
+
+			self.pts_3d = numpy.transpose(pts_3d_world).tolist()
+			self.pts_3d = zip(self.pts_3d, color)
+			self.scene = Scene3D(self, self.pts_3d)
+
+			self._switchAxis("+0-1")
 
 	# ──────────
 	# Decorators
