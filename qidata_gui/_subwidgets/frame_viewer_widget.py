@@ -312,7 +312,7 @@ class FrameViewer(QtGui.QSplitter):
 				)
 
 		else:
-			self.viewer_widget = QtGui.QWidget(self)
+			self.viewer_widget = QtGui.QWidget()
 			self._addWidget(self.viewer_widget)
 			self.viewer_layout = QtGui.QVBoxLayout(self)
 			self.viewer_widget.setLayout(self.viewer_layout)
@@ -443,7 +443,7 @@ class FrameViewer(QtGui.QSplitter):
 			self.pts_3d = zip(self.pts_3d, color)
 			self.scene = Scene3D(self, self.pts_3d)
 
-			self._switchAxis("+0-1")
+			self._switchAxis("-1-2")
 
 	# ──────────
 	# Decorators
