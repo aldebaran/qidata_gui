@@ -345,10 +345,10 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self._displayInfo(info[1])
 
 	def _displayInfo(self, info):
+		self.annotation_displayer.data = info
 		self.type_selector.setCurrentIndex(
 		    self.type_selector.findText(type(info).__name__)
 		)
-		self.annotation_displayer.data = info
 		self.type_selector.setEnabled(not self.read_only)
 
 	def _showAnnotationsFrom(self, requested_annotators):
