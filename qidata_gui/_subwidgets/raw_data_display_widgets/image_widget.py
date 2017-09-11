@@ -9,7 +9,6 @@ from PySide import QtGui, QtCore
 
 # Local modules
 from qidata_gui import RESOURCES_DIR
-from image import Image, Colorspace
 from .graphics_elements import AnnotationItem, Scene
 
 class ImageROI(QtGui.QGraphicsRectItem, AnnotationItem):
@@ -163,7 +162,7 @@ class ImageWidget(QtGui.QWidget):
 		# Add pixmap to scene and scene to widget
 		self._pixmap = self.scene.addItem(
 		                   BackgroundPixmap(
-		                   	   Image(image_raw_data).qimage
+		                       image_raw_data.qimage
 		                   )
 		               )
 
