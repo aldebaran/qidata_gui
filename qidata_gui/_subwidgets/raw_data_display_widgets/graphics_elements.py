@@ -46,6 +46,7 @@ class Scene(QtGui.QGraphicsScene):
 		QtGui.QGraphicsScene.__init__(self)
 		self._selectedItem = None
 		self._parent_view = parent_view
+		self.setBackgroundBrush(QtCore.Qt.lightGray)
 
 	# ──────────
 	# Public API
