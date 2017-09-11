@@ -64,7 +64,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 
 			# A list of un-localized annotations with add/remove buttons
 		self.global_annotations_widget = QtGui.QWidget(self)
-		self.global_annotations_layout = QtGui.QVBoxLayout(self)
+		self.global_annotations_layout = QtGui.QVBoxLayout()
 		self.global_annotation_displayer = SelectableListWidget(self)
 
 			# Two buttons to add/remove an annotation from the list
@@ -101,7 +101,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 		self.minus_button.setEnabled(False)
 
 		# Aggregation
-		self.buttons_layout = QtGui.QHBoxLayout(self)
+		self.buttons_layout = QtGui.QHBoxLayout()
 		self.buttons_layout.addWidget(self.plus_button)
 		self.buttons_layout.addWidget(self.minus_button)
 		self.buttons_widget.setLayout(self.buttons_layout)
@@ -139,7 +139,7 @@ class QiDataSensorWidget(QtGui.QSplitter):
 
 		# Right-most widget: A displayer for selected annotation
 		self.right_most_widget = QtGui.QWidget(self)
-		self.right_most_layout = QtGui.QVBoxLayout(self)
+		self.right_most_layout = QtGui.QVBoxLayout()
 
 		self.type_selector = QtGui.QComboBox(self.right_most_widget)
 		self.type_selector.setEnabled(False)

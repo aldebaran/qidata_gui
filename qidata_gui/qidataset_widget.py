@@ -194,7 +194,7 @@ class QiDataSetWidget(QtGui.QSplitter):
 
 		# A.4 Button bar (refresh and optional frame control)
 		self.buttons_widget = QtGui.QWidget(self)
-		self.buttons_layout = QtGui.QHBoxLayout(self)
+		self.buttons_layout = QtGui.QHBoxLayout()
 		self.buttons_widget.setLayout(self.buttons_layout)
 		self.left_most_widget.addWidget(self.buttons_widget)
 
