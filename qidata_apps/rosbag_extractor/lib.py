@@ -102,7 +102,6 @@ if _rosbag_conversion_enabled:
 			# Prepare needed structures
 			counter = dict() # file counter for each topics
 			filename_gen = dict() # filename pattern for each topic
-			current_state = dict() # Holds the current file for each topic
 			for topic, topic_details in topics_info.iteritems():
 				if not topics_to_save.has_key(topic):
 					continue
@@ -116,7 +115,6 @@ if _rosbag_conversion_enabled:
 				                        )
 				                      )
 				counter[topic] = 0
-				current_state[topic] = None
 
 			# Initialize openCV-ROS bridge
 			bridge = CvBridge()
@@ -211,19 +209,6 @@ if _rosbag_conversion_enabled:
 					  )
 					)
 
-					# Mark the new file as the current one
-					current_state[topic_name] = filename
-
-					# Create a frame if several topics are being recorded
-					if len(current_state)>1:
-						frame = []
-						for current_file in current_state.values():
-							if current_file is None:
-								break
-							else:
-								frame.append(current_file)
-						else:
-							qs.createNewFrame(*frame)
 					counter[topic_name] += 1
 
 		qs.context = ds_context

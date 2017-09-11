@@ -7,11 +7,13 @@ import os
 from PySide import QtCore, QtGui
 import qidata
 from qidata import QiDataSet
+from qidata.qidatasensorobject import QiDataSensorObject
 from strong_typing import ObjectDisplayWidget
 
 # Local modules
 from qidata_gui import RESOURCES_DIR
 from qidataframe_widget import QiDataFrameWidget
+from qidatasensor_widget import QiDataSensorWidget
 from _subwidgets import StreamViewer
 
 class CentralWidget(QtGui.QSplitter):
@@ -32,12 +34,12 @@ class CentralWidget(QtGui.QSplitter):
 		self.qidataset = qidataset
 		self.writer = writer
 
-		self._frame_widget_location = 0
-		self._displayedFrame = None
+		self._sub_widget_location = 0
+		self._displayed_object = None
 
 		if len(self.qidataset.getAllStreams())>0:
 			# Mark the frame widget will be the second widget
-			self._frame_widget_location += 1
+			self._sub_widget_location += 1
 
 			# Display streams
 			self._stream_viewer = StreamViewer(
@@ -46,8 +48,42 @@ class CentralWidget(QtGui.QSplitter):
 			self.addWidget(
 			    self._stream_viewer
 			)
-			self._stream_viewer.frameSelected.connect(
-			    lambda x:self.displayFrame(self.qidataset.getFrame(*list(x)))
+			self._stream_viewer.objectSelected.connect(
+			    lambda x: "" if x is None\
+			                 else self.displaySensorData(
+			                     qidata.open(os.path.join(self.qidataset.name, x),"w")
+			                 )
+			)
+
+	def displaySensorData(self, qidatasensorobject):
+		"""
+		Displays a QiDataSensorObject. If a different QiDataSensorObject is
+		already displayed, it is removed. If None is given, nothing is
+		displayed, and any visible QiDataSensorObject is removed.
+
+		:param qidatasensorobject: The sensor object to display
+		:type qidatasensorobject: qidata.QiDataSensorObject
+		"""
+		if self._displayed_object is not None:
+			if qidatasensorobject is not None\
+			   and isinstance(self._displayed_object, QiDataSensorObject)\
+			   and self._displayed_object.name == qidatasensorobject.name:
+				# If the displayed object is the same as the one we want to show
+				# do nothing
+				return
+
+			# If an object is displayed and is different from the one to display,
+			# remove it
+			self.hideSubWidget()
+
+		if qidatasensorobject is not None:
+			# Add a new widget to display the frame
+			self._displayed_object = qidatasensorobject
+			self.addWidget(
+			    QiDataSensorWidget(
+			        qidatasensorobject,
+			        self.writer,
+			    )
 			)
 
 	def displayFrame(self, qidataframe):
@@ -59,20 +95,21 @@ class CentralWidget(QtGui.QSplitter):
 		:param qidataframe: The frame to display
 		:type qidataframe: qidata.QiDataFrame
 		"""
-		if self._displayedFrame is not None:
+		if self._displayed_object is not None:
 			if qidataframe is not None\
-			   and self._displayedFrame.files == qidataframe.files:
+			   and isinstance(self._displayed_object, qidata.QiDataFrame)\
+			   and self._displayed_object.files == qidataframe.files:
 				# If the displayed frame is the same as the one we want to show
 				# do nothing
 				return
 
 			# If a frame is displayed and is different from the one to display,
 			# remove it
-			self.hideFrame()
+			self.hideSubWidget()
 
 		if qidataframe is not None:
 			# Add a new widget to display the frame
-			self._displayedFrame = qidataframe
+			self._displayed_object = qidataframe
 			self.addWidget(
 			    QiDataFrameWidget(
 			        self.qidataset,
@@ -81,13 +118,15 @@ class CentralWidget(QtGui.QSplitter):
 			    )
 			)
 
-	def hideFrame(self):
-		if self._displayedFrame is not None:
+	def hideSubWidget(self):
+		if self._displayed_object is not None:
 			# If there is already a displayed frame, remove it
-			w = self.widget(self._frame_widget_location)
+			w = self.widget(self._sub_widget_location)
 			w.setParent(None) # take it out of the view
 			w.deleteLater() # destroy it
-			self._displayedFrame = None
+			if isinstance(self._displayed_object, QiDataSensorObject):
+				self._displayed_object.close()
+			self._displayed_object = None
 
 class QiDataSetWidget(QtGui.QSplitter):
 	"""
@@ -142,17 +181,16 @@ class QiDataSetWidget(QtGui.QSplitter):
 		self.left_most_widget.addWidget(self.content_tree)
 
 		# A.3 Frames display (only if no stream)
-		if not self._has_streams:
-			self.frames_list = QtGui.QTreeWidget()
-			self.frames_list.setColumnCount(1)
-			self.frames_list.setHeaderHidden(False)
-			header_item = QtGui.QTreeWidgetItem()
-			header_item.setText(0, "Frames defined")
-			self.frames_list.setHeaderItem(header_item)
-			self.left_most_widget.addWidget(self.frames_list)
+		self.frames_list = QtGui.QTreeWidget()
+		self.frames_list.setColumnCount(1)
+		self.frames_list.setHeaderHidden(False)
+		header_item = QtGui.QTreeWidgetItem()
+		header_item.setText(0, "Frames defined")
+		self.frames_list.setHeaderItem(header_item)
+		self.left_most_widget.addWidget(self.frames_list)
 
-			self.frames_list.itemActivated.connect(self._displayFrame)
-			self.frames_list.itemClicked.connect(self._selectFrame)
+		self.frames_list.itemActivated.connect(self._displayFrame)
+		self.frames_list.itemClicked.connect(self._selectFrame)
 
 		# A.4 Button bar (refresh and optional frame control)
 		self.buttons_widget = QtGui.QWidget(self)
@@ -160,45 +198,44 @@ class QiDataSetWidget(QtGui.QSplitter):
 		self.buttons_widget.setLayout(self.buttons_layout)
 		self.left_most_widget.addWidget(self.buttons_widget)
 
-		if not self._has_streams:
-			# A.4.1 "Add a frame" button
-			self.plus_button = QtGui.QPushButton("", self.buttons_widget)
-			plus_ic_path = os.path.join(RESOURCES_DIR, "add.png")
-			plus_ic = QtGui.QIcon(plus_ic_path)
-			self.plus_button.setFixedSize(
-			    plus_ic.actualSize(
-			        plus_ic.availableSizes()[0]
-			    )
-			)
-			self.plus_button.setText("")
-			self.plus_button.setToolTip("Add a frame")
-			self.plus_button.setIcon(plus_ic)
-			self.plus_button.setIconSize(plus_ic.availableSizes()[0])
-			self.plus_button.clicked.connect(self._addFrame)
-			# There is no need to have a writer to be allowed to add a frame, as
-			# frame creation is not signed. However, a writer will be needed to
-			# annotate any frame (new or not)
-			self.plus_button.setEnabled(True)
-			self.buttons_layout.addWidget(self.plus_button)
+		# A.4.1 "Add a frame" button
+		self.plus_button = QtGui.QPushButton("", self.buttons_widget)
+		plus_ic_path = os.path.join(RESOURCES_DIR, "add.png")
+		plus_ic = QtGui.QIcon(plus_ic_path)
+		self.plus_button.setFixedSize(
+		    plus_ic.actualSize(
+		        plus_ic.availableSizes()[0]
+		    )
+		)
+		self.plus_button.setText("")
+		self.plus_button.setToolTip("Add a frame")
+		self.plus_button.setIcon(plus_ic)
+		self.plus_button.setIconSize(plus_ic.availableSizes()[0])
+		self.plus_button.clicked.connect(self._addFrame)
+		# There is no need to have a writer to be allowed to add a frame, as
+		# frame creation is not signed. However, a writer will be needed to
+		# annotate any frame (new or not)
+		self.plus_button.setEnabled(True)
+		self.buttons_layout.addWidget(self.plus_button)
 
-			# A.4.2 "Remove a frame" button
-			self.minus_button = QtGui.QPushButton("", self.buttons_widget)
-			minus_ic_path = os.path.join(RESOURCES_DIR, "delete.png")
-			minus_ic = QtGui.QIcon(minus_ic_path)
-			self.minus_button.setFixedSize(
-			    minus_ic.actualSize(
-			        minus_ic.availableSizes()[0]
-			    )
-			)
-			self.minus_button.setText("")
-			self.minus_button.setToolTip("Remove selected frame")
-			self.minus_button.setIcon(minus_ic)
-			self.minus_button.setIconSize(minus_ic.availableSizes()[0])
-			self.minus_button.clicked.connect(
-			    lambda: self._removeFrame(self.frames_list.currentItem())
-			)
-			self.minus_button.setEnabled(False)
-			self.buttons_layout.addWidget(self.minus_button)
+		# A.4.2 "Remove a frame" button
+		self.minus_button = QtGui.QPushButton("", self.buttons_widget)
+		minus_ic_path = os.path.join(RESOURCES_DIR, "delete.png")
+		minus_ic = QtGui.QIcon(minus_ic_path)
+		self.minus_button.setFixedSize(
+		    minus_ic.actualSize(
+		        minus_ic.availableSizes()[0]
+		    )
+		)
+		self.minus_button.setText("")
+		self.minus_button.setToolTip("Remove selected frame")
+		self.minus_button.setIcon(minus_ic)
+		self.minus_button.setIconSize(minus_ic.availableSizes()[0])
+		self.minus_button.clicked.connect(
+		    lambda: self._removeFrame(self.frames_list.currentItem())
+		)
+		self.minus_button.setEnabled(False)
+		self.buttons_layout.addWidget(self.minus_button)
 
 		# A.4.3 Refresh dataset content button
 		self.refresh_button = QtGui.QPushButton("", self.buttons_widget)
@@ -232,8 +269,6 @@ class QiDataSetWidget(QtGui.QSplitter):
 		# ──────────
 		# END OF GUI
 		# ──────────
-
-
 
 	# ──────────
 	# Properties
@@ -315,18 +350,15 @@ class QiDataSetWidget(QtGui.QSplitter):
 		self.content_tree.update()
 
 		# Clear frames_list and fill it again
-		if not self._has_streams:
-			self.frames_list.clear()
-			_frames = self.qidataset.getAllFrames()
-			for frame_index in range(len(_frames)):
-				item = QtGui.QTreeWidgetItem()
-				self.frames_list.addTopLevelItem(item)
-				item.setText(0, "frame_%d"%frame_index)
-				item.setData(0, QtCore.Qt.UserRole, _frames[frame_index])
-				# self.global_annotation_displayer\
-			 #        .addItem("annotation", annotation_details)
-			self.frames_list.resizeColumnToContents(0)
-			self.frames_list.update()
+		self.frames_list.clear()
+		_frames = self.qidataset.getAllFrames()
+		for frame_index in range(len(_frames)):
+			item = QtGui.QTreeWidgetItem()
+			self.frames_list.addTopLevelItem(item)
+			item.setText(0, "frame_%d"%frame_index)
+			item.setData(0, QtCore.Qt.UserRole, _frames[frame_index])
+		self.frames_list.resizeColumnToContents(0)
+		self.frames_list.update()
 
 	def _displayFrame(self, item, column):
 		if item is not None:
@@ -337,7 +369,7 @@ class QiDataSetWidget(QtGui.QSplitter):
 			self.minus_button.setEnabled(True)
 
 	def _removeFrame(self, item):
-		self.central_widget.hideFrame()
+		self.central_widget.hideSubWidget()
 		self.qidataset.removeFrame(
 		    *(item.data(0, QtCore.Qt.UserRole).files)
 		)

@@ -54,5 +54,5 @@ def test_create_dataset_from_rosbag(rosbag_asus_path):
 			assert(-0.520649197032 == _f.transform.rotation.z)
 			assert(0.525849234512 == _f.transform.rotation.w)
 			assert(DataType.IMAGE_3D == _f.type)
-		assert(141 == len(_ds.getAllFrames()))
+		assert(0 == len(_ds.getAllFrames()))
 		assert(["mohamed.djabri"] == _ds.context.recorder_names)

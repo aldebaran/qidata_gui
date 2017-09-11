@@ -684,13 +684,13 @@ class TimelineItem(QtGui.QGraphicsItem):
 		event.accept()
 		self._moveCurrentPosTo(event.pos())
 
-		self._parent.frameSelected.emit(
-		    self._parent.getFilesAtStamp(self.current_pos)
+		self._parent.objectSelected.emit(
+		    self._parent.getFileAtStamp(self.current_pos)
 		)
 
 class StreamViewer(QtGui.QWidget):
 
-	frameSelected = QtCore.Signal(list)
+	objectSelected = QtCore.Signal(list)
 
 	# ───────────
 	# Constructor
@@ -782,6 +782,28 @@ class StreamViewer(QtGui.QWidget):
 	# ──────────
 	# Public API
 
+	def getFileAtStamp(self, timestamp):
+		"""
+		Return the latest file activated at a specific timestamp
+
+		:param timestamp: Time where we want to know the active file
+		:type timestamp: float
+		:return: the latest activated file
+		:rtype: str
+		"""
+		out = ""
+		out_ts = (0,0)
+		for stream_name in self.stamps_by_stream.keys():
+			ts_index = bisect.bisect_right(self.stamps_by_stream[stream_name], timestamp)-1
+			if ts_index < 0:
+				continue
+			tuple_ts = self.streams[stream_name].keys()
+			tuple_ts.sort()
+			if tuple_ts[ts_index] > out_ts:
+				out_ts = tuple_ts[ts_index]
+				out = self.streams[stream_name][tuple_ts[ts_index]]
+		return out
+
 	def getFilesAtStamp(self, timestamp):
 		"""
 		Return the list of files active at a specific timestamp
@@ -808,16 +830,15 @@ class StreamViewer(QtGui.QWidget):
 		"""
 		all_ts = [s for t in self.stamps_by_stream.values() for s in t]
 		all_ts.sort()
-		first_frame = max([s[0] for s in self.stamps_by_stream.values()])
-		last_frame = min([s[-1] for s in self.stamps_by_stream.values()])
+		first_frame = all_ts[0]
 
 		selected_index = bisect.bisect_right(all_ts, self._timeline.current_pos)-1
 		if selected_index <= 0 or all_ts[selected_index-1] < first_frame:
 			# There is no data before, or no frame. Do nothing
 			return
 		self._timeline.current_pos = all_ts[selected_index-1]
-		self.frameSelected.emit(
-		    self.getFilesAtStamp(self._timeline.current_pos)
+		self.objectSelected.emit(
+		    self.getFileAtStamp(self._timeline.current_pos)
 		)
 
 	def moveToNextFrame(self):
@@ -827,7 +848,7 @@ class StreamViewer(QtGui.QWidget):
 		"""
 		all_ts = [s for t in self.stamps_by_stream.values() for s in t]
 		all_ts.sort()
-		first_frame = max([s[0] for s in self.stamps_by_stream.values()])
+		first_frame = all_ts[0]
 
 		selected_index = bisect.bisect_right(all_ts, self._timeline.current_pos)-1
 		if len(all_ts)-1 == selected_index:
@@ -840,8 +861,8 @@ class StreamViewer(QtGui.QWidget):
 			increase += 1
 
 		self._timeline.current_pos = all_ts[selected_index+increase]
-		self.frameSelected.emit(
-		    self.getFilesAtStamp(self._timeline.current_pos)
+		self.objectSelected.emit(
+		    self.getFileAtStamp(self._timeline.current_pos)
 		)
 
 	# ─────
