@@ -85,5 +85,5 @@ def test_stream_viewer(qtbot, big_dataset_path):
 				# End of timeline was reached
 				break
 
-			assert(previous_file != _s.args[0]) ###### on peut faire mieux !!!!
+			assert(previous_file != _s.args[0])
 			previous_set = _s.args[0]
