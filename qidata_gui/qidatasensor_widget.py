@@ -197,6 +197,14 @@ class QiDataSensorWidget(QtGui.QSplitter):
 	# Properties
 
 	@property
+	def displayed_qidata_object(self):
+		return self.displayed_object
+
+	@property
+	def qidata_widget(self):
+		return self
+
+	@property
 	def read_only(self):
 		return self._read_only
 

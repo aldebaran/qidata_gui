@@ -274,6 +274,16 @@ class QiDataSetWidget(QtGui.QSplitter):
 	# Properties
 
 	@property
+	def displayed_qidata_object(self):
+		return self.central_widget._displayed_object
+
+	@property
+	def qidata_widget(self):
+		if self.displayed_qidata_object is None:
+			return None
+		return self.central_widget.widget(self.central_widget._sub_widget_location)
+
+	@property
 	def read_only(self):
 		return self._read_only
 

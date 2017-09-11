@@ -36,6 +36,21 @@ class App(QiDataApp):
 		self.fs_explorer.setRoot(path)
 		self.fs_explorer.path_selected.connect(self.setSelected)
 
+		# Add copy-paste possibility
+		self._clipboard = None
+		self.copy_all_msg = QtGui.QAction("Copy all annotations", self.main_window,
+		                                      shortcut="Ctrl+C",
+		                                      triggered=self._copyAllAnnotations)
+		self.copy_all_msg.setEnabled(False)
+
+		self.paste_all_msg = QtGui.QAction("Paste", self.main_window,
+		                                      shortcut="Ctrl+V",
+		                                      triggered=self._pasteAllAnnotations)
+		self.paste_all_msg.setEnabled(False)
+
+		self.main_window.file_menu.addAction(self.copy_all_msg)
+		self.main_window.file_menu.addAction(self.paste_all_msg)
+
 	# ──────────
 	# Public API
 
@@ -82,6 +97,7 @@ class App(QiDataApp):
 			                                   self.opened_qidata_object,
 			                                   self.writer
 			                               )
+		self.copy_all_msg.setEnabled(True)
 
 	def run(self):
 		try:
@@ -89,6 +105,33 @@ class App(QiDataApp):
 		finally:
 			if self.opened_qidata_object is not None:
 				self.opened_qidata_object.close()
+
+	# ───────────
+	# Private API
+
+	def _copyAllAnnotations(self):
+		w = self.main_window.main_widget
+		if w is not None\
+		   and w.displayed_qidata_object is not None:
+				if w.displayed_qidata_object.annotations.has_key(self.writer):
+					self._clipboard = w.displayed_qidata_object.annotations[self.writer]
+				if self._clipboard is not None:
+					self.paste_all_msg.setEnabled(True)
+
+	def _pasteAllAnnotations(self):
+		w = self.main_window.main_widget
+		if w is not None\
+		   and w.displayed_qidata_object is not None\
+		   and self._clipboard is not None:
+			for annotation_bins in self._clipboard.values():
+				for annot in annotation_bins:
+					w.displayed_qidata_object.addAnnotation(self.writer,
+					                                        annot[0],
+					                                        annot[1])
+
+					w.qidata_widget._addAnnotationItemOnView(
+					    annot[1], (self.writer, annot[0])
+					)
 
 def main(args):
 	qidata_app = App(args.path, args.writer)
