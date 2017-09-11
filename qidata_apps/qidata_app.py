@@ -18,6 +18,19 @@ class QiDataMainWindow(QtGui.QMainWindow):
 		QtGui.QMainWindow.__init__(self)
 		self.desktop_geometry = desktop_geometry
 
+		# ───────
+		# Actions
+
+		self.exit_action = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q", triggered=self.close)
+
+		# ─────
+		# Menus
+
+		self.file_menu = QtGui.QMenu("&File", self)
+		self.file_menu.addAction(self.exit_action)
+
+		self.menuBar().addMenu(self.file_menu)
+
 	# ──────────
 	# Properties
 
@@ -27,10 +40,6 @@ class QiDataMainWindow(QtGui.QMainWindow):
 
 	@main_widget.setter
 	def main_widget(self, main_widget):
-		"""
-		This is typically set by ``AnnotationMakerApp`` when
-		a new file is selected
-		"""
 		self._main_widget = main_widget
 		self.setCentralWidget(main_widget)
 		self.setDefaultGeometry(self.desktop_geometry)
