@@ -89,7 +89,7 @@ class App(QiDataApp):
 				    "Do you want to turn this folder into a QiDataSet ?",
 				    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
 				)
-				if answer != QMessageBox.Yes:
+				if answer != QtGui.QMessageBox.Yes:
 					return
 
 			self.opened_qidata_object = qidata.QiDataSet(path, "w")
