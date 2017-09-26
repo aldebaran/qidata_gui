@@ -8,6 +8,7 @@ try:
 	from cv_bridge.core import CvBridge
 	from geometry_msgs.msg import TransformStamped
 	from rosbag import Bag as RosBag
+	import rospy
 	from tf2_py import _tf2, TransformException, ExtrapolationException
 	_rosbag_conversion_enabled = True
 except ImportError:
@@ -110,10 +111,12 @@ if _rosbag_conversion_enabled:
 		# Initialize it as a QiDataSet
 		qs = QiDataSet(output_folder, "w")
 
-		# Initialize a TF buffer
-		tf_buffer = _tf2.BufferCore()
-
 		with RosBag(rosbag_path, 'r') as bag:
+			# Initialize a TF buffer
+			tf_buffer = _tf2.BufferCore(
+			    rospy.Duration(bag.get_end_time()-bag.get_start_time() + 10)
+			)
+
 			# Retrieve information about the bag's content
 			topics_info = bag.get_type_and_topic_info()[1]
 
