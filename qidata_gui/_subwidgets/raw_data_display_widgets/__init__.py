@@ -15,6 +15,7 @@ SUPPORTED_WIDGETS = {
 	"IMAGE_2D": ImageWidget,
 	"IMAGE_3D": ImageWidget,
 	"IMAGE_IR": ImageWidget,
+	"IMAGE_STEREO": ImageWidget,
 }
 
 def makeRawDataWidget(parent_widget, data_type, raw_data):
