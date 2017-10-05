@@ -217,7 +217,7 @@ class QiDataSetWidget(QtGui.QSplitter):
 		self.frames_list.setHeaderItem(header_item)
 		self.left_most_widget.addWidget(self.frames_list)
 
-		self.frames_list.itemActivated.connect(self._displayFrame)
+		# self.frames_list.itemActivated.connect(self._displayFrame)
 		self.frames_list.itemClicked.connect(self._selectFrame)
 
 		# A.4 Button bar (refresh and optional frame control)
