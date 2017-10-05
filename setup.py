@@ -38,7 +38,7 @@ setup(
         "qidata >= 1.0.0",
         "argcomplete >= 1.1.0",
         "opencv-python >= 3.3",
-        "image.py >= 0.3.0"
+        "image.py >= 0.4.1"
     ],
     package_data={"qidata_gui":["VERSION", "_resources/*.png"]},
     entry_points={

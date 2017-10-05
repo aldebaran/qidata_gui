@@ -13,7 +13,7 @@ try:
 except ImportError:
 	_rosbag_conversion_enabled = False
 
-# Local modules
+from image import CameraInfo
 import qidata
 from qidata import QiDataSet, DataType
 from qidata.metadata_objects import TimeStamp, Transform
@@ -86,8 +86,26 @@ if _rosbag_conversion_enabled:
 		# Create an appropriate folder from the bag name
 		rosbag_path = os.path.abspath(rosbag_path)
 		output_folder = os.path.splitext(os.path.abspath(rosbag_path))[0]
+		camera_infos = dict()
 		if not os.path.isdir(output_folder):
 			os.mkdir(output_folder)
+
+		for topic_name in topics_to_save:
+			camera_infos[topic_name] = [None, None]
+			if "" != topics_to_save[topic_name][2]:
+				camera_infos[topic_name][0] = CameraInfo.fromNaoqiCalibrationFile(
+				    os.path.join(
+				        os.path.dirname(rosbag_path),
+				        topics_to_save[topic_name][2]
+				    )
+				)
+			if "" != topics_to_save[topic_name][3]:
+				camera_infos[topic_name][1] = CameraInfo.fromNaoqiCalibrationFile(
+				    os.path.join(
+				        os.path.dirname(rosbag_path),
+				        topics_to_save[topic_name][3]
+				    )
+				)
 
 		# Initialize it as a QiDataSet
 		qs = QiDataSet(output_folder, "w")
@@ -182,10 +200,7 @@ if _rosbag_conversion_enabled:
 					)
 
 					# Set the file timestamp, transform and type
-					with qidata.open(os.path.join(
-					       output_folder,
-					       filename
-					    ),"w") as _f:
+					with qidata.open(os.path.join(output_folder,filename),"w") as _f:
 						_f.timestamp.seconds = msg.header.stamp.secs
 						_f.timestamp.nanoseconds = msg.header.stamp.nsecs
 
@@ -198,6 +213,12 @@ if _rosbag_conversion_enabled:
 						_f.transform.rotation.w = ros_tf.transform.rotation.w
 
 						_f.type = topics_to_save[topic_name][1]
+
+						if "IMAGE_STEREO" == str(topics_to_save[topic_name][1]):
+							_f.raw_data.setIsStereo(camera_infos[topic_name][0],camera_infos[topic_name][1])
+						else:
+							_f.raw_data.setIsMono(camera_infos[topic_name][0])
+						_f.raw_data.save(_f.name)
 
 					# Add file to the corresponding stream
 					addFileToStream(

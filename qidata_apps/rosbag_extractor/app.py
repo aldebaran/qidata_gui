@@ -58,11 +58,13 @@ if _has_ros:
 			# Topic listing widget
 			self.content_tree = QtGui.QTreeWidget()
 			self.left_vlayout.addWidget(self.content_tree)
-			self.content_tree.setColumnCount(3)
+			self.content_tree.setColumnCount(5)
 			header_item = QtGui.QTreeWidgetItem()
 			header_item.setText(0, "Topic")
 			header_item.setText(1, "Name")
 			header_item.setText(2, "DataType")
+			header_item.setText(3, "Main calibration file")
+			header_item.setText(4, "Secondary calibration file")
 			self.content_tree.setHeaderItem(header_item)
 
 			# Buttons bar
@@ -121,7 +123,21 @@ if _has_ros:
 					typeWidget.addItems(type_list)
 					self.content_tree.setItemWidget(item, 2, typeWidget)
 
+					cal1Widget = QtGui.QLineEdit(self)
+					cal1Widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
+					                         QtGui.QSizePolicy.Fixed)
+					self.content_tree.setItemWidget(item, 3, cal1Widget)
+
+					cal2Widget = QtGui.QLineEdit(self)
+					cal2Widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
+					                         QtGui.QSizePolicy.Fixed)
+					self.content_tree.setItemWidget(item, 4, cal2Widget)
+
 				self.content_tree.resizeColumnToContents(0)
+				self.content_tree.resizeColumnToContents(1)
+				self.content_tree.resizeColumnToContents(2)
+				self.content_tree.resizeColumnToContents(3)
+				self.content_tree.resizeColumnToContents(4)
 				self.content_tree.update()
 
 				self._topic_list = topic_list
@@ -149,7 +165,9 @@ if _has_ros:
 				topic = item.text(0)
 				name = self.content_tree.itemWidget(item, 1).text()
 				datatype = self.content_tree.itemWidget(item, 2).currentText()
-				out[str(topic)] = (str(name), DataType[str(datatype)])
+				cal1file = self.content_tree.itemWidget(item, 3).text()
+				cal2file = self.content_tree.itemWidget(item, 4).text()
+				out[str(topic)] = (str(name), DataType[str(datatype)], str(cal1file), str(cal2file))
 			return out
 
 		# ─────
@@ -218,7 +236,9 @@ if _has_ros:
 
 else:
 	def main(args):
-		print "No ROS workspace was found. Source a ROS workspace and try again"
+		raise RuntimeError(
+		    "No ROS workspace was found. Source a ROS workspace and try again"
+		)
 
 # ─────────────────────────────
 # Definitions for Qidata plugin
