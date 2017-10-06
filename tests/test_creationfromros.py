@@ -8,16 +8,17 @@ from qidata import DataType, QiDataSet
 from qidata.metadata_objects import Context
 from qidata_apps.rosbag_extractor.lib import makeQiDataSetFromROSbag
 
-def test_create_dataset_from_rosbag(rosbag_asus_path):
+def test_create_dataset_from_asus_rosbag(rosbag_asus_files):
+	rosbag_asus_path = rosbag_asus_files[0]
 	output_ds = os.path.splitext(rosbag_asus_path)[0]
 	c=Context()
 	c.recorder_names.append("mohamed.djabri")
 
 	makeQiDataSetFromROSbag(rosbag_asus_path,
 	    {
-	        "/asus/camera/front/image_raw":("front",DataType.IMAGE_2D),
-	        "/asus/camera/depth/image_raw":("depth",DataType.IMAGE_3D),
-	        "/asus/camera/ir/image_raw":("ir",DataType.IMAGE_IR),
+	        "/asus/camera/front/image_raw":("front",DataType.IMAGE_2D, rosbag_asus_files[1], ""),
+	        "/asus/camera/depth/image_raw":("depth",DataType.IMAGE_3D, rosbag_asus_files[2], ""),
+	        "/asus/camera/ir/image_raw":("ir",DataType.IMAGE_IR, rosbag_asus_files[2], ""),
 	    },
 	    c
 	)
@@ -54,5 +55,8 @@ def test_create_dataset_from_rosbag(rosbag_asus_path):
 			assert(-0.520649197032 == _f.transform.rotation.z)
 			assert(0.525849234512 == _f.transform.rotation.w)
 			assert(DataType.IMAGE_3D == _f.type)
+			assert(262.5 == _f.raw_data.camera_info.camera_matrix[0][0])
+			assert(262.5 == _f.raw_data.camera_info.projection_matrix[0][0])
+			assert([] == _f.raw_data.camera_info.distortion_coeffs)
 		assert(0 == len(_ds.getAllFrames()))
 		assert(["mohamed.djabri"] == _ds.context.recorder_names)

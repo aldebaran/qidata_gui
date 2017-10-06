@@ -68,14 +68,14 @@ def test_stream_viewer(qtbot, big_dataset_path):
 			qtbot.mouseClick(widget.next_button, QtCore.Qt.LeftButton)
 
 		assert(
-		    "front_00.png" == _s.args[0]
+		    "ir_00.png" == _s.args[0]
 		)
 
 		# Check that each "next" only change one file
 		# This is not mandatory but quite usual in streams, as a frame is
 		# created for each set of files, and it is rare that two files change
 		# at the exact same timestamp
-		previous_file = "front_00.png"
+		previous_file = "ir_00.png"
 
 		while True:
 			try:

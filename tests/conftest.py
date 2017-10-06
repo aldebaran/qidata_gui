@@ -34,6 +34,8 @@ FRAME_DATASET = "dataset_with_frame_and_no_tf"
 FRAME_TF_DATASET = "dataset_with_frame_and_tf"
 BIG_DATASET = "Michal_Asus_2016-02-19-15-25-46"
 ROSBAG_ASUS = "Michal_Asus_2016-02-19-15-25-46.bag"
+CALIBRATION_T = "topVGA.yml"
+CALIBRATION_D = "asusQVGA.yml"
 
 #[MODULE CONTENT]--------------------------------------------------------------
 
@@ -92,8 +94,8 @@ def small_dataset_path():
 	return sandboxed(SMALL_DATASET)
 
 @pytest.fixture(scope="function")
-def rosbag_asus_path():
-	return sandboxed(ROSBAG_ASUS)
+def rosbag_asus_files():
+	return (sandboxed(ROSBAG_ASUS), sandboxed(CALIBRATION_T), sandboxed(CALIBRATION_D))
 
 @pytest.fixture(scope="session")
 def open_command_parser():

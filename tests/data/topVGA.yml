@@ -1,0 +1,28 @@
+%YAML:1.0
+version: "1.0"
+width: 640
+height: 480
+flags: 0
+cameraMatrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [ 5.56845055e+02, 0., 3.09366895e+02, 0., 5.55898680e+02,
+       2.30592234e+02, 0., 0., 1. ]
+distortion: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: f
+   data: [ -5.45211535e-02, 6.91973423e-02, -2.41094929e-03,
+       -1.12245009e-03, 0]
+rectificationMatrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [ 1., 0., 0., 0., 1., 0., 0., 0., 1. ]
+projectionMatrix: !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: f
+   data: [ 5.51589722e+02, 0., 3.08271133e+02, 0., 0., 5.50291321e+02,
+       2.29201437e+02, 0., 0., 0., 1., 0. ]

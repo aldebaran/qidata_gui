@@ -5,6 +5,7 @@ import time
 
 # Third-party libraries
 import cv2
+from image import Image
 from PySide import QtCore, QtGui
 from pymouse import PyMouse
 import pytest
@@ -153,11 +154,11 @@ def test_raw_data_display_widget(qtbot, jpg_file_path):
 
 	# Test raw data widget with wrong given type
 	with pytest.raises(TypeError) as e:
-		widget = RawDataDisplayWidget(None, "TYPE", cv2.imread(jpg_file_path))
+		widget = RawDataDisplayWidget(None, "TYPE", Image(jpg_file_path))
 	assert("No widget available for type TYPE" == e.value.message)
 
 	# Create widget
-	widget = RawDataDisplayWidget(None, "IMAGE", cv2.imread(jpg_file_path))
+	widget = RawDataDisplayWidget(None, "IMAGE", Image(jpg_file_path))
 	qtbot.addWidget(widget)
 	widget.show()
 	assert("IMAGE" == widget.type_selector.currentText())
